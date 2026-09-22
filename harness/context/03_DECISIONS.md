@@ -1,0 +1,429 @@
+# Project Decisions
+
+This file records accepted decisions whose scope or reasoning matters beyond one implementation
+plan. Do not record tentative answers or trivial implementation details here.
+
+---
+
+## DEC-001 - Trello intake with repository-owned implementation contracts
+
+**Status:** Accepted
+
+The `APP - NextPost` Trello board is the product backlog and the starting point for feature work.
+Trello cards are not passed directly to the implementation harness.
+
+Each selected card is first captured in repository-owned grooming notes and analysed collaboratively.
+After all material questions are resolved and the product owner explicitly approves finalisation, a
+self-contained `RF-XX-Implementation-plan.md` becomes the implementation contract.
+
+This keeps backlog management convenient while ensuring implementation is reproducible without
+conversation history or Trello access.
+
+---
+
+## DEC-002 - Separate grooming from implementation
+
+**Status:** Accepted
+
+Product scope, user experience, business rules, feature boundaries, and material trade-offs are
+decided collaboratively by the product owner and Codex. Codex may inspect code, identify impact,
+prepare options, and recommend a direction, but proposals remain unaccepted until confirmed.
+
+The external coding harness may run only against a plan marked `Ready for implementation`, and only
+after the product owner explicitly asks Codex to launch it.
+
+---
+
+## DEC-003 - OpenCode is the initial external implementation harness
+
+**Status:** Accepted
+
+NextPost initially reuses the verified FlexGym OpenCode handoff: OpenCode Go with
+`opencode-go/deepseek-v4-pro` and the explicit `high` reasoning variant. The repository-specific
+execution contract is stored in `.codex/runbooks/opencode_implementation.md`.
+
+Changing the provider, model, reasoning level, or execution mode requires an explicit product-owner
+decision rather than a silent fallback.
+
+---
+
+## DEC-004 - Shared React application for web, iOS, and Android
+
+**Status:** Accepted
+
+NextPost uses one React and TypeScript application built with Vite. The web application is the
+initial delivery target, and Capacitor will package the same application for iOS and Android.
+Native platform projects are generated only after the permanent application ID and signing setup
+are chosen.
+
+---
+
+## DEC-005 - FastAPI backend with SQLAlchemy and Alembic
+
+**Status:** Accepted
+
+The MVP backend is a Python FastAPI service. SQLAlchemy owns relational persistence integration and
+Alembic owns every schema change. HTTP handlers should remain thin enough that product rules can be
+tested independently as features are introduced.
+
+---
+
+## DEC-006 - PostgreSQL is the relational system of record
+
+**Status:** Accepted
+
+NextPost uses PostgreSQL rather than FlexGym's local SQLite database because the application will
+have a shared backend, concurrent users, and transactional product rules across web and mobile
+clients. Local development uses PostgreSQL 18 through Docker Compose.
+
+---
+
+## DEC-007 - Defer background-worker infrastructure
+
+**Status:** Accepted
+
+The MVP baseline has no worker, queue, or message broker. Initial work stays synchronous unless an
+approved feature proves that a background boundary is necessary. A worker can be added later
+without making it a prerequisite for the first product increments.
+
+---
+
+## DEC-008 - Minimal first-party password and session mechanism
+
+**Status:** Accepted
+
+NextPost's initial account flow stores passwords using Argon2id and authenticates the web MVP with a
+signed `HttpOnly` cookie containing only the account identifier. RF-01 creates that cookie after
+successful registration; RF-02 will reuse it for manual login and clear it on logout.
+
+The MVP does not add a server-side session table, stateless access/refresh token system, hosted
+identity provider, or native-specific authentication transport. Those mechanisms require a later
+approved need rather than being introduced speculatively.
+
+---
+
+## DEC-009 - English product copy for the MVP
+
+**Status:** Accepted
+
+NextPost's user-facing MVP copy is written in English because the product is intended for an
+international audience. New screens, validation messages, errors, loading states, and actions must
+not mix Spanish into the product experience.
+
+The MVP does not introduce a runtime internationalisation framework, language selector, or locale
+catalogue before multiple languages are required. UI copy should nevertheless remain easy to
+centralise or migrate when localisation becomes an approved feature.
+
+---
+
+## DEC-010 - Phase 2 covers the complete consultation loop
+
+**Status:** Accepted (2026-09-22)
+
+Phase 2 is planned as a coherent author-and-voter flow, not as a standalone consultation editor or
+publication endpoint. Its finish line includes preparing and publishing a consultation,
+eligible discovery and voting, author results and closure, the author's final choice, and private
+outcome feedback for participants. Sharing, enforceable audience rules, withdrawal, and image
+retention are part of making that flow usable. The initially proposed trust and operational ticket
+grouping was narrowed by DEC-020; remaining minimum operating safeguards must be resolved in grooming.
+
+The cross-ticket scope inventory and proposed grouping are in `harness/grooming/PHASE-2-scope.md`.
+Acceptance of this phase outcome does not approve individual card specifications or authorize
+implementation. The rollout audience can be chosen separately and is not a prerequisite for defining
+phase-2 behaviour. Material product, security, retention, and operational decisions must be resolved
+in grooming before each self-contained plan can be finalized.
+
+---
+
+## DEC-011 - Registration is sufficient for phase-2 voting eligibility
+
+**Status:** Accepted (2026-09-22)
+
+Phase-2 voters need a registered account; email verification is deferred. The RF-16 Trello criterion
+that excludes unverified accounts is superseded for this phase by the product owner's explicit
+decision. Registration alone does not override the other eligibility and access rules: authors
+cannot vote on their own consultations, and account status, blocking, audience, consultation state,
+and one-vote-per-account enforcement still apply where those rules are defined.
+
+Email verification can be groomed later as a separate feature. Phase-2 plans must not silently add
+verification or use a missing verification flag as a reason to reject an otherwise eligible voter.
+
+---
+
+## DEC-012 - Temporary consultation preparation in phase 2
+
+**Status:** Accepted (2026-09-22)
+
+Start with the simpler preparation model: an unpublished consultation is a temporary authoring
+session, not a recoverable library of drafts or permanent autosave. Closing or reloading the app can
+lose the unfinished form. The UI must warn about unsaved changes where the platform permits and must
+not promise recovery. Editor-to-preview behaviour during a live session remains to be specified.
+
+Real image uploads may occur before publication to support progress, retry, and server processing.
+Any such uploaded files remain private and must be removed after discard or abandonment according to
+the explicit RF-37 cleanup policy, including when the browser cannot send a reliable exit request.
+The precise upload-session and cleanup mechanism remains to be selected during grooming.
+
+---
+
+## DEC-013 - Configurable consultation photo count
+
+**Status:** Accepted (2026-09-22)
+
+The initial allowed number of photographs in a publishable consultation is a minimum of 2 and a
+maximum of 10. Both limits must be easy to configure without changing business-rule code or
+duplicating constants in the client. The displayed guidance and server validation must derive from
+the same effective configuration, and invalid combinations (such as maximum below minimum) must be
+rejected. Configuration must preserve the accepted comparison baseline of at least two photographs
+and support for at least five, unless a later product decision changes that baseline. Publication
+must never accept fewer or more than the active limits.
+
+The configuration mechanism and whether changes require a service restart or can take effect while
+running remain open. No administrator UI is implied by this decision.
+
+---
+
+## DEC-014 - Phase-2 clients are web and iOS TestFlight
+
+**Status:** Accepted (2026-09-22)
+
+The first usable phase-2 experience targets the web and an iOS build distributed to invited testers
+through TestFlight. The shared React/Capacitor application remains the product client (DEC-004). The
+iOS photo-selection, upload, signed-in session, navigation, sharing, and safe-area flows must be
+validated on a real device as well as on the web. Rollout by invitation does not reduce the
+functional phase-2 scope or server-side privacy and access requirements.
+
+The native iOS project has not yet been generated. A permanent application ID, Apple signing setup,
+Xcode build environment, and TestFlight distribution work are required before an actual iOS test
+build; those operational prerequisites must be planned explicitly. This decision does not authorize
+generation of signed projects, upload of a build, or invitation of testers now. Android remains a
+future packaging target and is not part of this first delivery.
+
+---
+
+## DEC-015 - Direct iPhone gallery photo selection
+
+**Status:** Accepted (2026-09-22)
+
+An iOS TestFlight user must be able to select ordinary photos directly from the iPhone gallery
+without changing camera settings or manually converting files. The initial accepted still-image
+inputs therefore include JPEG, PNG, WebP, HEIC, and HEIF; the backend must identify and validate
+actual image content rather than trust filename, MIME declaration, or picker hints. Accepted iPhone
+formats must be normalized to a broadly displayable voter-facing derivative with the visible
+orientation preserved and source location metadata removed, consistent with RF-07.
+
+The same user flow should be shared with the web client where feasible, using the platform photo
+picker first. A native-only picker is not required unless real-device testing shows the shared path
+is inadequate. File-size/pixel limits, the exact processing library, and image-deletion deadlines
+remain RF-07/RF-37 grooming questions. Original-file retention is settled separately in DEC-016.
+
+---
+
+## DEC-016 - Retain processed consultation images, not uploaded originals
+
+**Status:** Accepted (2026-09-22)
+
+After a valid upload is processed, NextPost retains the normalized image needed for consultation
+display and any explicitly required derivatives. It does not keep the original uploaded bytes as a
+second permanent object. Source metadata, including location, must not be carried into served files.
+Temporary raw upload files must be removed after processing or failure. The processed files remain
+private and follow the owner/audience/lifecycle authorization and deletion policy agreed under
+RF-37.
+
+This reduces stored sensitive data and cleanup complexity. It also means future reprocessing cannot
+depend on the original bytes. The exact normalized dimensions/quality, file-size/pixel limits,
+temporary-file handling, and retention deadlines remain to be decided.
+
+---
+
+## DEC-017 - No automatic consultation expiry in phase 2
+
+**Status:** Accepted (2026-09-22)
+
+An open consultation does not close after a fixed duration in phase 2. Its author can voluntarily
+close it, and a closed consultation cannot receive further votes or be reopened. The editor and
+publication confirmation must not ask the author to choose a duration or promise an expiry date.
+RF-11's automatic-expiry criteria and expiry-specific state are deferred; RF-11 still contributes
+the open/closed/unavailable state contract. RF-19 supplies the author-close action. Moderation
+removal and author deletion are separate access-revoking actions, not automatic expiry.
+
+This choice removes scheduled expiry as a prerequisite for the initial consultation flow. An
+unfinalized consultation remains open and visible to its selected audience until its author acts,
+deletes it, or the administrator removes it (DEC-021/022). It does not remove the need to purge
+abandoned uploads or delete files after finalization, deletion, or administrator removal according
+to RF-37. Any future automatic duration requires a new product decision and updated user-facing
+rules.
+
+---
+
+## DEC-018 - Immutable publication and one configurable limits source
+
+**Status:** Accepted (2026-09-22)
+
+Once published, a consultation's photographs, question, context, and audience cannot be edited. An
+author who wants to change the comparison closes or deletes it and creates a new consultation, so a
+confirmed vote never silently changes meaning. The initial maximum is three open consultations per
+author. This limit and the accepted two-to-ten photo limits (DEC-013) must be easy to change in one
+restricted application configuration source, with the effective values exposed to the client and
+enforced by the server. No administrator settings screen is required.
+
+---
+
+## DEC-019 - Simple chronological community feed and private vote results
+
+**Status:** Accepted (2026-09-22)
+
+The phase-2 community feed is a vertically scrolling list of accessible public consultations, newest
+first. It has no personalized ranking, category matching, fairness weighting, or synthetic activity.
+People may browse without voting on every item. A confirmed vote is final, and the voter must be
+able to review and cancel before submitting it. Voters do not see aggregate results; the author sees
+counts and percentages but not which account chose which image. A participant may later see their
+own outcome in private history under DEC-021/023.
+
+The earlier proposal to vary photo order across voters is deferred to keep the first MVP simple.
+Browsing past a consultation through ordinary feed scrolling is enough; RF-17's explicit Skip
+action is deferred. Optional voter comments and an overall coincidence percentage are deferred;
+the private participation history can show each recorded outcome without those additions.
+
+---
+
+## DEC-020 - Lean identity and deferred social-safety interfaces
+
+**Status:** Accepted (2026-09-22)
+
+Phase-2 consultation cards and details show the author's nickname without adding public profile
+pages. The owner deferred user-facing blocking, reporting, moderation inbox/actions, broad abuse
+controls, and versioned service-rule acceptance from the first MVP (RF-29 through RF-33 and RF-36;
+the broad RF-40 administration surface is also deferred). The accepted configurable photo and
+open-consultation limits in DEC-013/018 still apply.
+
+Deferring those cards does not authorize implementation to invent an alternative moderation or
+retention policy. The owner accepted a restricted, manual administrator removal path and a brief
+photo-rights reminder without user-facing report/moderation screens (DEC-022). RF-37's private
+file access and actual image deletion remain in scope.
+
+---
+
+## DEC-021 - Finalization declares a selection and removes photos
+
+**Status:** Accepted (2026-09-22)
+
+The author finalizes an open consultation by explicitly declaring one photo, several photos, or
+none. Confirmation of that declaration closes the consultation in the same operation. There is no
+separate close-without-declaration action, later selection step, reopening, or automatic closure in
+phase 2. A vote matches the author's declaration when its photo belongs to the declared set; a
+declaration of none produces no match or mismatch. The finalized declaration cannot be silently
+changed. The author may delete an open consultation instead of finalizing it.
+
+Finalization or deletion immediately removes all third-party access and starts deletion of every
+stored consultation photo and derivative, with no 30-day author-only image buffer. The UI must not
+promise that the author can see photos after finalization. The system must not deliberately retain
+image copies for future analytics or model training. File-deletion failures must remain detectable
+and retryable without restoring access. Processed uploads abandoned before publication also require
+cleanup. Exact storage, failure recovery, and backup handling belong in RF-37's implementation
+contract, consistent with this no-buffer rule.
+
+If an open consultation is deleted or removed before finalization, it has no declared outcome to
+retain for coincidence analysis. Its votes must not contribute to later coincidence metrics and
+participant history must not imply that an outcome was reached. The minimum non-image outcome
+retention contract is recorded in DEC-023. This decision does not authorize model training.
+
+---
+
+## DEC-022 - Registered-only audiences and manual administrator removal
+
+**Status:** Accepted (2026-09-22)
+
+The initial audience labels are Public and Private. Public consultations are discoverable in the
+chronological feed and viewable by any registered account; Private consultations are unlisted and
+viewable only by registered accounts that possess the link. A forwarded Private link grants no
+access to an unauthenticated visitor. Any eligible registered account with the link may use it;
+Private does not mean an invitee allowlist. Both audiences require an account to vote (DEC-011),
+and publication fixes the audience (DEC-018).
+
+The first MVP has no user-facing Block, Report, moderation inbox, or broad admin console (DEC-020).
+A designated administrator can manually remove a consultation through a restricted operational
+mechanism. Removal revokes access and starts the same no-buffer photo deletion path as author
+deletion. The authoring flow includes a short reminder that users must have permission to share
+their photos; the full versioned service-rules feature remains deferred. Administrator identity,
+restricted command/API choice, and audit details are implementation design questions, not a mandate
+for an administration UI.
+
+---
+
+## DEC-023 - Keep minimum non-image outcome records after finalization
+
+**Status:** Accepted (2026-09-22)
+
+When a consultation is finalized, compute for each valid vote whether its chosen photo is among the
+author's declared selections. If the author declares none, record a distinct No choice outcome,
+not a mismatch. After the photos are deleted, retain only the non-image data needed for author
+aggregate counts, each participant's private per-consultation history, and later product statistics:
+consultation/option identifiers, relevant dates, aggregate vote counts, declared option identifiers,
+and each participant's account-linked Matched, Not matched, or No choice outcome. Do not retain
+uploaded image bytes, image derivatives, source metadata, or an unnecessary per-voter photo-choice
+record for this purpose.
+
+If an open consultation is deleted or removed before finalization, there is no outcome to retain;
+its votes do not contribute to coincidence data. If a finalized consultation is later deleted or
+removed, its public content disappears but the minimum private outcome records may remain for
+history/statistics. Account-linked outcome records remain only while the relevant participant
+account exists; later account-deletion grooming must define their deletion or anonymization.
+
+Retaining these records does not itself authorize model training, a public reputation score, a
+personalized feed, or any sharing of individual voting choices with authors.
+
+---
+
+## DEC-024 - Explicit audience selection during preparation
+
+**Status:** Accepted (2026-09-22)
+
+The consultation composer starts with neither Public nor Private selected. The author must choose
+one before publication. Both options explain who can see the photos: Public is available to any
+registered account and discoverable in the feed; Private is unlisted but available to registered
+accounts with the link. Publication confirms the chosen audience and the server rejects an absent
+or invalid audience. This avoids silently assigning exposure to the author's photos. The selected
+audience remains fixed after publication under DEC-018/022.
+
+---
+
+## DEC-025 - First photo-upload increment includes minimum protection
+
+**Status:** Accepted (2026-09-22)
+
+RF-07 is a prerequisite for implementing RF-06 with real processed photos. Its first implementation
+increment includes the minimum RF-37 capabilities needed to keep uploads safe: private storage,
+owner-only access to temporary images, revocation when a photo is removed or discarded, and cleanup
+of abandoned uploads that works without a reliable client exit request. RF-37 continues to own the
+broader image lifecycle, including access after publication, finalization/deletion, backup policy,
+and recovery from deletion failures. No real upload is exposed before that minimum protection works.
+
+This is a scope and ordering decision. It does not settle the temporary lifetime, storage mechanism,
+resource limits, or exact maintenance process; those remain in RF-07/RF-37 grooming.
+
+---
+
+## DEC-026 - Active composer lifecycle for prepublication photo uploads
+
+**Status:** Accepted (2026-09-22)
+
+A processed prepublication photo belongs to an active, owner-bound composer session. This technical
+session exists so the server can process and privately serve the image before publication; it is not
+a saved draft, is not listed anywhere, and cannot be recovered after the authoring client leaves.
+
+The lifecycle has three deliberate outcomes:
+
+1. Successful publication atomically promotes the selected processed photos into the new open
+   consultation.
+2. Removing a photo or cancelling the composer revokes it immediately and requests physical
+   deletion.
+3. While the composer remains open, authenticated and connected, it renews a temporary lease, so
+   its photos do not expire regardless of how long the author takes. Closing/reloading/crashing the
+   client or losing contact without a successful cancel stops renewal. After 24 hours without a
+   successful lease renewal, the server treats the session as abandoned, revokes access and queues
+   its files for deletion. A best-effort exit request may accelerate cleanup but is never required.
+
+Temporary unpublished photos have no backup or versioned copy. The lease is an internal cleanup
+mechanism and does not provide draft recovery. This decision does not define backup handling for
+photos belonging to a published consultation, which remains RF-37 scope.

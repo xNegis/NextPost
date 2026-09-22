@@ -1,0 +1,6 @@
+.env
+android
+dist
+ios
+node_modules
+npm-debug.log*
