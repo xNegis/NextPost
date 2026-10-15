@@ -4,6 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "./App";
 import { ApiError, fetchProfile, fetchSession, signOut } from "./api";
+import {
+  fetchConsultationCapacity,
+  fetchFeed,
+  fetchMyConsultations,
+} from "./consultationApi";
+import { fetchApplicationConfig } from "./photoApi";
 
 vi.mock("./api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./api")>();
@@ -15,9 +21,45 @@ vi.mock("./api", async (importOriginal) => {
   };
 });
 
+vi.mock("./photoApi", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./photoApi")>();
+  return {
+    ...actual,
+    fetchApplicationConfig: vi.fn(),
+    createUploadSession: vi.fn(),
+    renewUploadSession: vi.fn(),
+    uploadImage: vi.fn(),
+    removeImage: vi.fn(),
+    discardUploadSession: vi.fn(),
+    fetchImageUrl: vi.fn(),
+  };
+});
+
+vi.mock("./consultationApi", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./consultationApi")>();
+  return {
+    ...actual,
+    fetchConsultationCapacity: vi.fn(),
+    publishConsultation: vi.fn(),
+    fetchConsultationDetail: vi.fn(),
+    fetchConsultationPhotoUrl: vi.fn(),
+    fetchOwnerLink: vi.fn(),
+    disableOwnerLink: vi.fn(),
+    replaceOwnerLink: vi.fn(),
+    createOwnerLink: vi.fn(),
+    fetchMyConsultations: vi.fn(),
+    fetchMyConsultation: vi.fn(),
+    fetchFeed: vi.fn(),
+  };
+});
+
 const fetchSessionMock = vi.mocked(fetchSession);
 const fetchProfileMock = vi.mocked(fetchProfile);
 const signOutMock = vi.mocked(signOut);
+const configMock = vi.mocked(fetchApplicationConfig);
+const capacityMock = vi.mocked(fetchConsultationCapacity);
+const myListMock = vi.mocked(fetchMyConsultations);
+const feedMock = vi.mocked(fetchFeed);
 
 const AUTHENTICATED_SESSION = {
   authenticated: true,
@@ -28,6 +70,21 @@ beforeEach(() => {
   fetchSessionMock.mockReset();
   fetchProfileMock.mockReset();
   signOutMock.mockReset();
+  configMock.mockResolvedValue({
+    consultation_min_photos: 2,
+    consultation_max_photos: 10,
+    max_open_consultations: 3,
+    photo_max_input_bytes: 15728640,
+    consultation_question_max_length: 120,
+    consultation_context_max_length: 500,
+  });
+  capacityMock.mockResolvedValue({
+    open_count: 0,
+    limit: 3,
+    can_start: true,
+  });
+  myListMock.mockResolvedValue({ items: [], next_cursor: null });
+  feedMock.mockResolvedValue({ items: [], next_cursor: null });
 });
 
 describe("App", () => {
@@ -51,7 +108,7 @@ describe("App", () => {
     render(<App />);
 
     expect(
-      await screen.findByRole("heading", { name: "Hi, Ana" }),
+      await screen.findByRole("heading", { name: "Home" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("navigation", { name: "Primary" }),
@@ -183,8 +240,37 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Home" }));
 
     expect(
-      await screen.findByRole("heading", { name: "Hi, Ana" }),
+      await screen.findByRole("heading", { name: "Home" }),
     ).toBeInTheDocument();
+  });
+
+  it("opens the consultation composer from the Create destination", async () => {
+    const user = userEvent.setup();
+    fetchSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Create" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "New consultation" }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the My consultations destination from primary navigation", async () => {
+    const user = userEvent.setup();
+    fetchSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
+
+    render(<App />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "My consultations" }),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "My consultations" }),
+    ).toBeInTheDocument();
+    expect(myListMock).toHaveBeenCalled();
   });
 
   it("signs out from My profile and returns to sign-in on success", async () => {

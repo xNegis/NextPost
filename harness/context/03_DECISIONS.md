@@ -427,3 +427,212 @@ The lifecycle has three deliberate outcomes:
 Temporary unpublished photos have no backup or versioned copy. The lease is an internal cleanup
 mechanism and does not provide draft recovery. This decision does not define backup handling for
 photos belonging to a published consultation, which remains RF-37 scope.
+
+---
+
+## DEC-027 - Explicit question correction and full comparison context
+
+**Status:** Accepted (2026-09-23)
+
+RF-08's editable default question is an initial authoring value. If the author clears it, the field
+stays empty and must be corrected before preview or publication. Do not silently restore the default
+or add a default-restoration action. Publication independently requires a valid nonempty question.
+
+The shared author preview and voter detail show the complete question followed by the complete
+optional context above the photos, within the effective text limits. Context is not initially
+collapsed or truncated; an empty context block is omitted. RF-06 consumes this presentation and
+RF-10 consumes the text validation contract. Compact feed-card layout remains RF-14 scope.
+
+The owner confirmed options `1A 2A` in RF-08 grooming. This records the cross-feature behavior;
+implementation-plan finalisation and harness launch remain separate approval gates.
+
+---
+
+## DEC-028 - Generic unavailable response for consultation links
+
+**Status:** Accepted (2026-09-28)
+
+Authenticated recipients opening an invalid, revoked, replaced, finalized, deleted or removed
+consultation link receive the same generic unavailable message. The response must not disclose
+which condition applies or expose protected consultation text, photos or aggregate results.
+Unauthenticated visitors still follow the generic authentication flow without protected content.
+Network/server failures remain retryable failures rather than claims that a consultation was removed.
+
+This does not replace the owner's authorized management view or participants' permitted private
+non-image outcome history. The owner explicitly selected Q4A in RF-09 grooming; the remaining
+audience/link questions and implementation approvals remain separate.
+
+---
+
+## DEC-029 - Automatic private links and request-time revocation checks
+
+**Status:** Accepted (2026-09-28)
+
+Publishing a Private consultation automatically creates its current shareable link, ready for the
+author to copy and send. Opening the link checks its current active/revoked state in the database,
+alongside account, audience and consultation lifecycle authorization. A revoked or otherwise
+unavailable target receives the generic unavailable response from DEC-028.
+
+Do not add periodic polling, a 30-second timer or push revocation to clear already-open screens.
+The owner explicitly accepts that previously loaded photographs may remain visible while a
+recipient stays on that screen after revocation. This does not grant continuing server access:
+each subsequent protected content request and vote must still satisfy current authorization.
+Reopening or refreshing cannot bypass the revoked state. No browser-persistent offline photo
+cache or permanent recipient access grant is implied.
+
+The owner confirmed automatic issuance and this simpler request-driven behavior in RF-09 grooming.
+Link revocation does not itself redefine consultation finalization, image deletion or existing votes.
+
+---
+
+## DEC-030 - Use ordinary platform link opening for the proof of concept
+
+**Status:** Accepted (2026-09-28)
+
+Use the ordinary URL-opening behavior provided by the platform and components in use. RF-09 does
+not require a bespoke device-specific flow, guaranteed automatic native-app opening, an added
+"Open app" button, or forced browser-only behavior. Do not claim native link handling exists when
+it has not been configured and tested. The current repository has no native link-opening integration.
+
+The accepted web and invited TestFlight targets remain, as does returning to a valid consultation
+destination after authentication. Native packaging and device validation remain separate delivery
+work. The owner explicitly requested simplicity rather than new native link infrastructure now.
+
+---
+
+## DEC-031 - Single publication confirmation and early open-cap guidance
+
+**Status:** Accepted (2026-09-28)
+
+RF-06/RF-10 use one explicit publication confirmation in the author preview. Before the Publish
+action, show audience reach, immutable published content and the absence of automatic expiry.
+The author can return to editing; no additional confirmation dialog is required.
+
+When the configured open-consultation limit is known to be reached, explain it and block starting
+a new preparation. If another tab takes the last slot while a preparation is already open, preserve
+that live preparation, explain the limit and allow an explicit retry when capacity is available.
+The server independently enforces the cap transactionally; the early check reserves no slot and
+does not add saved drafts or automatic publication when a slot becomes free.
+
+The owner accepted RF-10 grooming recommendations Q1A and Q3A. Q2/Q4/Q5 clarification, plan
+finalisation and implementation authorization remain separate.
+
+---
+
+## DEC-032 - Ordinary published-photo persistence is sufficient for the POC
+
+**Status:** Accepted (2026-09-28)
+
+Published consultations and their processed photos persist in PostgreSQL and the existing private
+storage volume across app close/reopen and ordinary server restarts. For the proof of concept, add
+no photo backup/versioning or special disaster-recovery infrastructure; exceptional storage loss
+is an accepted limitation rather than a reason to expand RF-10 or block its grooming.
+
+This is distinct from unpublished preparation, which remains temporary and non-recoverable after
+close/reload under DEC-012/026. Normal access control, immutable publication and required photo
+deletion remain unchanged. The owner explicitly rejected further complexity in RF-10 question Q4;
+do not reopen that question or treat the earlier bundled recovery proposals as approved scope.
+
+---
+
+## DEC-033 - Shared consultation lifecycle without transition dates
+
+**Status:** Accepted (2026-09-29)
+
+The persisted consultation lifecycle remains `open`, `finalized`, `deleted` and `removed`.
+`Unavailable` is a safe external access result, not another persisted lifecycle, and temporary
+preparation remains an upload-session state rather than a consultation state. RF-11 supplies one
+reusable lifecycle policy and strict open-state projection; RF-13, RF-16, RF-19/RF-20 and RF-37
+retain ownership of the real deletion, vote, finalization/outcome and physical-photo operations.
+
+RF-11 adds no `finalized_at`, `deleted_at`, `removed_at` or generic `state_changed_at`. The existing
+`published_at` remains the product date available to later list/detail consumers. No expiry date,
+duration, reopening, scheduler or lifecycle event framework is introduced.
+
+Terminal consumers must lock and re-read the consultation in the same transaction as their side
+effects. The first terminal operation that commits wins. A retry may return an existing result only
+when that consumer can prove it is the same operation and payload; a different operation or payload
+against an already terminal consultation fails safely and cannot reinterpret the outcome. There is
+no priority hierarchy among finalization, author deletion and restricted administrator removal.
+
+---
+
+## DEC-034 - Product owner owns visual validation
+
+**Status:** Accepted (2026-10-02)
+
+The product owner performs visual validation for NextPost. Codex and implementation harnesses must
+not spend execution time or tokens on browser-based visual inspection, viewport screenshots or
+manual zoom checks unless the product owner explicitly requests a specific visual check. Automated
+component, accessibility and layout-regression tests remain part of normal technical validation.
+
+Implementation review must report the visual gate as awaiting product-owner validation rather than
+claiming it from automated evidence or blocking unrelated technical verification.
+
+---
+
+## DEC-035 - A community for purpose-based photographic choices
+
+**Status:** Accepted product intent from the owner's interview (2026-10-12)
+
+NextPost organizes the existing practice of asking friends or online communities which photo to
+choose. Authors compare several photographs and explain the purpose: a social post, a professional
+profile photo or another photographic decision. The product is not restricted to Instagram, and
+this breadth requires no new category system or social-account integration.
+
+The owner wants a recurring community. A person may mainly ask, mainly vote or do both; mandatory
+reciprocity is not part of that direction. A vote represents a participant's choice for the stated
+purpose. The author determines when the help is sufficient and may choose differently from the
+majority; no minimum vote threshold, response guarantee or automatic finalization was requested.
+
+The first participants will be invited personally. This does not authorize a technical invitation
+system, access allowlist or change to registration/audience rules. Demand beyond the observed
+example and ongoing voter motivation remain unvalidated hypotheses.
+
+The owner considers a vote sufficient for the basic contribution. Optional explanations and a
+future reputation/coincidence mechanism are possibilities requiring further design, not accepted
+initial-MVP additions, formulae, expertise rankings or predictive probabilities. Existing privacy,
+voluntary finalization and no-buffer photo-deletion contracts remain in force.
+
+The interview synthesis, code inspection, Trello reconciliation and proposed grooming order are
+recorded in `harness/grooming/PRODUCT-2026-10-12-reorganization.md`. Backlog placement does not
+approve a feature plan or authorize implementation.
+
+---
+
+## DEC-036 - Own consultations have a primary navigation destination
+
+**Status:** Accepted (2026-10-12)
+
+RF-12 adds `My consultations` as a fourth authenticated primary destination beside
+Home, Create and Profile. Home remains the default after ordinary authentication and
+session restoration, and retains its future community-discovery role under RF-14.
+The author's private consultation management is directly reachable through primary
+navigation rather than nested under Home or Profile.
+
+The owner selected option A in the RF-12 consolidated grooming batch. This settles
+navigation only; it does not authorize plan finalization, implementation or a harness
+launch. RF-12's proposed scope and dependencies remain in its grooming notes.
+
+---
+
+## DEC-037 - Home includes own Public consultations and first-photo previews
+
+**Status:** Accepted (2026-10-15)
+
+The chronological Home feed includes the current author's open Public consultations
+alongside other authors' eligible consultations, without changing their chronological
+position. Own cards are marked Your consultation and open the existing authorized owner
+detail with a return to Home. My consultations remains the dedicated management destination.
+Private consultations never appear in Home, including for their author or a current-link holder.
+
+Each card shows the first photograph in immutable publication order, identified as Photo 1.
+This is a preview, not a leading photo or voting result. Preview bytes use the existing
+authenticated, request-authorized media path; no permanent public URL, stored thumbnail
+or additional derivative is implied. Loading, failure/retry, session loss and revoked
+access must be handled for these preview requests as well as for detail photos.
+
+The owner selected RF-14 options `1B y 2B`. This accepts those product choices only;
+scope confirmation, explicit implementation-plan finalization approval and a subsequent
+independent harness-launch request remain separate gates. No vote, result or terminal
+operation is authorized by this decision.

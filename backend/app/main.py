@@ -11,10 +11,12 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.accounts import router as accounts_router
+from app.api.consultations import router as consultations_router
 from app.api.health import router as health_router
 from app.api.photos import router as photos_router
 from app.cleanup import run_cleanup
 from app.config import get_settings
+from app.consultation_service import ConsultationError
 from app.db import get_session_factory
 from app.photo_service import PhotoError
 from app.storage import PhotoStorage
@@ -117,9 +119,22 @@ def create_app() -> FastAPI:
             content={"detail": {"code": exc.code}},
         )
 
+    @application.exception_handler(ConsultationError)
+    async def handle_consultation_error(request: Request, exc: ConsultationError) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": {"code": exc.code}},
+            headers={
+                "Cache-Control": "private, no-store",
+                "X-Content-Type-Options": "nosniff",
+                "Referrer-Policy": "no-referrer",
+            },
+        )
+
     application.include_router(health_router, prefix="/api")
     application.include_router(accounts_router, prefix="/api")
     application.include_router(photos_router, prefix="/api")
+    application.include_router(consultations_router, prefix="/api")
     return application
 
 

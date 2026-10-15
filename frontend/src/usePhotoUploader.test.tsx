@@ -41,6 +41,8 @@ const defaultConfig = {
   consultation_max_photos: 10,
   max_open_consultations: 3,
   photo_max_input_bytes: 15728640,
+  consultation_question_max_length: 120,
+  consultation_context_max_length: 500,
 };
 
 function makeFile(name: string): File {

@@ -7,6 +7,8 @@ export interface ApplicationConfig {
   consultation_max_photos: number;
   max_open_consultations: number;
   photo_max_input_bytes: number;
+  consultation_question_max_length: number;
+  consultation_context_max_length: number;
 }
 
 export interface UploadSession {
@@ -20,14 +22,28 @@ export interface UploadedImage {
   height: number;
 }
 
+function isFiniteSafePositiveInteger(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    Number.isSafeInteger(value) &&
+    value > 0
+  );
+}
+
 function isApplicationConfig(value: unknown): value is ApplicationConfig {
   if (typeof value !== "object" || value === null) return false;
   const record = value as Record<string, unknown>;
+  const questionMax = record.consultation_question_max_length;
+  const contextMax = record.consultation_context_max_length;
   return (
     typeof record.consultation_min_photos === "number" &&
     typeof record.consultation_max_photos === "number" &&
     typeof record.max_open_consultations === "number" &&
-    typeof record.photo_max_input_bytes === "number"
+    typeof record.photo_max_input_bytes === "number" &&
+    isFiniteSafePositiveInteger(questionMax) &&
+    questionMax >= 27 &&
+    isFiniteSafePositiveInteger(contextMax)
   );
 }
 

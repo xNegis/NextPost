@@ -1,5 +1,14 @@
 # Phase 2 scope - working proposal
 
+## 2026-10-12 reconciliation
+
+This document preserves the historical phase-2 inventory, discussion and owner answers.
+Its code observations and proposed delivery ordering are historical. The current owner-interview
+reconciliation and backlog continuation are in `PRODUCT-2026-10-12-reorganization.md`;
+the exact pre-change Trello snapshot is `TRELLO-2026-10-12-before-reorganization.json`.
+Accepted DEC-010 through DEC-035 and approved plans still govern scope. The reorganization does
+not approve new feature specifications, reclassify implementation evidence or launch a harness.
+
 ## Status
 
 `Grooming - awaiting product-owner confirmation of the proposed technical direction`. This is a cross-ticket scoping note, not an approved implementation plan or an intake snapshot for every card. On 2026-09-22 the product owner confirmed the full author-and-voter phase outcome through RF-21, then narrowed safety/social scope and resolved finalization, audience, image-deletion, and outcome-data retention rules (DEC-018–023). Web and invited iOS TestFlight remain the first delivery targets (DEC-014). The simple technical direction below is proposed for review before individual plans are finalized.

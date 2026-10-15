@@ -5,25 +5,43 @@ import { describe, expect, it, vi } from "vitest";
 import { Navigation } from "./Navigation";
 
 describe("Navigation", () => {
-  it("renders Home and Profile destinations with visible labels", () => {
+  it("renders Home, Create, My consultations and Profile with visible labels", () => {
     render(<Navigation active="home" onSelect={() => {}} />);
 
     expect(
       screen.getByRole("navigation", { name: "Primary" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Home" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "My consultations" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Profile" })).toBeInTheDocument();
   });
 
+  it("marks the My consultations destination when active", () => {
+    render(<Navigation active="my" onSelect={() => {}} />);
+
+    expect(
+      screen.getByRole("button", { name: "My consultations" }),
+    ).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("button", { name: "Home" })).not.toHaveAttribute(
+      "aria-current",
+    );
+  });
+
   it("marks only the active destination with aria-current", () => {
-    render(<Navigation active="profile" onSelect={() => {}} />);
+    render(<Navigation active="create" onSelect={() => {}} />);
 
     expect(screen.getByRole("button", { name: "Home" })).not.toHaveAttribute(
       "aria-current",
     );
-    expect(screen.getByRole("button", { name: "Profile" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Create" })).toHaveAttribute(
       "aria-current",
       "page",
+    );
+    expect(screen.getByRole("button", { name: "Profile" })).not.toHaveAttribute(
+      "aria-current",
     );
   });
 
@@ -32,8 +50,8 @@ describe("Navigation", () => {
     const onSelect = vi.fn();
     render(<Navigation active="home" onSelect={onSelect} />);
 
-    await user.click(screen.getByRole("button", { name: "Profile" }));
+    await user.click(screen.getByRole("button", { name: "Create" }));
 
-    expect(onSelect).toHaveBeenCalledWith("profile");
+    expect(onSelect).toHaveBeenCalledWith("create");
   });
 });

@@ -54,6 +54,8 @@ def application_config(
         consultation_max_photos=settings.consultation_max_photos,
         max_open_consultations=settings.max_open_consultations,
         photo_max_input_bytes=settings.photo_max_input_bytes,
+        consultation_question_max_length=settings.consultation_question_max_length,
+        consultation_context_max_length=settings.consultation_context_max_length,
     )
 
 

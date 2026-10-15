@@ -8,9 +8,19 @@
 - Workspace ARI: `ari:cloud:trello::workspace/6aa9032829f8b45ead46cfdd`
 - Board ARI: `ari:cloud:trello::board/workspace/6aa9032829f8b45ead46cfdd/6aa903892e7d7b54f23fae1b`
 
-The board currently contains product groupings including `Funcionalidades`, `Fase 1`, `Fase 2`, and
-`Descartadas del MVP`. These list names describe backlog organisation, not this repository's
-implementation status. Repository state is authoritative for grooming and implementation progress.
+On 2026-10-12 the owner requested a backlog reconciliation, which was applied and verified.
+The board columns are
+`Validado · incrementos aprobados`, `En revisión · implementación existente`,
+`Próximo · completar el MVP`, `Beta · entrega y aprendizaje`,
+`Después · comunidad y participación`, `Después · cuentas y administración`, and
+`Fuera del MVP inicial`. The application/verification record is in
+`harness/grooming/PRODUCT-2026-10-12-reorganization.md`.
+
+Columns organize the work; repository state remains authoritative for implementation evidence.
+`Validado` refers to the approved increment, not every downstream consumer of a broad source card.
+`Próximo` is a grooming queue, not approval or `Ready for implementation`. Pending validation must
+remain explicit even when a historical Trello completion flag is set. Capture the actual current
+list name at future intake; preserve old snapshots and card identifiers/URLs.
 
 ## Consuming a ticket
 

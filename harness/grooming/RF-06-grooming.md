@@ -2,7 +2,13 @@
 
 ## Status
 
-`Grooming - questions open`
+`Implementation review`
+
+The product owner explicitly approved plan finalisation on 2026-09-28. The self-contained contract
+is `harness/features/RF-06-Implementation-plan.md`, marked `Ready for implementation`. The explicitly
+launched harness completed on 2026-09-28. Independent local automated review passed on 2026-09-29;
+the isolated built-stack two-account smoke remains pending because Docker Desktop fails during local
+startup. The real iPhone/TestFlight gate remains external.
 
 ## Trello snapshot
 
@@ -119,41 +125,100 @@ approved contracts for its real upload and publication handoffs. This confirmati
 plan finalisation or code implementation. Exact temporary-session lifetime and cleanup mechanics
 remain proposed design details for RF-07/RF-37 grooming.
 
+## Re-grooming checkpoint after RF-07 through RF-10 (2026-09-28)
+
+The product owner reactivated RF-06 grooming after RF-10 completed independent validation. The old
+dependency blockers in this file are now historical:
+
+- RF-07 and its minimum RF-37 boundary provide owner-bound temporary sessions, private normalized
+  media, progress/retry/removal, a renewable 24-hour lease, explicit discard, abandonment cleanup,
+  HEIC/HEIF processing and the configured 2–10 limits. `usePhotoUploader` now also exposes the
+  publication session ID plus freeze, relinquish and discard operations.
+- RF-08 provides the default question, normalized question/context rules, server-owned limits,
+  controlled fields and the shared text display.
+- RF-09 provides the unselected Public/Private control, reach copy, current access policy, private
+  link helpers and owner link controls.
+- RF-10 provides the capacity read, atomic/idempotent publication, cleanup-safe promotion,
+  protected detail/media reads, current-link endpoints, publication controller and the single
+  confirmation summary. Its approved increment is completed and validated, including live
+  PostgreSQL concurrency and restart persistence.
+
+### Current repository findings
+
+- `frontend/src/App.tsx` still has only authenticated `home` and `profile` destinations.
+  `Navigation.tsx` renders those two buttons in a sticky desktop bar and mobile bottom bar. There is
+  no composer destination, routing layer, dirty-navigation interception or `beforeunload` handling.
+- `PhotoUploader.tsx` renders the tested upload list but its public component boundary currently
+  exposes only `discard`; RF-06 needs either a small extension or a composer-owned use of
+  `usePhotoUploader` to access session ID, ready items and URLs, freeze and relinquish without
+  duplicating upload behavior.
+- `ConsultationTextFields`, `ConsultationTextDisplay`, `AudienceSelector`, `PublishSummary`,
+  `useConsultationConfig` and `usePublishConsultation` are reusable. `PublishSummary` currently
+  states only the photo count, so RF-06 must compose the actual ready-photo presentation around it
+  for a faithful preview.
+- `consultationApi.ts` already supplies strict clients for capacity, publication, detail, published
+  media and owner link operations. No RF-06 backend endpoint, draft table or migration is needed.
+- There is no frontend destination for a newly published consultation. RF-06 must define a narrow
+  success destination without accidentally implementing RF-12 lists, RF-14 feed, RF-16 voting or
+  RF-26's complete shared-link/authentication-return flow.
+- The attempted 2026-09-28 browser recheck of the existing Trello URL reached Trello's sign-in wall,
+  so no newer card metadata could be verified through the available browser session. The complete
+  2026-09-22 snapshot/recheck above remains the captured backlog input. Trello was not mutated.
+
+### Candidate integration boundary
+
+RF-06 can now be a frontend vertical integration over the implemented contracts. It should create no
+draft persistence or parallel business rules. A single composer owns transient question/context,
+audience, photo-uploader and mode state; it loads capacity/config before allowing preparation,
+validates the combined snapshot, keeps the uploader mounted between edit and preview, freezes it only
+while publishing, and relinquishes it only after confirmed success. Cancel/discard clears local
+object URLs and requests temporary-session revocation; missing exit requests remain covered by the
+server lease. Session loss clears private local state and returns to sign-in.
+
+The main risks are state loss at the edit/preview boundary, mistakenly discarding promoted photos,
+duplicate validation rules, accidental persistence of private tokens/files, navigation that bypasses
+the discard warning, and claiming iPhone behavior without a signed real-device check. Focused
+component/state tests, a built two-account flow and an explicit external iPhone gate cover these
+risks. No data migration is expected for RF-06.
+
 ### Direction confirmed on 2026-09-22
 
-The product owner rejected an isolated, local-only RF-06 release and confirmed phase 2 as a complete author-and-voter flow through final choice and participant feedback. RF-06 must therefore be groomed with its upload, context, audience, publication, access, voting, lifecycle, safety, and retention dependencies. The exact RF-06 contract remains open (DEC-010); rollout audience is not a grooming gate.
+The product owner rejected an isolated, local-only RF-06 release and confirmed phase 2 as a complete author-and-voter flow through final choice and participant feedback. RF-06 was therefore groomed with its upload, context, audience, publication, access, voting, lifecycle, safety, and retention dependencies. Its composer contract is now settled; rollout audience is not a grooming gate.
 
-### Options and trade-offs (unaccepted)
+### Options and trade-offs considered
 
 1. **Browser-memory preparation as an isolated release:** ruled out by the product owner's complete-flow direction. It remains a possible internal implementation technique for the editor, not a shippable endpoint by itself.
 2. **Private persisted draft and uploads:** enables recovery and a direct path to RF-10, but requires consultation schema, owner-only APIs, private file storage/serving, processing, upload limits, lifecycle cleanup, and operational purge. These are substantial RF-07/RF-37 decisions, including how to delete abandoned data if the browser closes.
-3. **Integrated phase-2 planning (accepted direction, details open):** define a usable prepare-to-publish-to-vote lifecycle across related tickets, then implement in coherent verified increments with explicit integration gates.
+3. **Integrated phase-2 planning (accepted direction):** define a usable prepare-to-publish-to-vote lifecycle across related tickets, then implement in coherent verified increments with explicit integration gates.
 
-Temporary preparation without a recoverable draft library is accepted (DEC-012). The exact upload-session mechanics, per-ticket boundaries, and implementation sequence remain open. Rollout type is not a prerequisite for these decisions.
+Temporary preparation without a recoverable draft library is accepted (DEC-012). RF-07 through RF-10 have since settled the upload-session mechanics and the RF-06 integration boundary. Rollout type is not a prerequisite for these decisions.
 
 ## Questions
 
 ### Open
 
-The RF-06 scope, responsibility split, and dependency order are confirmed. These integration
-contracts still need approval before an RF-06 plan can be finalized:
-
-1. RF-07/RF-37: owner-bound temporary uploads, private media reads, processing states, server-side
-   cleanup after discard/abandonment, deletion recovery, and storage/backup rules. This contract must
-   work even when the client exits without sending a request.
-2. RF-08/RF-09: effective text limits and shared voter presentation, plus enforceable Public/Private
-   access and link behaviour. RF-06 must use the same rules and display as the published experience.
-3. RF-10: atomic publication from an authorized temporary session, validation of successfully
-   processed photos and configured limits, retry/idempotency, and failure recovery that preserves the
-   editor state until publication actually succeeds.
-4. Verify the integrated composer on web and a real iPhone, including picker output, preview,
-   internal-exit warning, refresh limitations, authentication, private media access, and cleanup.
-
-The exact temporary upload-session mechanism and lifetime are design proposals for RF-07/RF-37.
-The product owner has not yet selected or approved those ticket contracts.
+None. The product owner resolved the complete 2026-09-28 batch and explicitly approved plan
+finalisation on 2026-09-28.
 
 ### Resolved
 
+- 2026-09-28: The product owner answered `1A, 2B - un wizard bonito, 3A, 4A, 5A`. The natural-language
+  wizard direction is authoritative over the earlier A/B label mismatch: RF-06 uses a polished
+  progressive wizard rather than one long page. The settled flow is:
+  1. `Create` is a third permanent primary-navigation destination beside Home and Profile.
+  2. The composer is a three-step in-session wizard: **Photos**, **Details**, then **Review and
+     publish**. Back/forward navigation preserves the mounted uploader and all inputs. The final step
+     is the faithful preview and single RF-10 confirmation; there is no extra publish dialog.
+  3. Photos retain gallery-selection order in editor, preview and publication. There is no reorder
+     control in the POC; remove/reselect is sufficient.
+  4. The untouched default question does not make the wizard dirty. A text/audience change or the
+     start of photo selection does. Internal exit/Cancel offers `Keep editing` or `Discard`;
+     confirmed discard leaves immediately while server cleanup remains retryable. Refresh/app close
+     uses the native best-effort warning. Session loss clears local private state without recovery.
+  5. Confirmed publication replaces the wizard with a narrow persisted success/detail view loaded
+     by consultation ID. It shows normalized text and actual published photos; Private also shows
+     its automatically created link controls. `Back to Home` is available. General routing, feed,
+     voting and RF-26's complete shared-link return flow remain out of scope.
 - 2026-09-22: The product owner confirmed the concrete RF-06 composer boundary and the order of defining real-upload and cleanup contracts first. This closes the RF-06 scope/ordering confirmation, but does not approve plan finalisation or harness launch.
 - 2026-09-22: The product owner confirmed that the author must explicitly choose Public or Private; neither is preselected. The shared RF-06/RF-09 rule is recorded in DEC-024.
 - 2026-09-22: The product owner explicitly selected RF-06 for grooming; the complete card was consumed read-only from the configured board. No Trello mutation was performed.
@@ -172,7 +237,7 @@ The product owner has not yet selected or approved those ticket contracts.
 
 ## Proposed scope
 
-### In scope (confirmed boundary; integration details open)
+### In scope (confirmed boundary)
 
 - A visible authenticated entry into consultation preparation from shared navigation.
 - Image selection/removal and upload integration, context and audience editing, and an accurate author preview in the full publication journey.
@@ -187,20 +252,22 @@ The product owner has not yet selected or approved those ticket contracts.
 
 ## Validation outline
 
-- Test selection/removal, state preservation between editor and preview, navigation warning and discard, owner-only CRUD and media reads where applicable, isolation from discovery, race/retry handling, invalid files, upload failure/retry, abandoned-file purge, and migration/backup behaviour against the accepted retention policy.
+- Test selection/removal, state preservation across wizard steps, navigation warning and discard,
+  authorized media reads, isolation from discovery, retry/concurrency handling, invalid files, upload
+  failure/retry and abandoned-file cleanup. RF-06 adds no migration or backup contract.
 - Manually check refresh/close warning limits, mobile layout, keyboard access, screen-reader labels, and the complete prepare-to-publish handoff.
 - Check that the UI reflects actual server publication and audience/access state, including failures and retries.
 
 ## Implementation-plan design requested by the product owner (2026-09-22)
 
-This is a reviewable design in grooming, not an approved implementation plan. The owner requested
-an F06 plan so that implementation can follow. The dependency cards were re-read on the configured
-Trello board: RF-07, RF-08, RF-09, RF-10, and RF-37 all remain open in `Fase 2`, and the repository
-still has no consultation, upload, image storage, or publication implementation. Their current card
-criteria agree with DEC-012/013/015/016/017/018/021/022/023. They were read as dependencies, not
-separately consumed tickets; no Trello card was changed.
+This is the historical 2026-09-22 reviewable design in grooming, not an approved implementation plan.
+The 2026-09-28 re-grooming checkpoint and consolidated question batch above supersede its stale code
+and dependency observations. At that time, the dependency cards were re-read on the configured
+Trello board and the repository did not yet contain consultation, upload, image-storage or
+publication implementation. Their criteria agreed with DEC-012/013/015/016/017/018/021/022/023.
+They were read as dependencies, not separately consumed tickets; no Trello card was changed.
 
-### Proposed F06 implementation sequence
+### Candidate RF-06 implementation sequence
 
 1. Integrate a visible `Create consultation` entry with the RF-03 authenticated navigation and
    existing session-loss flow. Keep the current Home/Profile behaviour intact.
@@ -222,23 +289,23 @@ separately consumed tickets; no Trello card was changed.
    temporary images; server-side cleanup still handles missing or failed exit requests.
 7. Hand off a valid preview to RF-10's publication confirmation. Show actual audience reach before
    submission. Keep the form on validation, network, or server failure; retry through RF-10's
-   idempotent contract. On confirmed success, clear temporary state and navigate to the actual open
-   consultation. F06 does not create its own publication rule or success state.
+   idempotent contract. On confirmed success, clear temporary state and replace the wizard with
+   RF-06's narrow persisted success/detail view. RF-06 does not create its own publication rule.
 
 ### Implementation boundary and evidence
 
 - Frontend likely affects `frontend/src/App.tsx`, `Navigation.tsx`, `api.ts`, new composer and shared
   presentation components, styles, and focused tests. The exact component split can follow the
   implemented dependency contracts.
-- The current backend has only account models/endpoints and no private media volume. F06 must not
-  invent upload, media, publication, or cleanup persistence independently of RF-07/RF-37/RF-10.
+- RF-07 through RF-10 now provide the backend and reusable frontend contracts. RF-06 must consume
+  them rather than invent upload, media, publication, or cleanup persistence.
 - Test editor state, selection/removal, limits from server configuration, processing/error/retry,
   preview fidelity, return to edit, discard and cancelled navigation, failed publication recovery,
   session loss, and the success handoff. Verify keyboard/mobile layouts and a real iPhone picker,
   along with API authorization and cleanup tests owned by the dependency contracts.
-- Do not launch the F06 harness against account-only code: its real-image and publication acceptance
-  criteria could not pass. The plan can be finalized once the dependency contracts and ordering are
-  approved and self-contained, and the owner explicitly approves finalisation.
+- Do not launch the RF-06 harness before a self-contained plan is explicitly approved and marked
+  ready for implementation. The product questions are resolved; plan approval is the remaining
+  gate.
 
 ### Audience decision settled
 
@@ -246,21 +313,21 @@ The author must actively choose Public or Private; the editor preselects neither
 the real reach of each option in the editor and again before publication. Missing or invalid
 audience prevents publication on both client and server.
 
-The RF-07/RF-37 temporary-upload lifetime, deletion-retry/backup policy, RF-08 text limits,
-RF-09 link contract, and RF-10 idempotent publication contract remain open in their respective
-grooming. The owner may choose to broaden F06 into a combined cross-ticket increment, but that
-would change the confirmed F06 boundary and needs an explicit new decision.
+The RF-07/minimum-RF-37 temporary-upload contract, RF-08 text limits, RF-09 link/access contract and
+RF-10 idempotent publication contract are implemented and validated. RF-06 remains an integration
+increment and does not absorb the later full RF-37, RF-26, feed, vote or results scopes.
 
 ## Readiness checklist
 
 - [x] Desired outcome is unambiguous.
 - [x] Scope and exclusions are confirmed.
 - [x] Code impact was inspected.
-- [ ] Dependencies and conflicts are resolved.
-- [ ] Technical approach is selected.
-- [ ] UX and failure states are confirmed where applicable.
-- [ ] Security, privacy, retention, and abuse implications are resolved where applicable.
-- [ ] Data migration and operational implications are resolved where applicable.
-- [ ] Test and manual validation expectations are agreed.
-- [ ] No material question remains.
-- [ ] Product owner explicitly approved plan finalisation.
+- [x] Dependencies and conflicts are resolved.
+- [x] Technical approach is selected.
+- [x] UX and failure states are confirmed where applicable.
+- [x] Security, privacy, retention, and abuse implications are resolved where applicable.
+- [x] Data migration and operational implications are resolved where applicable (no RF-06 schema
+      change; reuse existing cleanup and publication operations).
+- [x] Test and manual validation expectations are agreed.
+- [x] No material question remains.
+- [x] Product owner explicitly approved plan finalisation on 2026-09-28.

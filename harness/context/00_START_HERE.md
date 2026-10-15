@@ -37,3 +37,8 @@ Before implementation, also read the complete assigned plan and every plan it na
 - `04_PROJECT_STATE.md`: current ticket, lifecycle state, and validated implementation status.
 
 Repository documentation, not previous conversations, is the source of truth.
+
+The owner's 2026-10-12 interview and backlog reconciliation are preserved in
+`../grooming/PRODUCT-2026-10-12-reorganization.md`. Read it when selecting the next ticket or
+reasoning about product direction; it distinguishes current MVP scope from later community ideas
+and does not replace approved feature contracts.

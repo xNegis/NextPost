@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-nextpost}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nextpost-local-only}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
@@ -23,6 +23,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://nextpost:nextpost-local-only@db:5432/nextpost}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:4173}
       SESSION_SECRET: ${SESSION_SECRET:-nextpost-session-secret-local-only}
+      PRIVATE_LINK_SECRET: ${PRIVATE_LINK_SECRET:-}
       PHOTO_STORAGE_ROOT: ${PHOTO_STORAGE_ROOT:-data/photos}
       CONSULTATION_MIN_PHOTOS: ${CONSULTATION_MIN_PHOTOS:-2}
       CONSULTATION_MAX_PHOTOS: ${CONSULTATION_MAX_PHOTOS:-10}
@@ -33,6 +34,8 @@ services:
       PHOTO_LEASE_SECONDS: ${PHOTO_LEASE_SECONDS:-86400}
       PHOTO_CLEANUP_INTERVAL_SECONDS: ${PHOTO_CLEANUP_INTERVAL_SECONDS:-3600}
       PHOTO_DELETION_ALERT_SECONDS: ${PHOTO_DELETION_ALERT_SECONDS:-86400}
+      CONSULTATION_QUESTION_MAX_LENGTH: ${CONSULTATION_QUESTION_MAX_LENGTH:-120}
+      CONSULTATION_CONTEXT_MAX_LENGTH: ${CONSULTATION_CONTEXT_MAX_LENGTH:-500}
     ports:
       - "8000:8000"
     volumes:

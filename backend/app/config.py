@@ -24,12 +24,32 @@ def _require_int(name: str, raw: str | None, default: int, minimum: int | None) 
     return value
 
 
+PRIVATE_LINK_SECRET_DEV_DEFAULT = "nextpost-private-link-secret-local-only"
+_PRIVATE_LINK_SECRET_MIN_BYTES = 32
+
+
+def _resolve_private_link_secret(app_env: str, raw: str | None) -> str:
+    if raw is None or raw.strip() == "":
+        if app_env == "development":
+            return PRIVATE_LINK_SECRET_DEV_DEFAULT
+        raise ValueError("PRIVATE_LINK_SECRET must be set when APP_ENV is not development")
+    secret = raw
+    if len(secret.encode("utf-8")) < _PRIVATE_LINK_SECRET_MIN_BYTES:
+        raise ValueError("PRIVATE_LINK_SECRET must be at least 32 bytes")
+    if app_env != "development" and secret == PRIVATE_LINK_SECRET_DEV_DEFAULT:
+        raise ValueError(
+            "PRIVATE_LINK_SECRET must not use the local development default outside development"
+        )
+    return secret
+
+
 @dataclass(frozen=True)
 class Settings:
     app_env: str
     database_url: str
     cors_origins: tuple[str, ...]
     session_secret: str
+    private_link_secret: str
     consultation_min_photos: int
     consultation_max_photos: int
     max_open_consultations: int
@@ -40,6 +60,8 @@ class Settings:
     photo_lease_seconds: int
     photo_cleanup_interval_seconds: int
     photo_deletion_alert_seconds: int
+    consultation_question_max_length: int
+    consultation_context_max_length: int
 
     def __post_init__(self) -> None:
         if self.consultation_min_photos < 2:
@@ -71,8 +93,9 @@ def get_settings() -> Settings:
     storage_root = os.getenv("PHOTO_STORAGE_ROOT", "data/photos").strip()
     if not storage_root:
         raise ValueError("PHOTO_STORAGE_ROOT must be set")
+    app_env = os.getenv("APP_ENV", "development")
     return Settings(
-        app_env=os.getenv("APP_ENV", "development"),
+        app_env=app_env,
         database_url=os.getenv(
             "DATABASE_URL",
             "postgresql+psycopg://nextpost:nextpost-local-only@localhost:5432/nextpost",
@@ -81,6 +104,7 @@ def get_settings() -> Settings:
             os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:4173")
         ),
         session_secret=os.getenv("SESSION_SECRET", "nextpost-session-secret-local-only"),
+        private_link_secret=_resolve_private_link_secret(app_env, os.getenv("PRIVATE_LINK_SECRET")),
         consultation_min_photos=_require_int(
             "CONSULTATION_MIN_PHOTOS", os.getenv("CONSULTATION_MIN_PHOTOS"), 2, 2
         ),
@@ -113,6 +137,18 @@ def get_settings() -> Settings:
             "PHOTO_DELETION_ALERT_SECONDS",
             os.getenv("PHOTO_DELETION_ALERT_SECONDS"),
             86400,
+            1,
+        ),
+        consultation_question_max_length=_require_int(
+            "CONSULTATION_QUESTION_MAX_LENGTH",
+            os.getenv("CONSULTATION_QUESTION_MAX_LENGTH"),
+            120,
+            27,
+        ),
+        consultation_context_max_length=_require_int(
+            "CONSULTATION_CONTEXT_MAX_LENGTH",
+            os.getenv("CONSULTATION_CONTEXT_MAX_LENGTH"),
+            500,
             1,
         ),
     )

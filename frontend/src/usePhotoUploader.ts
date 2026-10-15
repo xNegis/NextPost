@@ -33,10 +33,14 @@ export interface PhotoUploaderResult {
   isPublishBlocked: boolean;
   sessionInactive: boolean;
   cleanupError: string | null;
+  sessionId: string | null;
+  frozen: boolean;
   addFiles: (files: File[]) => void;
   removeItem: (clientId: string) => void;
   retryItem: (clientId: string) => void;
   discard: () => void;
+  relinquish: () => void;
+  setFrozen: (frozen: boolean) => void;
 }
 
 const LEASE_RENEWAL_MS = 5 * 60 * 1000;
@@ -89,6 +93,7 @@ export function usePhotoUploader(
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionInactive, setSessionInactive] = useState(false);
   const [cleanupError, setCleanupError] = useState<string | null>(null);
+  const [frozen, setFrozenState] = useState(false);
 
   const itemsRef = useRef<PhotoItem[]>([]);
   const sessionIdRef = useRef<string | null>(null);
@@ -97,7 +102,13 @@ export function usePhotoUploader(
   const filesRef = useRef<Map<string, File>>(new Map());
   const configRef = useRef<ApplicationConfig | null>(null);
   const mountedRef = useRef(true);
+  const frozenRef = useRef(false);
   const onSessionLostRef = useRef(onSessionLost);
+
+  const setFrozen = useCallback((value: boolean) => {
+    frozenRef.current = value;
+    setFrozenState(value);
+  }, []);
 
   useEffect(() => {
     onSessionLostRef.current = onSessionLost;
@@ -236,7 +247,7 @@ export function usePhotoUploader(
 
   const addFiles = useCallback(
     (files: File[]) => {
-      if (files.length === 0) return;
+      if (files.length === 0 || frozenRef.current) return;
       const currentConfig = configRef.current;
       if (!currentConfig) {
         setCleanupError("Photo limits are still loading. Please try again.");
@@ -297,6 +308,7 @@ export function usePhotoUploader(
 
   const removeItem = useCallback(
     (clientId: string) => {
+      if (frozenRef.current) return;
       cancelledRef.current.add(clientId);
       filesRef.current.delete(clientId);
       const item = itemsRef.current.find(
@@ -329,6 +341,7 @@ export function usePhotoUploader(
 
   const retryItem = useCallback(
     (clientId: string) => {
+      if (frozenRef.current) return;
       const item = itemsRef.current.find(
         (entry) => entry.clientId === clientId,
       );
@@ -374,6 +387,15 @@ export function usePhotoUploader(
     if (currentSessionId) {
       void discardUploadSession(currentSessionId).catch(() => undefined);
     }
+  }, [clearPrivateState]);
+
+  const relinquish = useCallback(() => {
+    sessionIdRef.current = null;
+    sessionPromiseRef.current = null;
+    setSessionId(null);
+    setSessionInactive(false);
+    setCleanupError(null);
+    clearPrivateState(false);
   }, [clearPrivateState]);
 
   useEffect(() => {
@@ -465,9 +487,13 @@ export function usePhotoUploader(
     isPublishBlocked,
     sessionInactive,
     cleanupError,
+    sessionId,
+    frozen,
     addFiles,
     removeItem,
     retryItem,
     discard,
+    relinquish,
+    setFrozen,
   };
 }

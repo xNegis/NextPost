@@ -55,7 +55,7 @@ def test_active_lease_is_not_purged(session_factory, storage) -> None:
         account_id = _account_id(db)
         session = create_upload_session(db, account_id, now=T0)
         image = upload_image(
-            db, storage, account_id, session.id, uuid.uuid4(), io.BytesIO(_jpeg_bytes())
+            db, storage, account_id, session.id, uuid.uuid4(), io.BytesIO(_jpeg_bytes()), now=T0
         )
         key = _image_key(db, image.id)
 
@@ -71,7 +71,7 @@ def test_expired_session_is_abandoned_and_images_deleted(session_factory, storag
         account_id = _account_id(db)
         session = create_upload_session(db, account_id, now=T0)
         image = upload_image(
-            db, storage, account_id, session.id, uuid.uuid4(), io.BytesIO(_jpeg_bytes())
+            db, storage, account_id, session.id, uuid.uuid4(), io.BytesIO(_jpeg_bytes()), now=T0
         )
         key = _image_key(db, image.id)
 
@@ -87,7 +87,7 @@ def test_discarded_session_images_are_deleted(session_factory, storage) -> None:
         account_id = _account_id(db)
         session = create_upload_session(db, account_id, now=T0)
         image = upload_image(
-            db, storage, account_id, session.id, uuid.uuid4(), io.BytesIO(_jpeg_bytes())
+            db, storage, account_id, session.id, uuid.uuid4(), io.BytesIO(_jpeg_bytes()), now=T0
         )
         key = _image_key(db, image.id)
 
@@ -103,7 +103,7 @@ def test_deletion_failure_is_retried(session_factory, storage, monkeypatch) -> N
         account_id = _account_id(db)
         session = create_upload_session(db, account_id, now=T0)
         image = upload_image(
-            db, storage, account_id, session.id, uuid.uuid4(), io.BytesIO(_jpeg_bytes())
+            db, storage, account_id, session.id, uuid.uuid4(), io.BytesIO(_jpeg_bytes()), now=T0
         )
         key = _image_key(db, image.id)
 
@@ -152,7 +152,9 @@ def test_pending_beyond_alert_is_reported(session_factory, storage, monkeypatch)
     with session_factory() as db:
         account_id = _account_id(db)
         session = create_upload_session(db, account_id, now=T0)
-        upload_image(db, storage, account_id, session.id, uuid.uuid4(), io.BytesIO(_jpeg_bytes()))
+        upload_image(
+            db, storage, account_id, session.id, uuid.uuid4(), io.BytesIO(_jpeg_bytes()), now=T0
+        )
 
         discard_upload_session(db, account_id, session.id, now=T0)
 
@@ -170,7 +172,9 @@ def test_repeated_cleanup_is_idempotent(session_factory, storage) -> None:
     with session_factory() as db:
         account_id = _account_id(db)
         session = create_upload_session(db, account_id, now=T0)
-        upload_image(db, storage, account_id, session.id, uuid.uuid4(), io.BytesIO(_jpeg_bytes()))
+        upload_image(
+            db, storage, account_id, session.id, uuid.uuid4(), io.BytesIO(_jpeg_bytes()), now=T0
+        )
 
         first = run_cleanup(db, storage, now=T0 + timedelta(hours=25))
         second = run_cleanup(db, storage, now=T0 + timedelta(hours=26))

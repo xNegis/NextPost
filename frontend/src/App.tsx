@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { fetchSession, signOut, type AccountSummary } from "./api";
+import { ConsultationComposer } from "./ConsultationComposer";
+import { HomeFeed } from "./HomeFeed";
+import { MyConsultations } from "./MyConsultations";
 import { Navigation, type Destination } from "./Navigation";
 import { ProfileView } from "./ProfileView";
 import { RegistrationForm } from "./RegistrationForm";
@@ -19,6 +22,11 @@ export function App() {
   const [attempt, setAttempt] = useState(0);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
+  const [composerDirty, setComposerDirty] = useState(false);
+  const [pendingNav, setPendingNav] = useState<Destination | null>(null);
+  const [selectedMyConsultationId, setSelectedMyConsultationId] = useState<
+    string | null
+  >(null);
 
   const checkSession = useCallback(() => {
     let active = true;
@@ -46,6 +54,9 @@ export function App() {
   function enterAuthenticated(account: AccountSummary) {
     setDestination("home");
     setSignOutFailed(false);
+    setComposerDirty(false);
+    setPendingNav(null);
+    setSelectedMyConsultationId(null);
     setPhase({ kind: "authenticated", account });
   }
 
@@ -53,6 +64,9 @@ export function App() {
     setSigningOut(false);
     setSignOutFailed(false);
     setDestination("home");
+    setComposerDirty(false);
+    setPendingNav(null);
+    setSelectedMyConsultationId(null);
     setPhase({ kind: "signin" });
   }, []);
 
@@ -70,17 +84,65 @@ export function App() {
     }
   }
 
+  function handleNavigation(dest: Destination) {
+    if (destination === "create" && composerDirty) {
+      setPendingNav(dest);
+      return;
+    }
+    if (dest === "my") {
+      setSelectedMyConsultationId(null);
+    }
+    setDestination(dest);
+  }
+
+  function handleComposerNavigate(dest: Destination) {
+    setPendingNav(null);
+    setComposerDirty(false);
+    if (dest === "my") {
+      setSelectedMyConsultationId(null);
+    }
+    setDestination(dest);
+  }
+
+  function handleViewInMyConsultations(consultationId: string) {
+    setPendingNav(null);
+    setComposerDirty(false);
+    setSelectedMyConsultationId(consultationId);
+    setDestination("my");
+  }
+
+  function handleCreateConsultation() {
+    setSelectedMyConsultationId(null);
+    setDestination("create");
+  }
+
   if (phase.kind === "authenticated") {
     return (
       <div className="page page--authenticated">
-        <Navigation active={destination} onSelect={setDestination} />
+        <Navigation active={destination} onSelect={handleNavigation} />
         <main className="app-content">
           {destination === "home" && (
-            <section className="card" aria-labelledby="home-title">
-              <p className="eyebrow">NextPost</p>
-              <h1 id="home-title">Hi, {phase.account.alias}</h1>
-              <p className="summary">Your account is ready to use NextPost.</p>
-            </section>
+            <HomeFeed onSessionLost={returnToSignIn} />
+          )}
+
+          {destination === "create" && (
+            <ConsultationComposer
+              onNavigate={handleComposerNavigate}
+              onSessionLost={returnToSignIn}
+              onDirtyChange={setComposerDirty}
+              pendingNav={pendingNav}
+              onCancelNavigation={() => setPendingNav(null)}
+              onViewInMyConsultations={handleViewInMyConsultations}
+            />
+          )}
+
+          {destination === "my" && (
+            <MyConsultations
+              selectedId={selectedMyConsultationId}
+              onSelectionChange={setSelectedMyConsultationId}
+              onSessionLost={returnToSignIn}
+              onCreate={handleCreateConsultation}
+            />
           )}
 
           {destination === "profile" && (

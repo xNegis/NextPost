@@ -203,7 +203,9 @@ def remove_image(
     now: datetime | None = None,
 ) -> None:
     current = now or utcnow()
-    _get_session_for_owner(db, account_id, session_id, lock=True)
+    session_row = _get_session_for_owner(db, account_id, session_id, lock=True)
+    if session_row.state == PhotoUploadSessionState.consumed:
+        raise InactiveSessionError()
     row = db.get(PhotoUploadImage, image_id)
     if row is None or row.upload_session_id != session_id:
         raise NotFoundError()

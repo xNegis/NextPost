@@ -57,6 +57,8 @@ def clear_settings_cache(monkeypatch):
         "PHOTO_MAX_INPUT_BYTES",
         "PHOTO_MAX_PIXELS",
         "PHOTO_MAX_OUTPUT_EDGE",
+        "CONSULTATION_QUESTION_MAX_LENGTH",
+        "CONSULTATION_CONTEXT_MAX_LENGTH",
     ):
         monkeypatch.delenv(key, raising=False)
     get_settings.cache_clear()
@@ -78,7 +80,23 @@ def test_config_returns_exact_non_secret_values(client) -> None:
         "consultation_max_photos": 10,
         "max_open_consultations": 3,
         "photo_max_input_bytes": 15728640,
+        "consultation_question_max_length": 120,
+        "consultation_context_max_length": 500,
     }
+
+
+def test_config_returns_effective_text_limits(client, monkeypatch) -> None:
+    register(client)
+    monkeypatch.setenv("CONSULTATION_QUESTION_MAX_LENGTH", "60")
+    monkeypatch.setenv("CONSULTATION_CONTEXT_MAX_LENGTH", "200")
+    get_settings.cache_clear()
+
+    response = client.get("/api/application-config")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["consultation_question_max_length"] == 60
+    assert body["consultation_context_max_length"] == 200
 
 
 def test_photo_endpoints_require_authentication(client) -> None:

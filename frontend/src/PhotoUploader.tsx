@@ -9,26 +9,34 @@ import {
 
 import { usePhotoUploader } from "./usePhotoUploader";
 import type { PhotoItem } from "./usePhotoUploader";
+import type { ApplicationConfig } from "./photoApi";
 
 const ACCEPT_TYPES = "image/jpeg,image/png,image/webp,image/heic,image/heif";
 
+export interface PhotoUploaderSnapshot {
+  items: PhotoItem[];
+  config: ApplicationConfig | null;
+  readyImageIds: string[];
+  isPublishBlocked: boolean;
+  sessionInactive: boolean;
+  sessionId: string | null;
+}
+
 export interface PhotoUploaderHandle {
   discard: () => void;
+  relinquish: () => void;
+  setFrozen: (frozen: boolean) => void;
 }
 
 interface PhotoUploaderProps {
-  onReadyChange?: (imageIds: string[]) => void;
-  onPublishBlockedChange?: (blocked: boolean) => void;
+  onSnapshot?: (snapshot: PhotoUploaderSnapshot) => void;
   onSessionLost?: () => void;
 }
 
 export const PhotoUploader = forwardRef<
   PhotoUploaderHandle,
   PhotoUploaderProps
->(function PhotoUploader(
-  { onReadyChange, onPublishBlockedChange, onSessionLost },
-  ref,
-) {
+>(function PhotoUploader({ onSnapshot, onSessionLost }, ref) {
   const inputRef = useRef<HTMLInputElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -41,21 +49,41 @@ export const PhotoUploader = forwardRef<
     isPublishBlocked,
     sessionInactive,
     cleanupError,
+    sessionId,
     addFiles,
     removeItem,
     retryItem,
     discard,
+    relinquish,
+    setFrozen,
   } = usePhotoUploader(onSessionLost ?? (() => undefined));
 
-  useImperativeHandle(ref, () => ({ discard }), [discard]);
+  useImperativeHandle(ref, () => ({ discard, relinquish, setFrozen }), [
+    discard,
+    relinquish,
+    setFrozen,
+  ]);
+
+  const snapshotRef = useRef(onSnapshot);
+  snapshotRef.current = onSnapshot;
 
   useEffect(() => {
-    onReadyChange?.(readyImageIds);
-  }, [readyImageIds, onReadyChange]);
-
-  useEffect(() => {
-    onPublishBlockedChange?.(isPublishBlocked);
-  }, [isPublishBlocked, onPublishBlockedChange]);
+    snapshotRef.current?.({
+      items,
+      config,
+      readyImageIds,
+      isPublishBlocked,
+      sessionInactive,
+      sessionId,
+    });
+  }, [
+    items,
+    config,
+    readyImageIds,
+    isPublishBlocked,
+    sessionInactive,
+    sessionId,
+  ]);
 
   const openEnlarged = useCallback((item: PhotoItem) => {
     returnFocusRef.current = document.activeElement as HTMLElement | null;
