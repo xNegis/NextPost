@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 export type Destination = "home" | "create" | "my" | "profile";
 
 interface NavigationProps {
-  active: Destination;
+  active?: Destination;
   onSelect: (destination: Destination) => void;
 }
 

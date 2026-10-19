@@ -1,0 +1,26 @@
+# Disposable RF-18 verification only; combine with root docker-compose.yml and
+# project name nextpost-rf18-review-20261018. Never target ordinary user volumes.
+services:
+  db:
+    ports: !override
+      - "127.0.0.1:15435:5432"
+    environment:
+      POSTGRES_DB: rf18_review
+      POSTGRES_USER: rf18
+      POSTGRES_PASSWORD: rf18-disposable-local
+  backend:
+    ports: !override
+      - "127.0.0.1:18003:8000"
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://rf18:rf18-disposable-local@db:5432/rf18_review
+      CORS_ORIGINS: http://localhost:14176
+      SESSION_SECRET: rf18-disposable-local-session-secret
+      PRIVATE_LINK_SECRET: rf18-disposable-local-private-link-secret
+      PHOTO_STORAGE_ROOT: /app/data/photos
+  frontend:
+    ports: !override
+      - "127.0.0.1:14176:80"
+    build:
+      args:
+        VITE_API_BASE_URL: http://localhost:18003

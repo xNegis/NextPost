@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { FeedItem } from "./consultationApi";
 import { FeedCard } from "./FeedCard";
@@ -12,6 +12,10 @@ interface HomeFeedProps {
 }
 
 export function HomeFeed({ onSessionLost }: HomeFeedProps) {
+  const [selected, setSelected] = useState<FeedItem | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const pendingFocusRef = useRef<string | null>(null);
+
   const {
     status,
     items,
@@ -22,11 +26,9 @@ export function HomeFeed({ onSessionLost }: HomeFeedProps) {
     loadMoreFailed,
     loadInitial,
     refresh,
+    reconcile,
     loadMore,
-  } = useHomeFeed(onSessionLost);
-
-  const [selected, setSelected] = useState<FeedItem | null>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
+  } = useHomeFeed(onSessionLost, selected === null);
 
   const previews = useFeedPreviews(items, selected === null, onSessionLost);
 
@@ -34,20 +36,25 @@ export function HomeFeed({ onSessionLost }: HomeFeedProps) {
     setSelected(item);
   }, []);
 
-  const handleBackFromDetail = useCallback(async () => {
-    const targetId = selected?.id ?? null;
+  const handleBackFromDetail = useCallback(() => {
+    pendingFocusRef.current = selected?.id ?? null;
     setSelected(null);
     if (status === "ready") {
-      await refresh();
+      void reconcile();
     } else {
       loadInitial();
     }
+  }, [selected, status, reconcile, loadInitial]);
+
+  useEffect(() => {
+    if (selected !== null || refreshing) return;
+    const targetId = pendingFocusRef.current;
     if (targetId !== null) {
-      document.getElementById(`feed-view-${targetId}`)?.focus();
-    } else {
-      headingRef.current?.focus();
+      const target = document.getElementById(`feed-view-${targetId}`);
+      (target ?? headingRef.current)?.focus();
     }
-  }, [selected, status, refresh, loadInitial]);
+    pendingFocusRef.current = null;
+  }, [items, refreshing, selected]);
 
   if (selected !== null) {
     if (selected.is_owner) {
@@ -110,6 +117,11 @@ export function HomeFeed({ onSessionLost }: HomeFeedProps) {
       {status === "ready" && items.length === 0 && (
         <div className="home-feed__empty">
           <p>No open public consultations yet.</p>
+          {refreshFailed && (
+            <p className="field-error" role="alert">
+              Could not refresh. Showing earlier consultations.
+            </p>
+          )}
           <button
             type="button"
             className="secondary-button"

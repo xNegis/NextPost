@@ -197,6 +197,38 @@ fabricated by this list or detail. Finalized rows therefore show the minimum per
 identifier/date/state summary without original free text, photos, link tokens or invented outcome
 data.
 
+## Voting
+
+`backend/app/vote_service.py` owns the immutable single-vote boundary and is exposed through two
+focused routes in `backend/app/api/consultations.py`:
+
+- `GET /api/consultations/{id}/my-vote` — the current account's own vote, returning exactly
+  `{status: "not_voted"}` or `{status: "voted", photo_id}`. It never returns a count, percentage,
+  leader, winner, timestamp, voter identity or any result derived from other votes.
+- `POST /api/consultations/{id}/votes` — accepts exactly `{photo_id}` and records one final vote.
+  The first insert returns 201, an exact replay returns 200, and a different already-recorded option
+  returns a safe `vote_already_recorded` conflict without being overwritten.
+
+Both routes require the signed cookie and, for Private consultations, the current capability in the
+`X-NextPost-Private-Link` header. Submission locks the consultation row `FOR UPDATE`, re-authorizes
+the current account/audience/link/lifecycle state inside the same transaction, and commits once, so
+a late vote cannot land on the far side of a terminal transition (DEC-033). Owners cannot vote, and
+unknown, unauthorized, terminal, revoked-link and self-vote cases share the generic
+`consultation_unavailable` result. An authorized option from a different consultation is a safe
+`invalid_selection` failure.
+
+Alembic revision `20261016_0005` adds the `votes` table with a `(consultation_id, voter_id)` unique
+constraint and a composite `(consultation_id, consultation_photo_id)` foreign key (backed by a new
+`(consultation_id, id)` candidate key on `consultation_photos`) proving the selected option belongs
+to that consultation. Foreign keys are restrictive so a future account/terminal workflow cannot
+silently erase participation; downgrade is refused while votes exist.
+
+The chronological Home feed adds a server-derived `has_voted` boolean (computed set-wise for the
+authenticated account, never a count). An already-voted Public card keeps its position and gains a
+`Voted` marker; opening it shows only that account's recorded photo as `Your vote` with
+`Votes cannot be changed`, and never exposes aggregate or other-voter information. Private
+consultations never appear in Home.
+
 
 
 

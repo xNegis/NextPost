@@ -68,17 +68,18 @@ beforeEach(() => {
 });
 
 describe("PhotoUploader", () => {
-  it("advertises the accepted image formats on the picker", () => {
+  it("requests browser-compatible picker output with JPEG preferred", () => {
     render(<PhotoUploader />);
 
     const input = screen.getByLabelText("Choose photos");
-    expect(input).toHaveAttribute(
+    expect(input).toHaveAttribute("accept", "image/jpeg,image/png,image/webp");
+    expect(input).not.toHaveAttribute(
       "accept",
-      expect.stringContaining("image/heic"),
+      expect.stringContaining("heic"),
     );
-    expect(input).toHaveAttribute(
+    expect(input).not.toHaveAttribute(
       "accept",
-      expect.stringContaining("image/webp"),
+      expect.stringContaining("heif"),
     );
   });
 

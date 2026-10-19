@@ -74,6 +74,12 @@ describe("buildConsultationUrl", () => {
     ).toThrow("Invalid application origin");
   });
 
+  it("accepts an HTTP origin on a private LAN for device testing", () => {
+    expect(
+      buildConsultationUrl("http://192.168.1.130:14175", UUID, TOKEN),
+    ).toBe(`http://192.168.1.130:14175/consultations/${UUID}#access=${TOKEN}`);
+  });
+
   it("rejects invalid IDs and tokens when building", () => {
     expect(() => buildConsultationUrl("https://app.example", "bad-id")).toThrow(
       "Invalid consultation ID",

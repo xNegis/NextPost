@@ -1,0 +1,17 @@
+# Disposable RF-18 mobile review instance exposed on the current local network.
+# Current Wi-Fi address: 192.168.1.130 (verified 2026-10-19).
+# Combine with docker-compose.yml and rf18-compose.override.yaml under the
+# project name nextpost-rf18-lan-20261019; never target ordinary user volumes.
+services:
+  backend:
+    environment:
+      CORS_ORIGINS: http://localhost:14176,http://192.168.1.130:14176
+    ports: !override
+      - "0.0.0.0:18003:8000"
+
+  frontend:
+    build:
+      args:
+        VITE_API_BASE_URL: http://192.168.1.130:18003
+    ports: !override
+      - "0.0.0.0:14176:80"

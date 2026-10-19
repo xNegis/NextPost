@@ -176,12 +176,20 @@ def test_open_list_exposes_only_allowlisted_fields(client) -> None:
     assert body["next_cursor"] is None
     assert len(body["items"]) == 1
     item = body["items"][0]
-    assert set(item) == {"id", "state", "question", "audience", "published_at"}
+    assert set(item) == {
+        "id",
+        "state",
+        "question",
+        "audience",
+        "published_at",
+        "total_votes",
+    }
     assert item["id"] == consultation_id
     assert item["state"] == "open"
     assert item["question"] == "Which one?"
     assert item["audience"] == "public"
     assert item["published_at"].endswith("Z")
+    assert item["total_votes"] == 0
 
 
 def test_open_list_includes_public_and_private(client) -> None:

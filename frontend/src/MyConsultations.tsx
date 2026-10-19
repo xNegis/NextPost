@@ -15,6 +15,8 @@ import {
 } from "./consultationApi";
 import { formatPublishedDate } from "./consultationDate";
 import { OwnerConsultationDetail } from "./OwnerConsultationDetail";
+import { usePeriodicRefresh } from "./usePeriodicRefresh";
+import { voteCountLabel } from "./voteCount";
 
 const PAGE_SIZE = 20;
 
@@ -118,41 +120,43 @@ export function MyConsultations({
     loadInitial(tab);
   }, [tab, loadInitial]);
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async (): Promise<void> => {
     if (refreshing || loadingMore || status !== "ready") return;
     const generation = ++generationRef.current;
     const pages = Math.max(1, loadedPagesRef.current);
     setRefreshing(true);
     setRefreshFailed(false);
 
-    void (async () => {
-      try {
-        let collected: MyConsultationListItem[] = [];
-        let cursor: string | null = null;
-        for (let page = 0; page < pages; page++) {
-          const result = await fetchMyConsultations(tab, PAGE_SIZE, cursor);
-          if (generation !== generationRef.current) return;
-          collected = dedupeAppend(collected, result.items);
-          cursor = result.next_cursor;
-          if (cursor === null) break;
-        }
+    try {
+      let collected: MyConsultationListItem[] = [];
+      let cursor: string | null = null;
+      for (let page = 0; page < pages; page++) {
+        const result = await fetchMyConsultations(tab, PAGE_SIZE, cursor);
         if (generation !== generationRef.current) return;
-        setItems(collected);
-        setNextCursor(cursor);
-        loadedPagesRef.current = pages;
-        setStatus("ready");
-      } catch (error) {
-        if (generation !== generationRef.current) return;
-        if (isSessionLost(error)) {
-          onSessionLostRef.current();
-          return;
-        }
-        setRefreshFailed(true);
-      } finally {
-        if (generation === generationRef.current) setRefreshing(false);
+        collected = dedupeAppend(collected, result.items);
+        cursor = result.next_cursor;
+        if (cursor === null) break;
       }
-    })();
+      if (generation !== generationRef.current) return;
+      setItems(collected);
+      setNextCursor(cursor);
+      loadedPagesRef.current = pages;
+      setStatus("ready");
+    } catch (error) {
+      if (generation !== generationRef.current) return;
+      if (isSessionLost(error)) {
+        onSessionLostRef.current();
+        return;
+      }
+      setRefreshFailed(true);
+    } finally {
+      if (generation === generationRef.current) setRefreshing(false);
+    }
   }, [dedupeAppend, isSessionLost, loadingMore, refreshing, status, tab]);
+
+  const autoRefreshEnabled =
+    tab === "open" && selectedId === null && status === "ready";
+  usePeriodicRefresh(refresh, autoRefreshEnabled);
 
   const loadMore = useCallback(() => {
     if (loadingMore || refreshing || status !== "ready" || nextCursor === null)
@@ -351,6 +355,9 @@ export function MyConsultations({
                         <time dateTime={item.published_at}>
                           {formatPublishedDate(item.published_at)}
                         </time>
+                      </p>
+                      <p className="my-consultations__votes">
+                        {voteCountLabel(item.total_votes)}
                       </p>
                     </>
                   ) : (

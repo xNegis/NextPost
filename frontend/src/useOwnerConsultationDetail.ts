@@ -32,25 +32,11 @@ export interface OwnerConsultationDetailController {
   phase: DetailPhase;
   link: LinkPhase;
   linkPending: boolean;
-  copyFailed: boolean;
   retry: () => void;
-  copy: (fullLink: string) => void;
   disable: () => void;
   replace: () => void;
   createNew: () => void;
   refreshLink: () => void;
-}
-
-async function copyText(text: string): Promise<boolean> {
-  try {
-    if (typeof navigator.clipboard?.writeText === "function") {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch {
-    return false;
-  }
-  return false;
 }
 
 export function useOwnerConsultationDetail(
@@ -60,7 +46,6 @@ export function useOwnerConsultationDetail(
   const [phase, setPhase] = useState<DetailPhase>({ kind: "loading" });
   const [link, setLink] = useState<LinkPhase>({ kind: "idle" });
   const [linkPending, setLinkPending] = useState(false);
-  const [copyFailed, setCopyFailed] = useState(false);
 
   const generationRef = useRef(0);
   const photoUrlsRef = useRef<string[]>([]);
@@ -124,7 +109,6 @@ export function useOwnerConsultationDetail(
     setPhase({ kind: "loading" });
     setLink({ kind: "idle" });
     setLinkPending(false);
-    setCopyFailed(false);
 
     void fetchMyConsultation(consultationId)
       .then(async (detail) => {
@@ -199,7 +183,6 @@ export function useOwnerConsultationDetail(
   const loadLink = useCallback(() => {
     const generation = ++generationRef.current;
     setLink({ kind: "loading" });
-    setCopyFailed(false);
     void fetchOwnerLink(consultationId)
       .then((result) => {
         if (generation !== generationRef.current) return;
@@ -249,7 +232,6 @@ export function useOwnerConsultationDetail(
       const generation = link.link.generation;
       const linkGen = ++generationRef.current;
       setLinkPending(true);
-      setCopyFailed(false);
       void operation(consultationId, generation)
         .then((result) => {
           if (linkGen !== generationRef.current) return;
@@ -287,22 +269,11 @@ export function useOwnerConsultationDetail(
     [consultationId, isSessionLost, link, reconcile],
   );
 
-  const copy = useCallback((fullLink: string) => {
-    const generation = generationRef.current;
-    setCopyFailed(false);
-    void copyText(fullLink).then((ok) => {
-      if (generation !== generationRef.current) return;
-      setCopyFailed(!ok);
-    });
-  }, []);
-
   return {
     phase,
     link,
     linkPending,
-    copyFailed,
     retry: load,
-    copy,
     disable: () => applyLinkMutation(disableOwnerLink),
     replace: () => applyLinkMutation(replaceOwnerLink),
     createNew: () => applyLinkMutation(createOwnerLink),

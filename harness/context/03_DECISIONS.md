@@ -636,3 +636,88 @@ The owner selected RF-14 options `1B y 2B`. This accepts those product choices o
 scope confirmation, explicit implementation-plan finalization approval and a subsequent
 independent harness-launch request remain separate gates. No vote, result or terminal
 operation is authorized by this decision.
+
+---
+
+## DEC-038 - Already-voted consultations remain discoverable with private own-choice recovery
+
+**Status:** Accepted (2026-10-16)
+
+After an account confirms a vote on an open Public consultation, that consultation remains
+in its normal chronological Home position and is marked `Voted` for that account. It is not
+removed, promoted or demoted because of participation. This preserves Home as the chronological
+view of open Public consultations and makes recovery possible without waiting for RF-21 history.
+
+Opening an already-voted consultation shows only the current account's recorded photo,
+highlighted as `Your vote`, and explains that the vote cannot be changed. This own-choice
+projection supports honest recovery after a lost response, reload or later sign-in. It is not
+an aggregate result and must not expose totals, percentages, trends, leaders, winners, voter
+identities or any signal derived from other accounts' votes.
+
+The marker and recorded choice are server-derived current-account state, not client memory.
+They do not grant access: current account, audience, Private-link and consultation lifecycle
+authorization still apply on every request. Private consultations remain outside Home, and
+RF-26 retains their actual link-entry and post-authentication return journey. The owner selected
+RF-16 options `1A 2A`; plan finalization and harness launch remain separate approval gates.
+
+---
+
+## DEC-039 - First author-results increment uses live counts only
+
+**Status:** Accepted (2026-10-18)
+
+RF-18's first increment exposes aggregate vote counts only to the authenticated author of an
+open consultation. Each Open row in `My consultations` shows its current total vote count, and
+the owner detail shows exact counts for every immutable photo option in publication order,
+including zero-vote options and natural ties. It does not calculate, return or display
+percentages, leaders, winners, rankings, confidence or voter identities/individual choices.
+Percentages remain part of the broader RF-18 backlog outcome but are deliberately deferred.
+
+While the My consultations Open list or an open owner detail is visible, the relevant counts
+refresh automatically every five seconds. Requests do not overlap; polling pauses for hidden,
+unmounted, changed-item or changed-account scopes and refreshes immediately when the current
+scope becomes visible again. Failed refresh preserves and identifies last-known counts, a
+successful zero aggregate remains distinct from failure, and manual Refresh remains available.
+
+This increment derives live counts from current immutable Vote rows and adds no denormalized
+counter or finalized-result snapshot. Durable photo-free finalized aggregates remain an explicit
+RF-19/RF-20/RF-37 consumer gate under DEC-021/023. Voter, feed, general-detail and Private-link
+holder surfaces remain aggregate-free. The owner selected RF-18 choices `1A`, `2B` with a
+five-second interval, count-only Q3 and `4A`; plan finalization and harness launch remain separate
+approval gates.
+
+---
+
+## DEC-040 - Narrow shared-link entry with author-only sharing and safe authentication return
+
+**Status:** Accepted (2026-10-19)
+
+RF-26 adds one narrow addressable `/consultations/{uuid}` entry boundary to the existing client,
+using the strict same-origin UUID/fragment parser and browser History API without migrating all
+primary navigation to a routing framework. A structurally valid anonymous entry shows generic
+consultation authentication copy with Sign in and Create account, no protected consultation data.
+The original parsed path and Private fragment remain the source of truth through same-tab session
+restoration, sign-in or registration, after which the client resumes that destination instead of
+forcing Home. Auth APIs receive no arbitrary return URL, and the Private capability is not copied
+into query parameters, cookies, localStorage or sessionStorage.
+
+Sharing controls belong to the author on every open Public or Private owner detail, including the
+publication-success view. Copy is always present. Device Share appears only when the runtime Web
+Share capability exists; manual URL selection remains the clipboard fallback. The share payload is
+generic English NextPost invitation text plus the URL and includes no question, context, nickname,
+audience, photo or result data. RF-26 adds no recipient re-share control, contact access, invitee
+record, messaging or automatic social posting.
+
+A registered non-owner opening the route receives the existing authorized reader/vote experience.
+The server resolves an author opening their own shared URL to the existing neutral owner detail,
+never a self-vote flow. Direct entry offers `Go to Home`; browser Back retains its normal history
+behavior. Generic unavailable and current request-time link/lifecycle authorization remain governed
+by DEC-028/029, and ordinary platform URL opening remains governed by DEC-030.
+
+Shared URLs are built from the strictly validated current `window.location.origin`, including the
+existing deliberate localhost/private-LAN HTTP allowance for development and device review. No
+separate canonical-origin setting is introduced. The accepted operational consequence is that a
+wrong browser-visible production/proxy origin would appear in copied links, so deployment must
+present the intended public origin. The owner selected RF-26 choices
+`1A 2A 3A 4A 5A 6A 7A 8B`; implementation-plan finalisation and harness launch remain separate
+approval gates.

@@ -4,17 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 
 import { PrivateLinkControls } from "./PrivateLinkControls";
 
-const LINK =
-  "https://app.example/consultations/123e4567-e89b-12d3-a456-426614174000#access=v1.AAA";
-
 function renderControls(
   overrides: Partial<Parameters<typeof PrivateLinkControls>[0]> = {},
 ) {
   const props = {
     status: "active" as const,
-    link: LINK,
     pending: false,
-    onCopy: vi.fn(),
     onDisable: vi.fn(),
     onReplace: vi.fn(),
     onCreateNew: vi.fn(),
@@ -25,21 +20,15 @@ function renderControls(
 }
 
 describe("PrivateLinkControls", () => {
-  it("shows the current link and copy action when active", () => {
+  it("shows the current link status and lifecycle actions when active", () => {
     renderControls();
 
     expect(screen.getByText("Current link")).toBeInTheDocument();
-    expect(screen.getByText(LINK)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Copy link" })).toBeEnabled();
-  });
-
-  it("copies the current link", async () => {
-    const user = userEvent.setup();
-    const props = renderControls();
-
-    await user.click(screen.getByRole("button", { name: "Copy link" }));
-
-    expect(props.onCopy).toHaveBeenCalledWith(LINK);
+    expect(screen.getByRole("button", { name: "Disable link" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Replace link" })).toBeEnabled();
+    expect(
+      screen.queryByRole("button", { name: "Copy link" }),
+    ).not.toBeInTheDocument();
   });
 
   it("requires confirmation before disabling", async () => {
@@ -89,7 +78,7 @@ describe("PrivateLinkControls", () => {
 
   it("shows disabled state and allows creating a new link", async () => {
     const user = userEvent.setup();
-    const props = renderControls({ status: "disabled", link: null });
+    const props = renderControls({ status: "disabled" });
 
     expect(screen.getByText("Link disabled")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Create new link" }));
@@ -100,7 +89,6 @@ describe("PrivateLinkControls", () => {
   it("prevents duplicate actions while pending", () => {
     renderControls({ pending: true });
 
-    expect(screen.getByRole("button", { name: "Copy link" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Disable link" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Replace link" })).toBeDisabled();
   });

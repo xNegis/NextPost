@@ -6,6 +6,8 @@ import { ApiError } from "./api";
 import {
   fetchConsultationDetail,
   fetchConsultationPhotoUrl,
+  fetchMyVote,
+  submitVote,
 } from "./consultationApi";
 import { ReaderConsultationDetail } from "./ReaderConsultationDetail";
 
@@ -15,11 +17,15 @@ vi.mock("./consultationApi", async (importOriginal) => {
     ...actual,
     fetchConsultationDetail: vi.fn(),
     fetchConsultationPhotoUrl: vi.fn(),
+    fetchMyVote: vi.fn(),
+    submitVote: vi.fn(),
   };
 });
 
 const detailMock = vi.mocked(fetchConsultationDetail);
 const photoMock = vi.mocked(fetchConsultationPhotoUrl);
+const myVoteMock = vi.mocked(fetchMyVote);
+const submitVoteMock = vi.mocked(submitVote);
 
 const CONSULTATION_ID = "123e4567-e89b-12d3-a456-426614174000";
 
@@ -41,6 +47,11 @@ beforeEach(() => {
   vi.clearAllMocks();
   detailMock.mockResolvedValue(DETAIL);
   photoMock.mockResolvedValue("blob:photo");
+  myVoteMock.mockResolvedValue({ status: "not_voted" });
+  submitVoteMock.mockResolvedValue({
+    status: "voted",
+    photo_id: DETAIL.photos[0].id,
+  });
 });
 
 function renderDetail(onSessionLost = vi.fn()) {
@@ -124,6 +135,96 @@ describe("ReaderConsultationDetail", () => {
 
   it("delegates session loss to the parent", async () => {
     detailMock.mockRejectedValue(new ApiError("unauthenticated"));
+    const onSessionLost = vi.fn();
+    renderDetail(onSessionLost);
+    await waitFor(() => expect(onSessionLost).toHaveBeenCalledTimes(1));
+  });
+
+  it("selects, reviews, cancels and confirms one immutable vote", async () => {
+    const user = userEvent.setup();
+    renderDetail();
+
+    await screen.findByText("Choose a photo");
+    expect(screen.getByRole("button", { name: "Review vote" })).toBeDisabled();
+
+    await user.click(screen.getByRole("radio", { name: "Photo 1" }));
+    await user.click(screen.getByRole("button", { name: "Review vote" }));
+
+    expect(screen.getByText("Review your vote")).toBeInTheDocument();
+    expect(
+      screen.getByText("Votes are final and cannot be changed."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Selected photo 1" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByText("Review your vote")).not.toBeInTheDocument();
+    expect(submitVoteMock).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Review vote" }));
+    await user.click(screen.getByRole("button", { name: "Confirm vote" }));
+
+    expect(await screen.findByText("Your vote")).toBeInTheDocument();
+    expect(screen.getByText("Votes cannot be changed.")).toBeInTheDocument();
+    expect(submitVoteMock).toHaveBeenCalledWith(
+      CONSULTATION_ID,
+      DETAIL.photos[0].id,
+      null,
+    );
+    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+  });
+
+  it("highlights the recorded photo as Your vote when already voted", async () => {
+    myVoteMock.mockResolvedValue({
+      status: "voted",
+      photo_id: DETAIL.photos[1].id,
+    });
+    renderDetail();
+
+    expect(await screen.findByText("Your vote")).toBeInTheDocument();
+    expect(screen.getByText("Votes cannot be changed.")).toBeInTheDocument();
+    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+  });
+
+  it("offers Check vote status when the status read fails", async () => {
+    myVoteMock.mockRejectedValue(new Error("offline"));
+    renderDetail();
+
+    expect(
+      await screen.findByText("Could not check your vote status."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Check vote status" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows unavailable when the vote status read reveals a denial", async () => {
+    myVoteMock.mockRejectedValue(new ApiError("consultation_unavailable"));
+    renderDetail();
+
+    expect(
+      await screen.findByText("This consultation is unavailable."),
+    ).toBeInTheDocument();
+  });
+
+  it("refreshes both protected detail and vote status after a denial", async () => {
+    myVoteMock
+      .mockRejectedValueOnce(new ApiError("consultation_unavailable"))
+      .mockResolvedValueOnce({ status: "not_voted" });
+    const user = userEvent.setup();
+    renderDetail();
+
+    await screen.findByText("This consultation is unavailable.");
+    await user.click(screen.getByRole("button", { name: "Refresh" }));
+
+    expect(await screen.findByText("Choose a photo")).toBeInTheDocument();
+    expect(detailMock).toHaveBeenCalledTimes(2);
+    expect(myVoteMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("delegates session loss from the vote status read", async () => {
+    myVoteMock.mockRejectedValue(new ApiError("unauthenticated"));
     const onSessionLost = vi.fn();
     renderDetail(onSessionLost);
     await waitFor(() => expect(onSessionLost).toHaveBeenCalledTimes(1));

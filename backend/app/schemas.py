@@ -225,12 +225,36 @@ class OwnerLinkResponse(BaseModel):
     token: str | None
 
 
+class ConsultationEntryResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    role: Literal["owner", "reader"]
+
+
 class MyConsultationOpenListItem(BaseModel):
     id: str
     state: Literal["open"]
     question: str
     audience: str
     published_at: str
+    total_votes: int = Field(ge=0)
+
+
+class ConsultationResultOptionResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    photo_id: str
+    ordinal: int = Field(ge=0)
+    vote_count: int = Field(ge=0)
+
+
+class ConsultationResultResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    consultation_id: str
+    state: Literal["open"]
+    total_votes: int = Field(ge=0)
+    options: list[ConsultationResultOptionResponse]
 
 
 class MyConsultationFinalizedListItem(BaseModel):
@@ -301,9 +325,31 @@ class FeedItemResponse(BaseModel):
     state: Literal["open"]
     published_at: str
     is_owner: bool
+    has_voted: bool
     first_photo: FeedPhotoResponse
 
 
 class FeedResponse(BaseModel):
     items: list[FeedItemResponse]
     next_cursor: str | None
+
+
+class VoteSubmitRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    photo_id: uuid.UUID
+
+
+class VoteNotVotedResponse(BaseModel):
+    status: Literal["not_voted"]
+
+
+class VoteVotedResponse(BaseModel):
+    status: Literal["voted"]
+    photo_id: str
+
+
+VoteStatusResponse = Annotated[
+    Union[VoteNotVotedResponse, VoteVotedResponse],
+    Field(discriminator="status"),
+]

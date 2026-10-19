@@ -6,8 +6,11 @@ import {
   fetchConsultationPhotoUrl,
   fetchFeed,
   fetchMyConsultation,
+  fetchMyConsultationResults,
   fetchMyConsultations,
+  fetchMyVote,
   publishConsultation,
+  submitVote,
 } from "./consultationApi";
 
 function respond(status: number, body: unknown): void {
@@ -188,6 +191,7 @@ describe("fetchMyConsultations", () => {
     question: "Which one?",
     audience: "public",
     published_at: "2026-09-28T12:00:00Z",
+    total_votes: 0,
   };
   const finalizedItem = {
     id: "123e4567-e89b-12d3-a456-426614174001",
@@ -233,6 +237,9 @@ describe("fetchMyConsultations", () => {
     { ...openItem, audience: "everyone" },
     { ...finalizedItem, question: "leaked" },
     { ...openItem, published_at: 42 },
+    { ...openItem, total_votes: -1 },
+    { ...openItem, total_votes: "2" },
+    { ...openItem, total_votes: 1.5 },
   ])("rejects malformed item %# as unavailable", async (item) => {
     respond(200, { items: [item], next_cursor: null });
     await expect(fetchMyConsultations("open", 20, null)).rejects.toEqual(
@@ -444,6 +451,7 @@ describe("fetchFeed", () => {
     state: "open",
     published_at: "2026-09-28T12:00:00Z",
     is_owner: false,
+    has_voted: false,
     first_photo: {
       id: "123e4567-e89b-12d3-a456-426614174001",
       width: 64,
@@ -479,6 +487,7 @@ describe("fetchFeed", () => {
     { ...feedItem, state: "finalized" },
     { ...feedItem, audience: "private" },
     { ...feedItem, is_owner: "yes" },
+    { ...feedItem, has_voted: "yes" },
     { ...feedItem, first_photo: { ...feedItem.first_photo, width: 0 } },
     { ...feedItem, id: "not-a-uuid" },
     { ...feedItem, context_excerpt: 42 },
@@ -499,6 +508,156 @@ describe("fetchFeed", () => {
   it("rejects a malformed next_cursor as unavailable", async () => {
     respond(200, { items: [], next_cursor: 7 });
     await expect(fetchFeed(20, null)).rejects.toEqual(
+      new ApiError("unavailable"),
+    );
+  });
+});
+
+describe("fetchMyConsultationResults", () => {
+  const consultationId = "123e4567-e89b-12d3-a456-426614174000";
+  const photoA = "123e4567-e89b-12d3-a456-426614174001";
+  const photoB = "123e4567-e89b-12d3-a456-426614174002";
+  const validResult = {
+    consultation_id: consultationId,
+    state: "open",
+    total_votes: 3,
+    options: [
+      { photo_id: photoA, ordinal: 0, vote_count: 2 },
+      { photo_id: photoB, ordinal: 1, vote_count: 1 },
+    ],
+  };
+
+  it("returns a valid aggregate", async () => {
+    respond(200, validResult);
+    await expect(fetchMyConsultationResults(consultationId)).resolves.toEqual(
+      validResult,
+    );
+  });
+
+  it("maps 401 to unauthenticated", async () => {
+    respond(401, { detail: { code: "unauthenticated" } });
+    await expect(fetchMyConsultationResults(consultationId)).rejects.toEqual(
+      new ApiError("unauthenticated"),
+    );
+  });
+
+  it("maps 404 to consultation_unavailable", async () => {
+    respond(404, { detail: { code: "consultation_unavailable" } });
+    await expect(fetchMyConsultationResults(consultationId)).rejects.toEqual(
+      new ApiError("consultation_unavailable"),
+    );
+  });
+
+  it.each([
+    { ...validResult, total_votes: 2 },
+    { ...validResult, state: "finalized" },
+    { ...validResult, consultation_id: "not-a-uuid" },
+    {
+      ...validResult,
+      options: [
+        { photo_id: photoA, ordinal: 0, vote_count: 1 },
+        { photo_id: photoA, ordinal: 1, vote_count: 1 },
+      ],
+    },
+    {
+      ...validResult,
+      options: [
+        { photo_id: photoA, ordinal: 0, vote_count: 1 },
+        { photo_id: photoB, ordinal: 0, vote_count: 1 },
+      ],
+    },
+    {
+      ...validResult,
+      options: [
+        { photo_id: photoA, ordinal: 0, vote_count: 1, voter_id: "x" },
+        { photo_id: photoB, ordinal: 1, vote_count: 1 },
+      ],
+    },
+    {
+      ...validResult,
+      options: [{ photo_id: photoA, ordinal: 0, vote_count: -1 }],
+    },
+    {
+      ...validResult,
+      options: [{ photo_id: photoA, ordinal: 0, vote_count: 1.5 }],
+    },
+  ])("rejects malformed or leaking aggregate %#", async (result) => {
+    respond(200, result);
+    await expect(fetchMyConsultationResults(consultationId)).rejects.toEqual(
+      new ApiError("unavailable"),
+    );
+  });
+
+  it("rejects an aggregate for a different consultation", async () => {
+    respond(200, validResult);
+    await expect(
+      fetchMyConsultationResults("123e4567-e89b-12d3-a456-426614174999"),
+    ).rejects.toEqual(new ApiError("unavailable"));
+  });
+});
+
+describe("viewer vote API", () => {
+  const consultationId = "123e4567-e89b-12d3-a456-426614174000";
+  const photoId = "123e4567-e89b-12d3-a456-426614174001";
+  const privateToken = `v1.${"A".repeat(43)}`;
+
+  it.each([{ status: "not_voted" }, { status: "voted", photo_id: photoId }])(
+    "accepts the exact my-vote projection %#",
+    async (projection) => {
+      respond(200, projection);
+      await expect(fetchMyVote(consultationId)).resolves.toEqual(projection);
+    },
+  );
+
+  it.each([
+    { status: "not_voted", extra: true },
+    { status: "voted", photo_id: "not-a-uuid" },
+    { status: "voted" },
+    { status: "unknown" },
+  ])("rejects malformed my-vote projection %#", async (projection) => {
+    respond(200, projection);
+    await expect(fetchMyVote(consultationId)).rejects.toEqual(
+      new ApiError("unavailable"),
+    );
+  });
+
+  it("submits the selected photo with the current Private token", async () => {
+    respond(201, { status: "voted", photo_id: photoId });
+    await expect(
+      submitVote(consultationId, photoId, privateToken),
+    ).resolves.toEqual({ status: "voted", photo_id: photoId });
+
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining(`/consultations/${consultationId}/votes`),
+      expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+          "X-NextPost-Private-Link": privateToken,
+        }),
+        body: JSON.stringify({ photo_id: photoId }),
+      }),
+    );
+  });
+
+  it("maps an immutable different-choice conflict", async () => {
+    respond(409, { detail: { code: "vote_already_recorded" } });
+    await expect(submitVote(consultationId, photoId)).rejects.toEqual(
+      new ApiError("vote_already_recorded"),
+    );
+  });
+
+  it("maps an authorized wrong-consultation option", async () => {
+    respond(422, { detail: { code: "invalid_selection" } });
+    await expect(submitVote(consultationId, photoId)).rejects.toEqual(
+      new ApiError("invalid_selection"),
+    );
+  });
+
+  it("rejects extra fields in a nominal submit success", async () => {
+    respond(201, { status: "voted", photo_id: photoId, total: 1 });
+    await expect(submitVote(consultationId, photoId)).rejects.toEqual(
       new ApiError("unavailable"),
     );
   });

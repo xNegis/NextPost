@@ -8,7 +8,9 @@ import {
   fetchConsultationPhotoUrl,
   fetchFeed,
   fetchMyConsultation,
+  fetchMyVote,
   fetchOwnerLink,
+  submitVote,
   type FeedItem,
 } from "./consultationApi";
 import { HomeFeed } from "./HomeFeed";
@@ -22,6 +24,8 @@ vi.mock("./consultationApi", async (importOriginal) => {
     fetchConsultationDetail: vi.fn(),
     fetchMyConsultation: vi.fn(),
     fetchOwnerLink: vi.fn(),
+    fetchMyVote: vi.fn(),
+    submitVote: vi.fn(),
   };
 });
 
@@ -30,6 +34,8 @@ const photoMock = vi.mocked(fetchConsultationPhotoUrl);
 const detailMock = vi.mocked(fetchConsultationDetail);
 const ownerDetailMock = vi.mocked(fetchMyConsultation);
 const linkMock = vi.mocked(fetchOwnerLink);
+const myVoteMock = vi.mocked(fetchMyVote);
+const submitVoteMock = vi.mocked(submitVote);
 
 const FEED_ITEM: FeedItem = {
   id: "123e4567-e89b-12d3-a456-426614174000",
@@ -40,6 +46,7 @@ const FEED_ITEM: FeedItem = {
   state: "open",
   published_at: "2026-09-28T12:00:00Z",
   is_owner: false,
+  has_voted: false,
   first_photo: {
     id: "123e4567-e89b-12d3-a456-426614174001",
     width: 64,
@@ -100,6 +107,11 @@ beforeEach(() => {
   detailMock.mockResolvedValue(READER_DETAIL);
   ownerDetailMock.mockResolvedValue(OWNER_DETAIL);
   linkMock.mockResolvedValue({ active: false, generation: "0", token: null });
+  myVoteMock.mockResolvedValue({ status: "not_voted" });
+  submitVoteMock.mockResolvedValue({
+    status: "voted",
+    photo_id: READER_DETAIL.photos[0].id,
+  });
 });
 
 afterEach(() => {
@@ -141,12 +153,24 @@ describe("HomeFeed", () => {
     expect(
       screen.getByRole("button", { name: "View consultation" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Photo 1" }).parentElement,
+    ).toHaveStyle({ aspectRatio: "64 / 64" });
   });
 
   it("marks own cards with Your consultation", async () => {
     feedMock.mockResolvedValue({ items: [OWN_ITEM], next_cursor: null });
     renderHome();
     expect(await screen.findByText("Your consultation")).toBeInTheDocument();
+  });
+
+  it("marks an already-voted card with Voted", async () => {
+    feedMock.mockResolvedValue({
+      items: [{ ...FEED_ITEM, has_voted: true }],
+      next_cursor: null,
+    });
+    renderHome();
+    expect(await screen.findByText("Voted")).toBeInTheDocument();
   });
 
   it("opens the reader detail for another author and returns to Home", async () => {
@@ -160,12 +184,29 @@ describe("HomeFeed", () => {
     expect(
       await screen.findByRole("heading", { name: "Consultation" }),
     ).toBeInTheDocument();
-    expect(detailMock).toHaveBeenCalledWith(FEED_ITEM.id);
+    expect(detailMock).toHaveBeenCalledWith(FEED_ITEM.id, null);
 
     await user.click(screen.getByRole("button", { name: "Back to Home" }));
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "Home" })).toBeInTheDocument(),
     );
+  });
+
+  it("focuses the Home heading after Back revalidation removes the card", async () => {
+    feedMock
+      .mockResolvedValueOnce({ items: [FEED_ITEM], next_cursor: null })
+      .mockResolvedValueOnce({ items: [], next_cursor: null });
+    const user = userEvent.setup();
+    renderHome();
+
+    await user.click(
+      await screen.findByRole("button", { name: "View consultation" }),
+    );
+    await screen.findByRole("heading", { name: "Consultation" });
+    await user.click(screen.getByRole("button", { name: "Back to Home" }));
+
+    const heading = await screen.findByRole("heading", { name: "Home" });
+    await waitFor(() => expect(heading).toHaveFocus());
   });
 
   it("opens the owner detail for an own card with Home return", async () => {

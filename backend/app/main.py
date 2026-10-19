@@ -96,6 +96,20 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    @application.middleware("http")
+    async def _protected_private_headers(request: Request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        if (
+            path.startswith("/api/consultations/")
+            or path == "/api/my-consultations"
+            or path.startswith("/api/my-consultations/")
+        ):
+            response.headers.setdefault("Cache-Control", "private, no-store")
+            response.headers.setdefault("X-Content-Type-Options", "nosniff")
+            response.headers.setdefault("Referrer-Policy", "no-referrer")
+        return response
+
     @application.exception_handler(RequestValidationError)
     async def handle_validation_error(
         request: Request, exc: RequestValidationError
@@ -114,6 +128,13 @@ def create_app() -> FastAPI:
 
     @application.exception_handler(PhotoError)
     async def handle_photo_error(request: Request, exc: PhotoError) -> JSONResponse:
+        logger.warning(
+            "photo request rejected: method=%s path=%s code=%s status=%s",
+            request.method,
+            request.url.path,
+            exc.code,
+            exc.status_code,
+        )
         return JSONResponse(
             status_code=exc.status_code,
             content={"detail": {"code": exc.code}},

@@ -1,4 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -36,6 +42,7 @@ const OPEN_ITEM = {
   question: "Which one?",
   audience: "public" as const,
   published_at: "2026-09-28T12:00:00Z",
+  total_votes: 3,
 };
 
 const FINALIZED_ITEM = {
@@ -438,5 +445,63 @@ describe("MyConsultations", () => {
 
     await user.keyboard("{Home}");
     expect(openTab).toHaveFocus();
+  });
+
+  it("shows the current total vote count on each open row", async () => {
+    listMock.mockResolvedValue({
+      items: [
+        { ...OPEN_ITEM, total_votes: 1 },
+        {
+          ...OPEN_ITEM,
+          id: "123e4567-e89b-12d3-a456-426614174002",
+          total_votes: 2,
+        },
+      ],
+      next_cursor: null,
+    });
+    renderList();
+    await waitFor(() => expect(screen.getByText("1 vote")).toBeInTheDocument());
+    expect(screen.getByText("2 votes")).toBeInTheDocument();
+  });
+
+  it("auto-refreshes the open list every five seconds while visible", async () => {
+    vi.useFakeTimers();
+    try {
+      listMock.mockResolvedValue({ items: [OPEN_ITEM], next_cursor: null });
+      renderList();
+      await act(async () => {});
+      expect(listMock).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5000);
+      });
+      expect(listMock).toHaveBeenCalledTimes(2);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5000);
+      });
+      expect(listMock).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not auto-refresh the finalized list", async () => {
+    vi.useFakeTimers();
+    try {
+      listMock.mockResolvedValue({ items: [], next_cursor: null });
+      renderList();
+      await act(async () => {});
+      fireEvent.click(screen.getByRole("tab", { name: "Finalized" }));
+      await act(async () => {});
+      const callsAfterSwitch = listMock.mock.calls.length;
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15000);
+      });
+      expect(listMock.mock.calls.length).toBe(callsAfterSwitch);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -217,6 +217,7 @@ def test_feed_includes_own_public_with_owner_marker(client) -> None:
         "state",
         "published_at",
         "is_owner",
+        "has_voted",
         "first_photo",
     }
     assert item["id"] == consultation_id

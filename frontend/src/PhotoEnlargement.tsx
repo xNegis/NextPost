@@ -1,4 +1,9 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+
+const FOCUSABLE_SELECTOR =
+  "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), " +
+  'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 interface PhotoEnlargementProps {
   src: string;
@@ -8,12 +13,18 @@ interface PhotoEnlargementProps {
 
 export function PhotoEnlargement({ src, alt, onClose }: PhotoEnlargementProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<Element | null>(null);
 
   useEffect(() => {
     previousFocusRef.current = document.activeElement;
     closeRef.current?.focus();
+
+    const root = document.getElementById("root");
+    root?.setAttribute("inert", "");
+
     return () => {
+      root?.removeAttribute("inert");
       const previous = previousFocusRef.current;
       if (previous instanceof HTMLElement) previous.focus();
     };
@@ -21,13 +32,35 @@ export function PhotoEnlargement({ src, alt, onClose }: PhotoEnlargementProps) {
 
   useEffect(() => {
     const handler = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const panel = panelRef.current;
+      if (panel === null) return;
+      const focusable = Array.from(
+        panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      ).filter((element) => element.tabIndex >= 0);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey) {
+        if (active === first || !panel.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (active === last || !panel.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  return (
+  return createPortal(
     <div
       className="photo-enlargement"
       role="dialog"
@@ -35,7 +68,7 @@ export function PhotoEnlargement({ src, alt, onClose }: PhotoEnlargementProps) {
       aria-label={alt}
     >
       <div className="photo-enlargement__backdrop" onClick={onClose} />
-      <div className="photo-enlargement__panel">
+      <div className="photo-enlargement__panel" ref={panelRef}>
         <img className="photo-enlargement__image" src={src} alt={alt} />
         <button
           ref={closeRef}
@@ -46,6 +79,7 @@ export function PhotoEnlargement({ src, alt, onClose }: PhotoEnlargementProps) {
           Close
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

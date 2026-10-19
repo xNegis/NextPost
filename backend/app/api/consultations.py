@@ -25,7 +25,9 @@ from app.consultation_service import (
     publish_consultation,
     read_consultation_detail,
     read_consultation_photo,
+    read_entry_role,
     read_my_consultation,
+    read_my_consultation_results,
     read_owner_link,
 )
 from app.db import get_db_session
@@ -34,9 +36,12 @@ from app.photo_service import InactiveSessionError, NotFoundError, PublicationIn
 from app.schemas import (
     ConsultationCapacityResponse,
     ConsultationDetailResponse,
+    ConsultationEntryResponse,
     ConsultationPhotoResponse,
     ConsultationPublishedResponse,
     ConsultationPublishRequest,
+    ConsultationResultOptionResponse,
+    ConsultationResultResponse,
     FeedItemResponse,
     FeedPhotoResponse,
     FeedResponse,
@@ -47,11 +52,21 @@ from app.schemas import (
     MyConsultationOpenListItem,
     MyConsultationOwnerDetail,
     OwnerLinkResponse,
+    VoteNotVotedResponse,
+    VoteStatusResponse,
+    VoteSubmitRequest,
+    VoteVotedResponse,
 )
 from app.schemas import (
     MyConsultationFinalizedDetail as MyConsultationFinalizedDetailSchema,
 )
 from app.storage import PhotoStorage
+from app.vote_service import (
+    VoteAlreadyRecordedError,
+    VoteInvalidSelectionError,
+    read_my_vote,
+    submit_vote,
+)
 
 router = APIRouter(tags=["consultations"])
 
@@ -139,6 +154,7 @@ def my_consultations(
                     question=item.question,
                     audience=item.audience,
                     published_at=_published_at_iso(item.published_at),
+                    total_votes=item.total_votes,
                 )
             )
         else:
@@ -189,6 +205,38 @@ def my_consultation_detail(
         photos=[
             ConsultationPhotoResponse(id=photo.id, width=photo.width, height=photo.height)
             for photo in detail.photos
+        ],
+    )
+
+
+@router.get(
+    "/my-consultations/{consultation_id}/results",
+    response_model=ConsultationResultResponse,
+)
+def my_consultation_results(
+    consultation_id: uuid.UUID,
+    account: Account = Depends(get_current_account),
+    db: Session = Depends(get_db_session),
+    response: Response = Response(),
+) -> ConsultationResultResponse:
+    _set_private_read_headers(response)
+
+    try:
+        result = read_my_consultation_results(db, consultation_id, account.id)
+    except ConsultationUnavailableError as exc:
+        raise HTTPException(status_code=404, detail={"code": exc.code}) from exc
+
+    return ConsultationResultResponse(
+        consultation_id=result.consultation_id,
+        state="open",
+        total_votes=result.total_votes,
+        options=[
+            ConsultationResultOptionResponse(
+                photo_id=option.photo_id,
+                ordinal=option.ordinal,
+                vote_count=option.vote_count,
+            )
+            for option in result.options
         ],
     )
 
@@ -288,6 +336,7 @@ def consultation_feed(
             state="open",
             published_at=_published_at_iso(item.published_at),
             is_owner=item.is_owner,
+            has_voted=item.has_voted,
             first_photo=FeedPhotoResponse(
                 id=item.first_photo.id,
                 width=item.first_photo.width,
@@ -319,6 +368,25 @@ def consultation_detail(
     except ConsultationUnavailableError as exc:
         raise HTTPException(status_code=404, detail={"code": exc.code}) from exc
     return _detail_response(detail)
+
+
+@router.get(
+    "/consultations/{consultation_id}/entry",
+    response_model=ConsultationEntryResponse,
+)
+def consultation_entry(
+    consultation_id: uuid.UUID,
+    account: Account = Depends(get_current_account),
+    db: Session = Depends(get_db_session),
+    private_link: Annotated[str | None, Header(alias=PRIVATE_LINK_HEADER)] = None,
+    response: Response = Response(),
+) -> ConsultationEntryResponse:
+    _set_private_read_headers(response)
+    try:
+        entry = read_entry_role(db, consultation_id, account.id, _private_link_token(private_link))
+    except ConsultationUnavailableError as exc:
+        raise HTTPException(status_code=404, detail={"code": exc.code}) from exc
+    return ConsultationEntryResponse(role=entry.role)
 
 
 @router.get("/consultations/{consultation_id}/photos/{photo_id}/content")
@@ -424,3 +492,61 @@ def create_private_link(
     _origin: None = Depends(require_trusted_origin),
 ) -> OwnerLinkResponse:
     return _mutate_link("create", consultation_id, payload, account, db)
+
+
+@router.get(
+    "/consultations/{consultation_id}/my-vote",
+    response_model=VoteStatusResponse,
+)
+def my_vote(
+    consultation_id: uuid.UUID,
+    account: Account = Depends(get_current_account),
+    db: Session = Depends(get_db_session),
+    private_link: Annotated[str | None, Header(alias=PRIVATE_LINK_HEADER)] = None,
+    response: Response = Response(),
+) -> VoteStatusResponse:
+    _set_private_read_headers(response)
+    try:
+        vote = read_my_vote(db, consultation_id, account.id, _private_link_token(private_link))
+    except ConsultationUnavailableError as exc:
+        raise HTTPException(status_code=404, detail={"code": exc.code}) from exc
+
+    if vote.status == "not_voted":
+        return VoteNotVotedResponse(status="not_voted")
+    assert vote.photo_id is not None
+    return VoteVotedResponse(status="voted", photo_id=vote.photo_id)
+
+
+@router.post(
+    "/consultations/{consultation_id}/votes",
+    response_model=VoteVotedResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def cast_vote(
+    consultation_id: uuid.UUID,
+    payload: VoteSubmitRequest,
+    account: Account = Depends(get_current_account),
+    db: Session = Depends(get_db_session),
+    private_link: Annotated[str | None, Header(alias=PRIVATE_LINK_HEADER)] = None,
+    response: Response = Response(),
+    _origin: None = Depends(require_trusted_origin),
+) -> VoteVotedResponse:
+    _set_private_read_headers(response)
+    try:
+        vote = submit_vote(
+            db,
+            consultation_id,
+            account.id,
+            _private_link_token(private_link),
+            payload.photo_id,
+        )
+    except ConsultationUnavailableError as exc:
+        raise HTTPException(status_code=404, detail={"code": exc.code}) from exc
+    except VoteAlreadyRecordedError as exc:
+        raise HTTPException(status_code=409, detail={"code": exc.code}) from exc
+    except VoteInvalidSelectionError as exc:
+        raise HTTPException(status_code=422, detail={"code": exc.code}) from exc
+
+    if not vote.created:
+        response.status_code = status.HTTP_200_OK
+    return VoteVotedResponse(status="voted", photo_id=vote.photo_id)

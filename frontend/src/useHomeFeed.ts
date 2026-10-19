@@ -17,10 +17,14 @@ export interface HomeFeedController {
   loadMoreFailed: boolean;
   loadInitial: () => void;
   refresh: () => Promise<void>;
+  reconcile: () => Promise<void>;
   loadMore: () => void;
 }
 
-export function useHomeFeed(onSessionLost: () => void): HomeFeedController {
+export function useHomeFeed(
+  onSessionLost: () => void,
+  active = true,
+): HomeFeedController {
   const [status, setStatus] = useState<FeedStatus>("loading");
   const [items, setItems] = useState<FeedItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -31,6 +35,7 @@ export function useHomeFeed(onSessionLost: () => void): HomeFeedController {
 
   const generationRef = useRef(0);
   const loadedPagesRef = useRef(0);
+  const activeRef = useRef(active);
   const onSessionLostRef = useRef(onSessionLost);
 
   useEffect(() => {
@@ -92,6 +97,33 @@ export function useHomeFeed(onSessionLost: () => void): HomeFeedController {
       return Promise.resolve();
     }
     const generation = ++generationRef.current;
+    setRefreshing(true);
+    setRefreshFailed(false);
+
+    return (async () => {
+      try {
+        const result = await fetchFeed(PAGE_SIZE, null);
+        if (generation !== generationRef.current) return;
+        setItems(result.items);
+        setNextCursor(result.next_cursor);
+        loadedPagesRef.current = 1;
+        setStatus("ready");
+      } catch (error) {
+        if (generation !== generationRef.current) return;
+        if (isSessionLost(error)) {
+          onSessionLostRef.current();
+          return;
+        }
+        setRefreshFailed(true);
+      } finally {
+        if (generation === generationRef.current) setRefreshing(false);
+      }
+    })();
+  }, [isSessionLost, loadingMore, refreshing, status]);
+
+  const reconcile = useCallback((): Promise<void> => {
+    if (status === "loading") return Promise.resolve();
+    const generation = ++generationRef.current;
     const pages = Math.max(1, loadedPagesRef.current);
     setRefreshing(true);
     setRefreshFailed(false);
@@ -100,12 +132,15 @@ export function useHomeFeed(onSessionLost: () => void): HomeFeedController {
       try {
         let collected: FeedItem[] = [];
         let cursor: string | null = null;
+        let previousCursor: string | null | undefined;
         for (let page = 0; page < pages; page++) {
           const result = await fetchFeed(PAGE_SIZE, cursor);
           if (generation !== generationRef.current) return;
           collected = dedupeAppend(collected, result.items);
+          previousCursor = cursor;
           cursor = result.next_cursor;
           if (cursor === null) break;
+          if (previousCursor === cursor) break;
         }
         if (generation !== generationRef.current) return;
         setItems(collected);
@@ -123,7 +158,7 @@ export function useHomeFeed(onSessionLost: () => void): HomeFeedController {
         if (generation === generationRef.current) setRefreshing(false);
       }
     })();
-  }, [dedupeAppend, isSessionLost, loadingMore, refreshing, status]);
+  }, [dedupeAppend, isSessionLost, status]);
 
   const loadMore = useCallback(() => {
     if (loadingMore || refreshing || status !== "ready" || nextCursor === null)
@@ -159,6 +194,16 @@ export function useHomeFeed(onSessionLost: () => void): HomeFeedController {
   ]);
 
   useEffect(() => {
+    const wasActive = activeRef.current;
+    activeRef.current = active;
+    if (wasActive && !active) {
+      generationRef.current += 1;
+      setRefreshing(false);
+      setLoadingMore(false);
+    }
+  }, [active]);
+
+  useEffect(() => {
     return () => {
       generationRef.current += 1;
     };
@@ -174,6 +219,7 @@ export function useHomeFeed(onSessionLost: () => void): HomeFeedController {
     loadMoreFailed,
     loadInitial,
     refresh,
+    reconcile,
     loadMore,
   };
 }

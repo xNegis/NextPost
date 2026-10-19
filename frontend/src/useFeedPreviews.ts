@@ -30,7 +30,6 @@ export function useFeedPreviews(
   const activeRef = useRef(active);
   const visibleRef = useRef<Set<string>>(new Set());
   const requestedRef = useRef<Set<string>>(new Set());
-  const inflightRef = useRef<Set<string>>(new Set());
   const urlsRef = useRef<Map<string, string>>(new Map());
   const elementsRef = useRef<Map<string, HTMLElement>>(new Map());
   const prevIdsRef = useRef<Set<string> | null>(null);
@@ -38,6 +37,14 @@ export function useFeedPreviews(
   const onSessionLostRef = useRef(onSessionLost);
   const drainRef = useRef<() => void>(() => undefined);
   const revokeAllRef = useRef<() => void>(() => undefined);
+
+  // Every request captures an immutable scope plus a per-card request token. A late success,
+  // error or 401 is ignored unless it is still the latest request for that card in the same
+  // scope, so a stale response can never sign out a later account or replace newer content.
+  const scopeRef = useRef(0);
+  const tokenSeqRef = useRef(0);
+  const inflightTokensRef = useRef<Set<number>>(new Set());
+  const latestForCardRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     onSessionLostRef.current = onSessionLost;
@@ -47,7 +54,6 @@ export function useFeedPreviews(
     for (const url of urlsRef.current.values()) URL.revokeObjectURL(url);
     urlsRef.current.clear();
     requestedRef.current.clear();
-    inflightRef.current.clear();
     visibleRef.current.clear();
     setStates({});
   }, []);
@@ -56,19 +62,31 @@ export function useFeedPreviews(
   const startFetch = useCallback((id: string) => {
     const item = itemsRef.current.find((candidate) => candidate.id === id);
     if (item === undefined) return;
+    const scope = scopeRef.current;
+    const token = ++tokenSeqRef.current;
+    latestForCardRef.current.set(id, token);
     requestedRef.current.add(id);
-    inflightRef.current.add(id);
+    inflightTokensRef.current.add(token);
     setStates((current) => ({ ...current, [id]: { kind: "loading" } }));
     void fetchConsultationPhotoUrl(item.id, item.first_photo.id)
       .then((url) => {
-        if (!activeRef.current || !visibleRef.current.has(id)) {
+        const isCurrent =
+          scope === scopeRef.current &&
+          latestForCardRef.current.get(id) === token;
+        if (!isCurrent || !activeRef.current || !visibleRef.current.has(id)) {
           URL.revokeObjectURL(url);
           return;
         }
+        const previous = urlsRef.current.get(id);
+        if (previous !== undefined) URL.revokeObjectURL(previous);
         urlsRef.current.set(id, url);
         setStates((current) => ({ ...current, [id]: { kind: "ready", url } }));
       })
       .catch((error: unknown) => {
+        const isCurrent =
+          scope === scopeRef.current &&
+          latestForCardRef.current.get(id) === token;
+        if (!isCurrent) return;
         if (error instanceof ApiError && error.code === "unauthenticated") {
           onSessionLostRef.current();
           return;
@@ -83,7 +101,7 @@ export function useFeedPreviews(
         setStates((current) => ({ ...current, [id]: { kind: "error" } }));
       })
       .finally(() => {
-        inflightRef.current.delete(id);
+        inflightTokensRef.current.delete(token);
         drainRef.current();
       });
   }, []);
@@ -91,7 +109,7 @@ export function useFeedPreviews(
   const drain = useCallback(() => {
     if (!activeRef.current) return;
     for (const item of itemsRef.current) {
-      if (inflightRef.current.size >= MAX_CONCURRENT_PREVIEWS) break;
+      if (inflightTokensRef.current.size >= MAX_CONCURRENT_PREVIEWS) break;
       if (!visibleRef.current.has(item.id)) continue;
       if (requestedRef.current.has(item.id)) continue;
       startFetch(item.id);
@@ -145,7 +163,6 @@ export function useFeedPreviews(
           urlsRef.current.delete(id);
         }
         requestedRef.current.delete(id);
-        inflightRef.current.delete(id);
         setStates((current) => {
           const next = { ...current };
           delete next[id];
@@ -167,6 +184,7 @@ export function useFeedPreviews(
   useEffect(() => {
     activeRef.current = active;
     if (!active) {
+      scopeRef.current += 1;
       revokeAll();
     } else {
       drainRef.current();
@@ -186,7 +204,6 @@ export function useFeedPreviews(
           urlsRef.current.delete(previousId);
         }
         requestedRef.current.delete(previousId);
-        inflightRef.current.delete(previousId);
         setStates((current) => {
           const next = { ...current };
           delete next[previousId];
@@ -200,6 +217,7 @@ export function useFeedPreviews(
 
   useEffect(() => {
     return () => {
+      scopeRef.current += 1;
       observerRef.current?.disconnect();
       revokeAllRef.current();
     };

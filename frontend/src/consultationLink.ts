@@ -4,6 +4,45 @@ const PRIVATE_LINK_HEADER = "X-NextPost-Private-Link";
 const MAX_FRAGMENT_LENGTH = 512;
 const LOCAL_HTTP_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
+function isPrivateIpv4(hostname: string): boolean {
+  const octets = hostname.split(".").map(Number);
+  if (
+    octets.length !== 4 ||
+    octets.some(
+      (octet, index) =>
+        !Number.isInteger(octet) ||
+        octet < 0 ||
+        octet > 255 ||
+        String(octet) !== hostname.split(".")[index],
+    )
+  ) {
+    return false;
+  }
+  return (
+    octets[0] === 10 ||
+    (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
+    (octets[0] === 192 && octets[1] === 168) ||
+    (octets[0] === 169 && octets[1] === 254)
+  );
+}
+
+function isPrivateIpv6(hostname: string): boolean {
+  const normalized = hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  return (
+    normalized.startsWith("fc") ||
+    normalized.startsWith("fd") ||
+    /^fe[89ab]/.test(normalized)
+  );
+}
+
+function isLocalHttpHost(hostname: string): boolean {
+  return (
+    LOCAL_HTTP_HOSTS.has(hostname) ||
+    isPrivateIpv4(hostname) ||
+    isPrivateIpv6(hostname)
+  );
+}
+
 export interface ConsultationDestination {
   consultationId: string;
   token: string | null;
@@ -67,7 +106,7 @@ function parseTrustedOrigin(origin: string): string | null {
     return null;
   }
   if (parsed.protocol === "https:") return parsed.origin;
-  if (parsed.protocol === "http:" && LOCAL_HTTP_HOSTS.has(parsed.hostname)) {
+  if (parsed.protocol === "http:" && isLocalHttpHost(parsed.hostname)) {
     return parsed.origin;
   }
   return null;

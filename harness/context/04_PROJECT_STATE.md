@@ -1,5 +1,459 @@
 # Project State
 
+## RF-26 completed and validated - 2026-10-19
+
+The product owner completed the private-LAN mobile review and explicitly reported `VALIDADO`.
+Together with the approved plan, successful harness run, independent review, 486 passing frontend
+tests, 405 passing local backend tests plus expected skips, clean quality/build/audit checks and the
+rebuilt multi-account PostgreSQL smoke, this closes RF-26 as `Completed and validated`.
+
+The temporary `nextpost-rf26-lan-20261019` services are stopped. Its isolated database and photo
+volumes remain recoverable; ordinary project services and data were not touched. No commit, push,
+deployment or Trello mutation occurred.
+
+The recommended next grooming ticket is RF-37, `Proteger y borrar fotografías`. The accepted backlog
+ordering requires its published-photo revocation, physical-deletion and retry contract before the
+terminal mutations in RF-13 and the coordinated RF-19/RF-20 finalization flow.
+
+## RF-26 disposable LAN review instance running - 2026-10-19
+
+At the product owner's request, RF-26 is exposed to the current private Wi-Fi network through
+an isolated Compose project, `nextpost-rf26-lan-20261019`. The recorded host address is
+`192.168.1.130`, with frontend port `14177`, API port `18004`, and PostgreSQL remaining localhost
+only on `15436`. `harness/validation/rf26-lan.override.yaml` records the LAN binding. This is a
+temporary review environment with dedicated database/photo volumes, not a deployment.
+
+The rebuilt frontend and API both respond through the LAN address: `/` and a direct consultation
+path returned HTTP 200, `/api/ready` returned `ok`, and the backend/database health checks are green.
+The instance starts empty so the owner can register fresh review accounts and consultations.
+
+The browser origin is plain private-LAN HTTP. It supports the RF-26 web/auth/link flow, but mobile
+browsers may withhold `navigator.share` because Web Share is normally restricted to secure HTTPS
+contexts. No commit, push or Trello mutation is authorized by this launch.
+
+## RF-26 implemented and independently reviewed; visual acceptance pending - 2026-10-19
+
+The approved RF-26 implementation is present and the autonomous OpenCode harness completed
+successfully. The coordinator independently reviewed the route/auth return, server-derived
+owner/reader boundary, Public/Private sharing, revocation behavior, privacy headers and mobile Share
+state machine. One uncovered synchronous `navigator.share()` failure path was corrected and new
+registration, Private-fragment, history, session-loss and Share concurrency tests were added.
+
+Final evidence is 486 passing frontend tests; 405 passing backend tests with 28 expected local
+PostgreSQL-only skips; clean Ruff/format/mypy/Prettier/ESLint/typecheck; successful production and
+Compose builds; zero npm audit vulnerabilities; and a passing isolated rebuilt multi-account smoke
+covering direct SPA fallback, anonymous denial, Public roles, forwarded Private access and
+missing/wrong/replaced/disabled token denial. The disposable containers and volumes were removed.
+Full evidence is in `harness/grooming/RF-26-implementation-review.md`.
+
+RF-26 is `Implementation review`. The sole remaining gate is the product owner's visual and actual
+iPhone Share-sheet validation under DEC-034, which the owner explicitly reserved. No commit, push,
+deployment or Trello mutation occurred.
+
+## RF-26 implementation launched - 2026-10-19
+
+The product owner explicitly authorized autonomous harness launch after approving the settled
+scope and plan finalisation. Preflight confirmed
+`harness/features/RF-26-Implementation-plan.md` is `Ready for implementation` with
+`Remaining questions: None`, project state names the same active ticket, OpenCode Go is
+authenticated, and `opencode-go/deepseek-v4-pro` remains active with the required `high`
+variant. RF-26 is `Implementation in progress`.
+
+The 62 prelaunch dirty tracked/untracked files were copied to the recoverable snapshot
+`C:\Users\anton\AppData\Local\Temp\NextPost-RF26-prelaunch-20261019-144701`.
+They include the accepted RF-14/RF-16/RF-18 and real-device correction baseline plus RF-26
+planning documentation and must be preserved. The harness is instructed to implement only
+RF-26, run executable technical validation and leave subjective UI/visual review to the product
+owner under DEC-034. Commit, push, deployment, Trello mutation and native distribution remain
+unauthorized.
+
+## RF-26 plan ready; autonomous implementation harness authorized - 2026-10-19
+
+The product owner explicitly approved the settled RF-26 scope, finalisation of the English
+implementation plan and autonomous launch of the external implementation harness. The owner
+selected `1A 2A 3A 4A 5A 6A 7A 8B`; DEC-040 records the durable behavior.
+
+`harness/features/RF-26-Implementation-plan.md` is `Ready for implementation` with
+`Remaining questions: None`. It defines author-only Public/Private Copy and capability-detected
+device Share, generic payload/manual fallback, one narrow consultation History API entry,
+safe destination return after session restoration/sign-in/registration, server-derived owner
+versus reader routing, current-token voting and generic revocation/terminal denial. Shared links
+use the strictly validated current `window.location.origin`; no schema migration, app-wide router,
+contact/invitation/messaging/social-posting or native deep-link infrastructure is planned.
+
+The external harness launch is authorized. It must preserve the substantial existing dirty
+worktree, implement only RF-26, run technical validation and leave subjective browser/UI review
+for the product owner under DEC-034. Commit, push, deployment, Trello mutation and native
+distribution are not authorized.
+
+## RF-26 material choices confirmed - 2026-10-19
+
+The product owner selected `1A 2A 3A 4A 5A 6A 7A 8B`. Sharing is author-only on every
+open Public or Private owner detail, with Copy always present, capability-detected device
+Share and a manual-copy fallback. The share payload is generic NextPost invitation text
+plus the URL. RF-26 will add only a narrow consultation URL/history boundary; generic
+authentication preserves and resumes the validated destination after sign-in or registration.
+An author opening their own shared URL receives neutral owner detail, while a non-owner uses
+the existing reader/vote flow. Direct entry offers Go to Home and leaves browser Back intact.
+
+Shared URLs will continue to use the strictly validated current `window.location.origin`,
+not a new canonical-origin setting. This preserves simple LAN/device-review behavior and
+accepts that deployment must expose the intended production origin or a wrong proxy/host
+will appear in copied links. DEC-040 records the durable behavior.
+
+RF-26 is now `Grooming - awaiting product-owner confirmation`. No material question remains
+identified. The settled scope, exclusions, security/privacy contract, failure behavior,
+dependencies and validation direction are recorded in `harness/grooming/RF-26-grooming.md`.
+No implementation plan has been created: explicit approval of the settled scope and plan
+finalisation is still required, and a harness launch would require a later independent request.
+No implementation, test run, visual inspection, commit, push, deployment, service operation
+or Trello mutation occurred.
+
+## RF-26 grooming started - 2026-10-19
+
+The product owner explicitly selected `RF-26 · Compartir una consulta e invitar a votar`.
+The current card was consumed read-only from the configured APP - NextPost board:
+https://trello.com/c/47FD3mrW/28-rf-26-compartir-una-consulta-e-invitar-a-votar.
+It is open and incomplete in `Próximo · completar el MVP`, with no labels, members,
+dates, checklists, comments, attachments or custom-field values. Its complete current
+description, criteria, metadata and available activity are captured in
+`harness/grooming/RF-26-grooming.md`. RF-26 is `Grooming - questions open`.
+
+Repository-first inspection confirms that RF-09/RF-10 already provide strict same-origin
+Public/Private URL helpers, versioned fragment capabilities, current database link
+revocation/rotation and protected detail/media endpoints; RF-12 recovers real owner detail
+and Private controls; RF-14/RF-16 provide real reader comparison and current-token voting.
+Copy exists for Private owners, but Public has no copy/share action, no device Share API is
+used, direct `/consultations/{uuid}` URLs are not routed, and App currently forces Home
+after restoration, sign-in and registration. The accepted recipient journey therefore
+does not work yet.
+
+The grooming recommends a narrow History-API consultation route using the existing strict
+parser, with the original path/fragment as the reload-safe source of truth and no arbitrary
+redirect or persistent token storage. It recommends author-only Copy plus capability-detected
+device Share for both audiences, generic share/auth copy, direct return after either auth
+flow, a neutral owner detail when the author opens their own link, generic unavailable for
+revoked/terminal targets and a configured production public origin. Eight material choices
+cover share placement/actor, fallback presentation, share payload, routing scope, author
+self-entry, unauthenticated entry copy, leaving direct detail and production origin. These
+are proposals only; no answer is inferred.
+
+No RF-26 implementation plan has been created. Product-owner answers and later explicit
+plan-finalization approval are required; any harness launch requires a subsequent independent
+request. Existing tracked/untracked implementation and documentation work is preserved. No
+implementation, test run, visual inspection, commit, push, deployment, service operation or
+Trello mutation occurred.
+
+## RF-18 completed and validated - 2026-10-19
+
+The product owner reviewed RF-18 on the real mobile/LAN flow with an actual three-photo Public
+consultation. Nine distinct disposable voter accounts cast immutable votes, producing verified
+author aggregates of 4, 3 and 2 votes (9 total). The owner then explicitly requested closure,
+satisfying the DEC-034 visual-acceptance gate.
+
+RF-18 is now `Completed and validated`. The accepted increment provides author-only live Open
+counts in My consultations and owner detail, including zero options and natural ties, with
+non-overlapping five-second visible-view refresh and no voter identities or participant aggregate
+access. Percentages and durable finalized/photo-free results remain explicitly deferred to their
+documented RF-19/RF-20/RF-37 boundary and are not part of this completion claim.
+
+The disposable `nextpost-rf18-lan-20261019` frontend, backend and database containers were stopped
+cleanly after review. Their isolated volumes were retained for recoverability; ordinary services
+and data were not touched. No commit, push, deployment or Trello mutation occurred.
+
+## RF-18 disposable LAN review instance launched - 2026-10-19
+
+At the product owner's request, a rebuilt disposable RF-18 review instance is running under the
+isolated Compose project `nextpost-rf18-lan-20261019`. The mobile URL is
+`http://192.168.1.130:14176`; its browser bundle targets the LAN API at
+`http://192.168.1.130:18003`. Host checks returned HTTP 200 for the frontend and API readiness, the
+backend/database report healthy, and PostgreSQL remains bound only to localhost on port 15435.
+
+The instance uses new isolated database/photo volumes and contains no seeded accounts or
+consultations. `harness/validation/rf18-lan.override.yaml` records the current LAN binding. This is
+a temporary owner-review environment, not a deployment. It was launched for DEC-034 visual and
+real-device acceptance; the later closure entry records its clean stop. No commit, push or Trello
+mutation occurred.
+
+## RF-18 implemented and independently reviewed; visual acceptance pending - 2026-10-18
+
+The external OpenCode harness implemented the approved RF-18 live Open, count-only increment and
+completed executable validation. The coordinator independently reviewed the work against every
+acceptance criterion and recorded the evidence in
+`harness/grooming/RF-18-implementation-review.md`.
+
+Delivered behavior includes author-only total counts in Open My consultations rows, exact per-photo
+counts in owner detail, zero-vote options and natural ties, immediate plus non-overlapping five-second
+visible-view refresh, honest stale/error/unavailable handling and strict aggregate payload guards.
+Participants and general consultation surfaces remain aggregate-free; no identity, individual choice,
+percentage, ranking or winner is exposed. No migration, counter cache or finalized snapshot was added.
+
+Harness evidence is 420 passing PostgreSQL tests, 448 passing frontend tests before review additions,
+clean quality/build/audit checks and a passing rebuilt-stack smoke covering zeros, ties, privacy and
+restart persistence. Coordinator review corrected exact-list 401 private headers, explicit nonnegative
+response constraints, unavailable-result presentation/poll stop and missing visibility-transition
+coverage. Final evidence includes 451 passing frontend tests, 393 passing local backend tests with the
+28 PostgreSQL-only cases skipped locally, 43 focused backend tests, 149 focused frontend tests and
+clean Ruff/format/mypy/Prettier/ESLint/types/build/audit/Compose/diff checks.
+
+RF-18 is `Implemented and independently reviewed - awaiting product-owner visual acceptance` under
+DEC-034. Percentages and durable finalized/photo-free results remain the documented RF-19/RF-20/RF-37
+gate, so the broader Trello card is not complete. No commit, push, deployment or Trello mutation
+occurred.
+
+## RF-18 harness launch blocked by expired OpenCode Go API key - 2026-10-18
+
+The coordinator completed the RF-18 preflight, recorded the existing dirty worktree in the
+recoverable snapshot `C:\Users\anton\AppData\Local\Temp\NextPost-RF18-prelaunch-20261018`, and
+verified that `opencode-go/deepseek-v4-pro` with the `high` variant remains active in the installed
+model catalog. A new OpenCode implementation conversation was then launched with the approved
+plan and exact configured model, but it exited before performing any task work because the OpenCode
+Go API key has expired. The CLI requires a new key from OpenCode Console to replace the local
+credential and explicitly says signing in again will not renew it.
+
+No alternate provider/model was selected and no implementation or validation ran. RF-18 remains
+`Ready for implementation`; the approved launch should be retried only after the product owner has
+replaced the expired OpenCode Go API key. No commit, push, deployment or Trello mutation occurred.
+
+## RF-18 plan ready; implementation harness authorized - 2026-10-18
+
+The product owner explicitly approved all settled RF-18 decisions, finalisation of the plan and
+launch of the external implementation harness. `harness/features/RF-18-Implementation-plan.md` is
+`Ready for implementation` with `Remaining questions: None`. The approved increment adds
+author-only live counts to Open My consultations: total votes in list rows and exact per-photo
+counts in owner detail, including zero options and natural ties, refreshed immediately and every
+five seconds only while the relevant view is visible.
+
+Percentages, voter aggregate access, voter identities and individual choices remain prohibited.
+No migration or denormalized counter is planned. Finalized aggregate snapshots/presentation remain
+an explicit RF-19/RF-20/RF-37 gate, so the broader Trello card must not be claimed complete by this
+increment. Existing dirty RF-16/device-correction work is the baseline and must be preserved. The
+harness launch is authorized; commit, push, deployment, visual acceptance and Trello mutation are
+not.
+
+## RF-18 material choices confirmed - 2026-10-18
+
+The product owner selected `1A`, `2B` with a five-second automatic refresh, a custom count-only
+answer to Q3, and `4A`. My consultations Open rows will show total votes; open owner detail will
+show exact per-photo counts in immutable order, including zeros and natural ties. Percentages,
+leader/winner presentation and all voter aggregate access are excluded from this first increment.
+
+The relevant Open list/detail scope refreshes immediately and every five seconds while visible,
+without overlapping requests or hidden/unmounted polling. Failed refresh preserves identified
+last-known counts and manual Refresh remains available. RF-18 derives current counts from Vote
+rows without denormalized counters or a migration. Finalized photo-free snapshots/display remain
+an explicit RF-19/RF-20/RF-37 consumer gate. DEC-039 records the accepted cross-feature behavior.
+
+RF-18 is now `Grooming - awaiting product-owner confirmation`. No material question remains
+identified. The settled scope, privacy boundary, failure behavior, dependencies and validation
+direction are recorded in `harness/grooming/RF-18-grooming.md`. No implementation plan has been
+created: explicit approval of the settled scope and plan finalization is still required, and a
+harness launch would require a later independent request. No implementation, test run, visual
+inspection, commit, push, deployment, service operation or Trello mutation occurred.
+
+## RF-18 grooming started - 2026-10-16
+
+The product owner explicitly selected `RF-18 · Consultar resultados como autor`. The current
+card was consumed read-only from the configured APP - NextPost board:
+https://trello.com/c/GBfvkzU8/19-rf-18-consultar-resultados-como-autor.
+It is open and incomplete in `Próximo · completar el MVP`, with no labels, members, dates,
+comments, checklists, attachments or custom field values. Its complete current description,
+criteria, metadata and available activity are captured in `harness/grooming/RF-18-grooming.md`.
+RF-18 is `Grooming - questions open`.
+
+Repository-first inspection confirms RF-12's private My consultations list/owner detail and
+RF-16's immutable Vote model, composite option integrity and aggregate-supporting index are
+present. No aggregate result service, schema, endpoint, persisted snapshot or author result UI
+exists. A set-wise owner-scoped outer join can derive current open counts while preserving
+zero-vote options and immutable photo order; voters/general readers must remain aggregate-free.
+
+Four material choices remain: whether the private list also shows total votes; explicit refresh
+versus polling; percentage/tie/leader presentation; and whether this increment delivers the
+safe open result slice now or waits/adds speculative persistence for the currently unavailable
+finalization/photo-deletion consumers. The grooming recommends a private list total plus full
+owner-detail results, explicit Refresh, one-decimal non-ranked presentation, and a coherent live
+Open increment with finalized snapshot/display retained as an explicit RF-19/RF-20/RF-37 gate.
+No recommendation is accepted yet.
+
+No RF-18 implementation plan has been created. Product-owner answers and later explicit plan-
+finalization approval are required; any harness launch requires a subsequent independent request.
+Existing tracked/untracked RF-16 and device-correction work is preserved. No implementation,
+test run, visual inspection, commit, push, deployment, service operation or Trello mutation occurred.
+
+## RF-07 real-iPhone photo compatibility confirmed; LAN Private-detail crash corrected - 2026-10-16
+
+The product owner successfully created a Private consultation from an iPhone after the upload
+pipeline correction. Safari supplied the selected still photos as two-frame MPO JPEG containers;
+the backend now extracts and normalizes the primary image instead of rejecting the companion frame.
+This confirms the real-device upload path that had previously failed.
+
+Opening that Private consultation then produced a blank page even though the owner detail, both
+photo bodies and the Private-link request all returned HTTP 200. The cause was client-side origin
+validation: rendering the share control synchronously rejected the disposable LAN origin
+`http://192.168.1.130:14175`. Private/link-local IP origins are now accepted for HTTP device review,
+public HTTP origins remain rejected, and link construction is guarded so an invalid deployment
+origin cannot crash the entire detail view. The focused regression tests and the complete 419-test
+frontend suite pass, as do ESLint, strict typecheck, formatting and the production build. The fixed
+frontend image is live in the disposable LAN review instance. The product owner subsequently
+confirmed the corrected Private detail on the real iPhone and accepted it for closure.
+
+During the same owner-device review, Home exhibited vertical scroll drift while preview requests
+crossed the viewport. The preview slot changed from a 140px idle placeholder to a much shorter
+loading status and then to the photo's rendered height; IntersectionObserver-driven unload/reload
+made those layout shifts repeat around the viewport boundary. Feed cards now reserve one stable,
+metadata-derived and bounded photo frame across idle, loading, ready and error states. The complete
+419-test frontend suite and all frontend quality/build checks pass. The product owner confirmed the
+corrected Home scrolling on the real iPhone and explicitly requested closure.
+
+During the RF-16 owner UI session, a real iPhone selected six gallery photos: two normalized
+successfully while four HEIF uploads repeatedly returned HTTP 422. Inspection found that the
+processor treated every multi-image HEIF container as animation, despite the approved RF-07
+contract requiring the primary still to be accepted when companion or auxiliary images exist.
+
+`backend/app/imaging.py` now distinguishes HEIF still-image brands from HEIF sequence brands. It
+normalizes the declared primary still from a multi-image HEIF container while continuing to reject
+actual HEIF image sequences and animated non-HEIF inputs. Regression tests cover both cases. The
+focused imaging/photo suite, Ruff checks and the full backend suite pass; the rebuilt disposable
+container also normalized a multi-image HEIF primary to JPEG and retained the LAN CORS contract.
+
+The correction is live in the disposable review instance. The later owner-device retry successfully
+created a Private consultation from the iPhone photos. No commit, push, deployment or Trello
+mutation occurred.
+
+The owner's attempt to attach one rejected photo for diagnosis arrived as a JPEG and passed the
+same live API, confirming that the iPhone/attachment path can provide a compatible representation.
+The RF-07 picker now requests JPEG first and no longer explicitly requests HEIC/HEIF, allowing
+WebKit's platform picker to transcode iPhone HEIF photos before upload. The backend retains actual
+HEIC/HEIF decoding as defense in depth. All 418 frontend tests plus format, lint, strict typecheck
+and production build pass, and the rebuilt LAN review bundle was verified to contain the new picker
+contract. The later owner-device publication satisfied this acceptance gate.
+
+## RF-16 completed and validated - 2026-10-16
+
+The coordinator independently reviewed the RF-16 worktree against the approved plan and recorded
+the result in `harness/grooming/RF-16-implementation-review.md`. Four client gaps found after the
+harness handoff were corrected: chosen-photo review rendering, combined detail/vote Refresh,
+Private-token change reauthorization and post-reconciliation Home focus. Focused tests cover them.
+
+Current evidence includes the harness's 398-pass PostgreSQL suite and isolated built-stack smoke,
+plus the coordinator's 45-pass focused backend suite and final 418-pass frontend suite. Backend
+Ruff/format/mypy, frontend format/lint/types/build, dependency audit (0 vulnerabilities), Compose
+configuration and diff checks pass. No material automated failure remains.
+
+During the real-iPhone review, the owner also exercised iPhone photo publication, Private owner
+detail and Home scrolling. The discovered HEIF/MPO normalization, LAN Private-link render crash and
+preview layout-shift defects were corrected; the final frontend suite has 419 passing tests. The
+owner confirmed the corrected behavior and explicitly requested closure, so RF-16 is now
+`Completed and validated` under DEC-034. RF-18 remains the agreed next grooming ticket. No commit,
+push, deployment or Trello mutation occurred.
+
+## RF-16 implementation evidence recorded - 2026-10-16
+
+The external OpenCode harness implemented the approved RF-16 plan
+(`harness/features/RF-16-Implementation-plan.md`). This entry records the harness's own
+validation evidence only; it is not an independent acceptance or a `Completed and validated`
+claim. The coordinator must still review the worktree against every acceptance criterion,
+and the product owner retains visual acceptance under DEC-034.
+
+Implemented:
+
+- Backend `Vote` model plus Alembic revision `20261016_0005_votes.py` (one immutable vote per
+  `(consultation_id, voter_id)`, composite `(consultation_id, consultation_photo_id)` foreign key
+  backed by a new `(consultation_id, id)` candidate key on `consultation_photos`, aggregate-support
+  index, restrictive foreign keys and populated-downgrade refusal).
+- `backend/app/vote_service.py` (locked submission with `FOR UPDATE`, current-state
+  `AccessOperation.vote` authorization, exact-replay and different-winner conflict semantics).
+- `GET /api/consultations/{id}/my-vote` and `POST /api/consultations/{id}/votes` with trusted-origin
+  protection and private `no-store`/`nosniff`/`no-referrer` headers. The feed now carries a
+  server-derived set-wise `has_voted` boolean.
+- A middleware applying the private headers to every `/api/consultations/` success and error path
+  (F7), plus the bounded F1 preview scope/ownership, F2 one-page-Refresh/bounded-Back-reconcile/
+  detail-entry-suspend, and F4 dialog focus-containment repairs.
+- Frontend vote clients (`fetchMyVote`/`submitVote` + strict guards), `FeedCard` `Voted` marker,
+  and the reader selection/review/cancel/confirm/`Your vote`/reconciliation state machine with
+  optional Private-token support.
+
+Harness validation evidence (this environment):
+
+- Backend against a disposable PostgreSQL 18 (`TEST_DATABASE_URL`): 398 passed, 0 skipped,
+  including new `test_votes.py`, `test_votes_postgres.py` (row-lock races and a seeded terminal
+  writer) and `test_votes_migration.py` (fresh upgrade, `0004 -> head` preservation, direct-SQL
+  uniqueness/same-consultation integrity, empty downgrade and populated-downgrade refusal).
+  Ruff check/format and strict mypy are clean.
+- Frontend at harness handoff: 405 passed. Prettier, ESLint, strict typecheck and production build
+  passed.
+- Isolated built-stack two-account smoke (`harness/validation/rf16_built_smoke.py` +
+  `rf16-compose.override.yaml`, disposable volumes removed afterwards) passes: create/replay/
+  conflict, self-vote denial, viewer-scoped recovery, Home `has_voted`, current-Private vote and
+  revoked-link denial, sign-in recovery and restart persistence, with no aggregate exposure.
+
+No commit, push, deployment, visual inspection or Trello mutation was performed. Owner visual
+acceptance (DEC-034), independent review and the future RF-18/RF-19/RF-20/RF-26/RF-37 consumer
+gates remain open.
+
+## RF-16 plan ready and harness authorized - 2026-10-16
+
+The product owner explicitly approved the settled RF-16 scope, finalized English plan and
+harness launch. `harness/features/RF-16-Implementation-plan.md` is `Ready for implementation`
+with `Remaining questions: None`. It preserves `1A 2A` in DEC-038 and defines the bounded
+vote persistence, API, UI, concurrency, privacy and RF-14 prerequisite work.
+
+Implementation has not yet been validated or declared complete. The pre-launch worktree includes
+only RF-16 grooming/context/plan documentation changes. No commit, push, deployment, visual
+acceptance, service mutation or Trello mutation has occurred.
+
+## RF-16 material choices confirmed - 2026-10-16
+
+The product owner answered `1A 2A`. An already-voted Public consultation remains in its
+normal chronological Home position and gains a server-derived `Voted` marker for that
+account. Opening it identifies only that account's recorded photo as `Your vote` and states
+that the vote cannot be changed. No aggregate, other-voter or winner signal is authorized.
+DEC-038 records the accepted cross-feature behavior.
+
+At that transition RF-16 was `Grooming - awaiting product-owner confirmation`. No material question remained
+identified. The settled scope, transaction/data/API approach, RF-14 prerequisite-debt split,
+future-ticket boundaries and validation direction are recorded in RF-16-grooming.md. No
+implementation plan has been created: the owner must still explicitly approve the settled
+scope and finalization of the self-contained English plan. A harness launch would require a
+later independent request. No implementation, test run, visual inspection, commit, push,
+deployment, service operation or Trello mutation occurred.
+
+## RF-16 grooming started - 2026-10-15
+
+The product owner explicitly selected `RF-16 · Emitir un voto independiente`. The current
+card was consumed read-only from the configured APP - NextPost board:
+https://trello.com/c/rzoUcPdL/17-rf-16-emitir-un-voto-independiente.
+It is open and incomplete in `Próximo · completar el MVP`, with no labels, members,
+dates, checklists, comments, attachments or custom field values. Its complete current
+description, acceptance criteria, metadata and available activity are captured in
+`harness/grooming/RF-16-grooming.md`. RF-16 is `Grooming - questions open`.
+
+Repository-first inspection confirms RF-14 discovery and protected reader detail are
+present, but no Vote model, migration, service, API, aggregate or vote UI exists. The
+recommended unaccepted increment adds one immutable vote per consultation/account, a
+viewer-scoped vote-status read, transactional current-state/access checks under a
+PostgreSQL consultation lock, database uniqueness and same-consultation option integrity,
+plus single-selection/review/cancel/confirm and ambiguous-response recovery in the reader
+detail. Public is reached from Home; the same contract accepts an authorized Private token,
+while RF-26 retains actual Private link entry and post-authentication return.
+
+RF-14's known debt was assessed rather than silently absorbed. F1 stale preview callbacks,
+the F2 hidden-list/Back subset, F4 modal keyboard isolation and F7 protected-path headers
+are necessary prerequisites for RF-16's session, navigation, accessibility and privacy
+requirements. F3 observer fallback, F5 own-detail enlargement and F6 feed cursor grammar
+can remain separately recorded debt. Two material product choices remain: whether already-
+voted Public items remain in Home with a marker, and whether the recovered state identifies
+the account's own selected photo. The grooming recommends keeping normal chronology with
+`Voted` and showing only the account's own recorded choice. No proposal is accepted yet.
+
+RF-14 -> RF-16 -> RF-18 remains the agreed order. RF-18 will consume aggregate-ready vote
+rows; RF-19/RF-20 later transform valid votes into minimum outcomes under the shared terminal
+lock; RF-21, RF-26 and RF-37 retain history, recipient-entry and photo-deletion boundaries.
+No RF-16 implementation plan has been created. Owner answers and a subsequent explicit plan-
+finalization approval are required; harness launch requires a later independent request.
+Only RF-16 grooming and project state changed. Existing work is preserved; no tests, visual
+inspection, commit, push, deployment, service operation or Trello mutation was performed.
+
 ## RF-14 closed by product-owner decision - 2026-10-15
 
 The product owner explicitly clarified `que des por cerrada RF-14 y ya` after accepting the

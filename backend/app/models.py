@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     Numeric,
@@ -198,6 +199,9 @@ class ConsultationPhoto(Base):
             "consultation_id", "ordinal", name="uq_consultation_photos_consultation_ordinal"
         ),
         UniqueConstraint("image_id", name="uq_consultation_photos_image_id"),
+        # Candidate key so a Vote can prove (via a composite foreign key) that its selected
+        # option belongs to the same consultation it references.
+        UniqueConstraint("consultation_id", "id", name="uq_consultation_photos_consultation_id"),
         Index("ix_consultation_photos_consultation_id", "consultation_id"),
         Index("ix_consultation_photos_image_id", "image_id"),
     )
@@ -210,6 +214,36 @@ class ConsultationPhoto(Base):
         Uuid, ForeignKey("photo_upload_images.id", ondelete="RESTRICT"), nullable=False
     )
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class Vote(Base):
+    __tablename__ = "votes"
+    __table_args__ = (
+        UniqueConstraint("consultation_id", "voter_id", name="uq_votes_consultation_voter"),
+        ForeignKeyConstraint(
+            ["consultation_id", "consultation_photo_id"],
+            ["consultation_photos.consultation_id", "consultation_photos.id"],
+            name="fk_votes_consultation_photo",
+            ondelete="RESTRICT",
+        ),
+        Index(
+            "ix_votes_consultation_photo",
+            "consultation_id",
+            "consultation_photo_id",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    consultation_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("consultations.id", ondelete="RESTRICT"), nullable=False
+    )
+    voter_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("accounts.id", ondelete="RESTRICT"), nullable=False
+    )
+    consultation_photo_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

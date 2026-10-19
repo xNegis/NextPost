@@ -55,6 +55,10 @@ function isPositiveInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
 }
 
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
 export interface ConsultationPublished {
   id: string;
   state: "open";
@@ -98,6 +102,7 @@ export interface MyConsultationOpenListItem {
   question: string;
   audience: Audience;
   published_at: string;
+  total_votes: number;
 }
 
 export interface MyConsultationFinalizedListItem {
@@ -134,6 +139,19 @@ export interface MyConsultationFinalizedDetail {
 export type MyConsultationOwnerDetail =
   MyConsultationOpenDetail | MyConsultationFinalizedDetail;
 
+export interface ConsultationResultOption {
+  photo_id: string;
+  ordinal: number;
+  vote_count: number;
+}
+
+export interface ConsultationResult {
+  consultation_id: string;
+  state: "open";
+  total_votes: number;
+  options: ConsultationResultOption[];
+}
+
 export interface FeedPhoto {
   id: string;
   width: number;
@@ -149,12 +167,27 @@ export interface FeedItem {
   state: "open";
   published_at: string;
   is_owner: boolean;
+  has_voted: boolean;
   first_photo: FeedPhoto;
 }
 
 export interface Feed {
   items: FeedItem[];
   next_cursor: string | null;
+}
+
+export type ConsultationEntryRole = "owner" | "reader";
+
+export interface ConsultationEntry {
+  role: ConsultationEntryRole;
+}
+
+export type VoteStatus =
+  { status: "not_voted" } | { status: "voted"; photo_id: string };
+
+export interface VoteRecorded {
+  status: "voted";
+  photo_id: string;
 }
 
 function extractErrorCode(body: unknown): string | null {
@@ -265,12 +298,41 @@ function isOwnerLink(value: unknown): value is OwnerLink {
   return record.token === null || typeof record.token === "string";
 }
 
+function isConsultationEntry(value: unknown): value is ConsultationEntry {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    hasExactKeys(record, ["role"]) &&
+    (record.role === "owner" || record.role === "reader")
+  );
+}
+
+function isVoteRecorded(value: unknown): value is VoteRecorded {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    hasExactKeys(record, ["status", "photo_id"]) &&
+    record.status === "voted" &&
+    isUuid(record.photo_id)
+  );
+}
+
+function isVoteStatus(value: unknown): value is VoteStatus {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  if (hasExactKeys(record, ["status"]) && record.status === "not_voted") {
+    return true;
+  }
+  return isVoteRecorded(value);
+}
+
 const OPEN_LIST_ITEM_KEYS = [
   "id",
   "state",
   "question",
   "audience",
   "published_at",
+  "total_votes",
 ];
 const FINALIZED_LIST_ITEM_KEYS = ["id", "state", "published_at"];
 const OPEN_DETAIL_KEYS = [
@@ -296,7 +358,8 @@ function isMyConsultationOpenListItem(
     record.state === "open" &&
     typeof record.question === "string" &&
     isAudience(record.audience) &&
-    isValidPublishedAt(record.published_at)
+    isValidPublishedAt(record.published_at) &&
+    isNonNegativeInteger(record.total_votes)
   );
 }
 
@@ -383,6 +446,62 @@ function isMyConsultationOwnerDetail(
   return false;
 }
 
+const RESULT_OPTION_KEYS = ["photo_id", "ordinal", "vote_count"];
+
+function isConsultationResultOption(
+  value: unknown,
+): value is ConsultationResultOption {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  if (!hasExactKeys(record, RESULT_OPTION_KEYS)) return false;
+  return (
+    isUuid(record.photo_id) &&
+    isNonNegativeInteger(record.ordinal) &&
+    isNonNegativeInteger(record.vote_count)
+  );
+}
+
+function isConsultationResult(
+  value: unknown,
+  consultationId: string,
+): value is ConsultationResult {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  if (
+    !hasExactKeys(record, [
+      "consultation_id",
+      "state",
+      "total_votes",
+      "options",
+    ])
+  ) {
+    return false;
+  }
+  if (
+    !isUuid(record.consultation_id) ||
+    record.consultation_id !== consultationId ||
+    record.state !== "open" ||
+    !isNonNegativeInteger(record.total_votes)
+  ) {
+    return false;
+  }
+  if (
+    !Array.isArray(record.options) ||
+    !record.options.every(isConsultationResultOption)
+  ) {
+    return false;
+  }
+  const photoIds = record.options.map((option) => option.photo_id);
+  const ordinals = record.options.map((option) => option.ordinal);
+  if (new Set(photoIds).size !== photoIds.length) return false;
+  if (new Set(ordinals).size !== ordinals.length) return false;
+  const sum = record.options.reduce(
+    (total, option) => total + option.vote_count,
+    0,
+  );
+  return sum === record.total_votes;
+}
+
 const FEED_ITEM_KEYS = [
   "id",
   "owner_nickname",
@@ -392,6 +511,7 @@ const FEED_ITEM_KEYS = [
   "state",
   "published_at",
   "is_owner",
+  "has_voted",
   "first_photo",
 ];
 const FEED_PHOTO_KEYS = ["id", "width", "height"];
@@ -421,6 +541,7 @@ function isFeedItem(value: unknown): value is FeedItem {
     record.state === "open" &&
     isValidPublishedAt(record.published_at) &&
     typeof record.is_owner === "boolean" &&
+    typeof record.has_voted === "boolean" &&
     isFeedPhoto(record.first_photo)
   );
 }
@@ -530,6 +651,33 @@ export async function fetchConsultationDetail(
   return body;
 }
 
+export async function fetchConsultationEntry(
+  consultationId: string,
+  token: string | null = null,
+): Promise<ConsultationEntry> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${API_BASE_URL}/api/consultations/${consultationId}/entry`,
+      requestOptions(token),
+    );
+  } catch {
+    throw new ApiError("network");
+  }
+
+  const body: unknown = await response.json().catch(() => null);
+  if (response.status === 401) {
+    throw new ApiError("unauthenticated");
+  }
+  if (!response.ok) {
+    throw new ApiError(extractErrorCode(body) ?? "unavailable");
+  }
+  if (!isConsultationEntry(body)) {
+    throw new ApiError("unavailable");
+  }
+  return body;
+}
+
 export async function fetchFeed(
   limit = 20,
   cursor: string | null = null,
@@ -589,6 +737,82 @@ export async function fetchConsultationPhotoUrl(
   return URL.createObjectURL(blob);
 }
 
+export async function fetchMyVote(
+  consultationId: string,
+  token: string | null = null,
+): Promise<VoteStatus> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${API_BASE_URL}/api/consultations/${consultationId}/my-vote`,
+      requestOptions(token),
+    );
+  } catch {
+    throw new ApiError("network");
+  }
+
+  const body: unknown = await response.json().catch(() => null);
+  if (response.status === 401) {
+    throw new ApiError("unauthenticated");
+  }
+  if (!response.ok) {
+    throw new ApiError(extractErrorCode(body) ?? "unavailable");
+  }
+  if (!isVoteStatus(body)) {
+    throw new ApiError("unavailable");
+  }
+  return body;
+}
+
+export async function submitVote(
+  consultationId: string,
+  photoId: string,
+  token: string | null = null,
+): Promise<VoteRecorded> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${API_BASE_URL}/api/consultations/${consultationId}/votes`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...privateLinkHeaders(token),
+        },
+        credentials: "include",
+        body: JSON.stringify({ photo_id: photoId }),
+      },
+    );
+  } catch {
+    throw new ApiError("network");
+  }
+
+  const body: unknown = await response.json().catch(() => null);
+  if (response.status === 401) {
+    throw new ApiError("unauthenticated");
+  }
+  if (response.status === 422) {
+    const code = extractErrorCode(body);
+    if (code === "invalid_selection") {
+      throw new ApiError("invalid_selection");
+    }
+    throw new ApiError("validation_error", extractFieldErrors(body));
+  }
+  if (response.status === 409) {
+    const code = extractErrorCode(body);
+    if (code === "vote_already_recorded") {
+      throw new ApiError("vote_already_recorded");
+    }
+  }
+  if (!response.ok) {
+    throw new ApiError(extractErrorCode(body) ?? "unavailable");
+  }
+  if (!isVoteRecorded(body)) {
+    throw new ApiError("unavailable");
+  }
+  return body;
+}
+
 export async function fetchMyConsultations(
   state: MyConsultationState,
   limit = 20,
@@ -644,6 +868,32 @@ export async function fetchMyConsultation(
     throw new ApiError(extractErrorCode(body) ?? "unavailable");
   }
   if (!isMyConsultationOwnerDetail(body) || body.id !== consultationId) {
+    throw new ApiError("unavailable");
+  }
+  return body;
+}
+
+export async function fetchMyConsultationResults(
+  consultationId: string,
+): Promise<ConsultationResult> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${API_BASE_URL}/api/my-consultations/${consultationId}/results`,
+      { credentials: "include" },
+    );
+  } catch {
+    throw new ApiError("network");
+  }
+
+  const body: unknown = await response.json().catch(() => null);
+  if (response.status === 401) {
+    throw new ApiError("unauthenticated");
+  }
+  if (!response.ok) {
+    throw new ApiError(extractErrorCode(body) ?? "unavailable");
+  }
+  if (!isConsultationResult(body, consultationId)) {
     throw new ApiError("unavailable");
   }
   return body;

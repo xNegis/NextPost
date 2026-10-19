@@ -11,7 +11,12 @@ import { usePhotoUploader } from "./usePhotoUploader";
 import type { PhotoItem } from "./usePhotoUploader";
 import type { ApplicationConfig } from "./photoApi";
 
-const ACCEPT_TYPES = "image/jpeg,image/png,image/webp,image/heic,image/heif";
+// Keep JPEG first and do not explicitly request HEIC/HEIF. WebKit can still let
+// an iPhone owner select those gallery photos, but hands the page a compatible
+// JPEG representation instead of forcing the original HEIF container through
+// the web upload path. The backend remains authoritative and still accepts
+// actual HEIC/HEIF content from clients that provide it.
+const ACCEPT_TYPES = "image/jpeg,image/png,image/webp";
 
 export interface PhotoUploaderSnapshot {
   items: PhotoItem[];

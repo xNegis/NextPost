@@ -39,6 +39,7 @@ function makeItem(index: number): FeedItem {
     state: "open",
     published_at: "2026-09-28T12:00:00Z",
     is_owner: false,
+    has_voted: false,
     first_photo: {
       id: `223e4567-e89b-12d3-a456-4266${hex}`,
       width: 64,
@@ -51,6 +52,16 @@ function makeCard(id: string): HTMLElement {
   const element = document.createElement("div");
   element.setAttribute("data-feed-card", id);
   return element;
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
 }
 
 function fireVisibility(
@@ -195,5 +206,65 @@ describe("useFeedPreviews", () => {
     await waitFor(() =>
       expect(result.current.stateFor(items[0].id).kind).toBe("ready"),
     );
+  });
+
+  it("ignores a preview 401 received after unmount", async () => {
+    const request = deferred<string>();
+    photoMock.mockReturnValue(request.promise);
+    const lost = vi.fn();
+    const items = [makeItem(0)];
+
+    const { result, unmount } = renderHook(() =>
+      useFeedPreviews(items, true, lost),
+    );
+    const element = makeCard(items[0].id);
+    act(() => result.current.observe(items[0].id, element));
+    fireVisibility([{ element, isIntersecting: true }]);
+    await waitFor(() => expect(photoMock).toHaveBeenCalledTimes(1));
+
+    act(() => unmount());
+    await act(async () => {
+      request.reject(new ApiError("unauthenticated"));
+      await Promise.resolve();
+    });
+    expect(lost).not.toHaveBeenCalled();
+  });
+
+  it("revokes an old preview response after a newer visibility scope", async () => {
+    const old = deferred<string>();
+    const current = deferred<string>();
+    photoMock
+      .mockReturnValueOnce(old.promise)
+      .mockReturnValueOnce(current.promise);
+    const revoke = vi.spyOn(URL, "revokeObjectURL");
+    const items = [makeItem(0)];
+
+    const { result, rerender } = renderHook(
+      ({ active }) => useFeedPreviews(items, active, vi.fn()),
+      { initialProps: { active: true } },
+    );
+    const element = makeCard(items[0].id);
+    act(() => result.current.observe(items[0].id, element));
+    fireVisibility([{ element, isIntersecting: true }]);
+
+    rerender({ active: false });
+    rerender({ active: true });
+    act(() => result.current.observe(items[0].id, element));
+    fireVisibility([{ element, isIntersecting: true }]);
+    await waitFor(() => expect(photoMock).toHaveBeenCalledTimes(2));
+
+    await act(async () => {
+      current.resolve("blob:new");
+    });
+    await act(async () => {
+      old.resolve("blob:old");
+    });
+
+    expect(result.current.stateFor(items[0].id)).toEqual({
+      kind: "ready",
+      url: "blob:new",
+    });
+    expect(revoke).toHaveBeenCalledWith("blob:old");
+    revoke.mockRestore();
   });
 });

@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 
 import { fetchSession, signOut, type AccountSummary } from "./api";
 import { ConsultationComposer } from "./ConsultationComposer";
+import { DirectConsultationEntry } from "./DirectConsultationEntry";
 import { HomeFeed } from "./HomeFeed";
 import { MyConsultations } from "./MyConsultations";
 import { Navigation, type Destination } from "./Navigation";
 import { ProfileView } from "./ProfileView";
 import { RegistrationForm } from "./RegistrationForm";
 import { SignInForm } from "./SignInForm";
+import { useConsultationRoute } from "./useConsultationRoute";
 
 type AppPhase =
   | { kind: "checking" }
@@ -15,6 +17,29 @@ type AppPhase =
   | { kind: "register" }
   | { kind: "authenticated"; account: AccountSummary }
   | { kind: "unavailable" };
+
+const DEFAULT_AUTH_SUMMARY =
+  "Ask for opinions on your photos and vote on other people's consultations.";
+
+function InvalidConsultationRoute({ onGoHome }: { onGoHome: () => void }) {
+  return (
+    <section className="card" aria-labelledby="invalid-route-title">
+      <p className="eyebrow">NextPost</p>
+      <h1 id="invalid-route-title">Consultation</h1>
+      <div
+        className="status status--unavailable"
+        role="status"
+        aria-live="polite"
+      >
+        <span className="status__dot" aria-hidden="true" />
+        This consultation is unavailable.
+      </div>
+      <button type="button" className="secondary-button" onClick={onGoHome}>
+        Go to Home
+      </button>
+    </section>
+  );
+}
 
 export function App() {
   const [phase, setPhase] = useState<AppPhase>({ kind: "checking" });
@@ -27,6 +52,8 @@ export function App() {
   const [selectedMyConsultationId, setSelectedMyConsultationId] = useState<
     string | null
   >(null);
+
+  const { route, navigateToRoot } = useConsultationRoute();
 
   const checkSession = useCallback(() => {
     let active = true;
@@ -89,10 +116,19 @@ export function App() {
       setPendingNav(dest);
       return;
     }
+    navigateToRoot();
     if (dest === "my") {
       setSelectedMyConsultationId(null);
     }
     setDestination(dest);
+  }
+
+  function handleGoHome() {
+    navigateToRoot();
+    setPendingNav(null);
+    setComposerDirty(false);
+    setSelectedMyConsultationId(null);
+    setDestination("home");
   }
 
   function handleComposerNavigate(dest: Destination) {
@@ -116,47 +152,74 @@ export function App() {
     setDestination("create");
   }
 
+  if (route.kind === "invalid") {
+    return (
+      <main className="page">
+        <InvalidConsultationRoute onGoHome={handleGoHome} />
+      </main>
+    );
+  }
+
   if (phase.kind === "authenticated") {
+    const isDirect = route.kind !== "root";
     return (
       <div className="page page--authenticated">
-        <Navigation active={destination} onSelect={handleNavigation} />
+        <Navigation
+          active={isDirect ? undefined : destination}
+          onSelect={handleNavigation}
+        />
         <main className="app-content">
-          {destination === "home" && (
-            <HomeFeed onSessionLost={returnToSignIn} />
+          {route.kind === "root" && (
+            <>
+              {destination === "home" && (
+                <HomeFeed onSessionLost={returnToSignIn} />
+              )}
+
+              {destination === "create" && (
+                <ConsultationComposer
+                  onNavigate={handleComposerNavigate}
+                  onSessionLost={returnToSignIn}
+                  onDirtyChange={setComposerDirty}
+                  pendingNav={pendingNav}
+                  onCancelNavigation={() => setPendingNav(null)}
+                  onViewInMyConsultations={handleViewInMyConsultations}
+                />
+              )}
+
+              {destination === "my" && (
+                <MyConsultations
+                  selectedId={selectedMyConsultationId}
+                  onSelectionChange={setSelectedMyConsultationId}
+                  onSessionLost={returnToSignIn}
+                  onCreate={handleCreateConsultation}
+                />
+              )}
+
+              {destination === "profile" && (
+                <ProfileView
+                  onSessionLost={returnToSignIn}
+                  onSignOut={handleSignOut}
+                  signingOut={signingOut}
+                  signOutFailed={signOutFailed}
+                />
+              )}
+            </>
           )}
 
-          {destination === "create" && (
-            <ConsultationComposer
-              onNavigate={handleComposerNavigate}
+          {route.kind === "consultation" && (
+            <DirectConsultationEntry
+              key={`${route.destination.consultationId}:${route.destination.token ?? ""}`}
+              destination={route.destination}
+              onGoHome={handleGoHome}
               onSessionLost={returnToSignIn}
-              onDirtyChange={setComposerDirty}
-              pendingNav={pendingNav}
-              onCancelNavigation={() => setPendingNav(null)}
-              onViewInMyConsultations={handleViewInMyConsultations}
-            />
-          )}
-
-          {destination === "my" && (
-            <MyConsultations
-              selectedId={selectedMyConsultationId}
-              onSelectionChange={setSelectedMyConsultationId}
-              onSessionLost={returnToSignIn}
-              onCreate={handleCreateConsultation}
-            />
-          )}
-
-          {destination === "profile" && (
-            <ProfileView
-              onSessionLost={returnToSignIn}
-              onSignOut={handleSignOut}
-              signingOut={signingOut}
-              signOutFailed={signOutFailed}
             />
           )}
         </main>
       </div>
     );
   }
+
+  const consultationEntry = route.kind === "consultation";
 
   return (
     <main className="page">
@@ -198,8 +261,9 @@ export function App() {
           <p className="eyebrow">NextPost</p>
           <h1 id="signin-title">Sign in</h1>
           <p className="summary">
-            Ask for opinions on your photos and vote on other people&apos;s
-            consultations.
+            {consultationEntry
+              ? "Sign in to view this consultation."
+              : DEFAULT_AUTH_SUMMARY}
           </p>
           <SignInForm
             onSignedIn={enterAuthenticated}
@@ -213,8 +277,9 @@ export function App() {
           <p className="eyebrow">NextPost</p>
           <h1 id="register-title">Create your account</h1>
           <p className="summary">
-            Ask for opinions on your photos and vote on other people&apos;s
-            consultations.
+            {consultationEntry
+              ? "Create your account to view this consultation."
+              : DEFAULT_AUTH_SUMMARY}
           </p>
           <RegistrationForm
             onRegistered={enterAuthenticated}

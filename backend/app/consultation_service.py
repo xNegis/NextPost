@@ -42,6 +42,7 @@ from app.models import (
     PhotoUploadImage,
     PhotoUploadSession,
     PhotoUploadSessionState,
+    Vote,
 )
 from app.photo_service import (
     ImageUnavailableError,
@@ -146,6 +147,7 @@ class MyConsultationOpenItem:
     question: str
     audience: str
     published_at: datetime
+    total_votes: int
 
 
 @dataclass(frozen=True)
@@ -169,6 +171,21 @@ class MyConsultationFinalizedDetail:
 
 
 @dataclass(frozen=True)
+class ConsultationResultOption:
+    photo_id: str
+    ordinal: int
+    vote_count: int
+
+
+@dataclass(frozen=True)
+class ConsultationResult:
+    consultation_id: str
+    state: Literal["open"]
+    total_votes: int
+    options: list[ConsultationResultOption]
+
+
+@dataclass(frozen=True)
 class FeedPhoto:
     id: str
     width: int
@@ -185,6 +202,7 @@ class FeedItem:
     state: Literal["open"]
     published_at: datetime
     is_owner: bool
+    has_voted: bool
     first_photo: FeedPhoto
 
 
@@ -575,6 +593,32 @@ def read_consultation_detail(
     return _build_open_detail(db, consultation)
 
 
+@dataclass(frozen=True)
+class EntryRole:
+    role: Literal["owner", "reader"]
+
+
+def read_entry_role(
+    db: Session,
+    consultation_id: uuid.UUID,
+    account_id: uuid.UUID,
+    presented_token: str | None,
+) -> EntryRole:
+    """Return the authenticated viewer's role for a direct shared-link entry (RF-26).
+
+    This is navigation metadata only: it reuses the exact RF-09 strict-open authorization used by
+    detail/media/vote so an unknown, revoked, replaced or terminal target is the generic unavailable
+    result and a Private capability never grants ownership. It performs no storage, photo or
+    vote/result work, and the returned role authorizes nothing by itself.
+    """
+    consultation = db.get(Consultation, consultation_id)
+    if consultation is None:
+        raise ConsultationUnavailableError()
+    _authorize(consultation, account_id, presented_token)
+    role: Literal["owner", "reader"] = "owner" if consultation.owner_id == account_id else "reader"
+    return EntryRole(role=role)
+
+
 def read_my_consultation(
     db: Session,
     consultation_id: uuid.UUID,
@@ -664,6 +708,7 @@ def list_my_consultations(
 
     items: list[MyConsultationOpenItem | MyConsultationFinalizedItem] = []
     page_rows = rows[:limit]
+    total_votes = _open_vote_totals(db, [row.id for row in page_rows])
     for row in page_rows:
         if state == "open":
             items.append(
@@ -673,6 +718,7 @@ def list_my_consultations(
                     question=row.question,
                     audience=row.audience,
                     published_at=_as_naive_utc(row.published_at),
+                    total_votes=total_votes.get(row.id, 0),
                 )
             )
         else:
@@ -689,6 +735,70 @@ def list_my_consultations(
         last = page_rows[-1]
         next_cursor = encode_cursor(state, _as_naive_utc(last.published_at), last.id)
     return MyConsultationListResult(items=items, next_cursor=next_cursor)
+
+
+def _open_vote_totals(db: Session, consultation_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
+    """Return the current total Vote count per consultation in one set-wise query."""
+    if not consultation_ids:
+        return {}
+    rows = db.execute(
+        select(Vote.consultation_id, func.count())
+        .where(Vote.consultation_id.in_(consultation_ids))
+        .group_by(Vote.consultation_id)
+    ).all()
+    return {consultation_id: int(count) for consultation_id, count in rows}
+
+
+def read_my_consultation_results(
+    db: Session,
+    consultation_id: uuid.UUID,
+    account_id: uuid.UUID,
+) -> ConsultationResult:
+    """Return the author-only live aggregate for one owned Open consultation.
+
+    Ownership and the Open lifecycle are checked before any aggregate work; unknown, non-owner,
+    deleted and removed targets collapse to the generic unavailable result (DEC-028). A single
+    set-wise ``LEFT OUTER JOIN`` from every immutable photo to its votes preserves zero-vote
+    options in ordinal order, so the sum of option counts always equals the total.
+    """
+    row = db.execute(
+        select(Consultation.id, Consultation.owner_id, Consultation.state).where(
+            Consultation.id == consultation_id
+        )
+    ).first()
+    if row is None or row.owner_id != account_id or row.state != ConsultationState.open:
+        raise ConsultationUnavailableError()
+
+    option_rows = db.execute(
+        select(
+            ConsultationPhoto.id,
+            ConsultationPhoto.ordinal,
+            func.count(Vote.id),
+        )
+        .outerjoin(
+            Vote,
+            and_(
+                Vote.consultation_id == ConsultationPhoto.consultation_id,
+                Vote.consultation_photo_id == ConsultationPhoto.id,
+            ),
+        )
+        .where(ConsultationPhoto.consultation_id == consultation_id)
+        .group_by(ConsultationPhoto.id, ConsultationPhoto.ordinal)
+        .order_by(ConsultationPhoto.ordinal)
+    ).all()
+
+    options = [
+        ConsultationResultOption(
+            photo_id=str(photo_id), ordinal=int(ordinal), vote_count=int(count)
+        )
+        for photo_id, ordinal, count in option_rows
+    ]
+    return ConsultationResult(
+        consultation_id=str(row.id),
+        state="open",
+        total_votes=sum(option.vote_count for option in options),
+        options=options,
+    )
 
 
 def _first_feed_photos(
@@ -790,6 +900,18 @@ def list_feed(
     }
     first_photos = _first_feed_photos(db, consultation_ids)
 
+    voted_ids: set[uuid.UUID] = set()
+    if consultation_ids:
+        voted_ids = {
+            consultation_id
+            for (consultation_id,) in db.execute(
+                select(Vote.consultation_id).where(
+                    Vote.voter_id == account_id,
+                    Vote.consultation_id.in_(consultation_ids),
+                )
+            ).all()
+        }
+
     items: list[FeedItem] = []
     for row in page_rows:
         first_photo = first_photos.get(row.id)
@@ -806,6 +928,7 @@ def list_feed(
                 state="open",
                 published_at=_as_naive_utc(row.published_at),
                 is_owner=row.owner_id == account_id,
+                has_voted=row.id in voted_ids,
                 first_photo=first_photo,
             )
         )

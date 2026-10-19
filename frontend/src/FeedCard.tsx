@@ -55,6 +55,9 @@ export function FeedCard({
       {item.is_owner && (
         <span className="feed-card__own">Your consultation</span>
       )}
+      {item.has_voted && !item.is_owner && (
+        <span className="feed-card__voted">Voted</span>
+      )}
       {item.context_excerpt !== null && (
         <p className="feed-card__excerpt" dir="auto">
           {item.context_excerpt}
@@ -63,37 +66,41 @@ export function FeedCard({
 
       <div className="feed-card__preview">
         <span className="feed-card__photo-label">Photo 1</span>
-        {preview.kind === "idle" && (
-          <div
-            className="feed-card__photo feed-card__photo--idle"
-            aria-hidden="true"
-          />
-        )}
-        {preview.kind === "loading" && (
-          <div
-            className="status feed-card__photo-status"
-            role="status"
-            aria-live="polite"
-          >
-            <span className="status__dot" aria-hidden="true" />
-            Loading photo…
-          </div>
-        )}
-        {preview.kind === "ready" && (
-          <img className="feed-card__photo" src={preview.url} alt="Photo 1" />
-        )}
-        {preview.kind === "error" && (
-          <div className="feed-card__photo-error" role="alert">
-            <p>Could not load the photo.</p>
-            <button
-              type="button"
-              className="secondary-button feed-card__photo-retry"
-              onClick={() => retry(item.id)}
+        <div
+          className="feed-card__photo-frame"
+          style={{
+            aspectRatio: `${item.first_photo.width} / ${item.first_photo.height}`,
+          }}
+        >
+          {preview.kind === "idle" && (
+            <div className="feed-card__photo--idle" aria-hidden="true" />
+          )}
+          {preview.kind === "loading" && (
+            <div
+              className="status feed-card__photo-status"
+              role="status"
+              aria-live="polite"
             >
-              Retry photo
-            </button>
-          </div>
-        )}
+              <span className="status__dot" aria-hidden="true" />
+              Loading photo…
+            </div>
+          )}
+          {preview.kind === "ready" && (
+            <img className="feed-card__photo" src={preview.url} alt="Photo 1" />
+          )}
+          {preview.kind === "error" && (
+            <div className="feed-card__photo-error" role="alert">
+              <p>Could not load the photo.</p>
+              <button
+                type="button"
+                className="secondary-button feed-card__photo-retry"
+                onClick={() => retry(item.id)}
+              >
+                Retry photo
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <button

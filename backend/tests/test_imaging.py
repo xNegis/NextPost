@@ -52,6 +52,30 @@ def _heif() -> bytes:
     return _bytes(image, format="HEIF")
 
 
+def _heif_with_companion_image(*, sequence: bool = False) -> bytes:
+    first = Image.new("RGB", (48, 32), (180, 90, 30))
+    primary = Image.new("RGB", (24, 16), (30, 90, 180))
+    content = bytearray(
+        _bytes(
+            first,
+            format="HEIF",
+            save_all=True,
+            append_images=[primary],
+            primary_index=1,
+        )
+    )
+    if sequence:
+        # Switch the HEIC still-image major brand to its sequence equivalent.
+        content[8:12] = b"hevc"
+    return bytes(content)
+
+
+def _mpo() -> bytes:
+    primary = Image.new("RGB", (60, 40), (180, 90, 30))
+    companion = Image.new("RGB", (30, 20), (30, 90, 180))
+    return _bytes(primary, format="MPO", save_all=True, append_images=[companion])
+
+
 def _decoded(content: bytes) -> Image.Image:
     image = Image.open(io.BytesIO(content))
     image.load()
@@ -74,6 +98,28 @@ def test_heic_and_heif_decode_to_jpeg() -> None:
 
     assert (result.width, result.height) == (48, 32)
     assert _decoded(result.content).format == "JPEG"
+
+
+def test_heif_with_companion_images_uses_the_primary_still() -> None:
+    result = process_image(_heif_with_companion_image(), MAX_PIXELS, MAX_EDGE)
+
+    assert (result.width, result.height) == (24, 16)
+    assert _decoded(result.content).format == "JPEG"
+
+
+def test_heif_image_sequence_is_rejected() -> None:
+    with pytest.raises(ImageProcessingError) as exc:
+        process_image(_heif_with_companion_image(sequence=True), MAX_PIXELS, MAX_EDGE)
+    assert exc.value.code == "animated_input"
+
+
+def test_mpo_uses_the_primary_jpeg_and_discards_companion_images() -> None:
+    result = process_image(_mpo(), MAX_PIXELS, MAX_EDGE)
+
+    assert (result.width, result.height) == (60, 40)
+    decoded = _decoded(result.content)
+    assert decoded.format == "JPEG"
+    assert getattr(decoded, "n_frames", 1) == 1
 
 
 def test_exif_orientation_is_applied() -> None:

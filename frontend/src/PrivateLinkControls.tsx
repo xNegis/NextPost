@@ -1,13 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type PrivateLinkStatus = "active" | "disabled";
 
 interface PrivateLinkControlsProps {
   status: PrivateLinkStatus;
-  link: string | null;
   pending: boolean;
   error?: string;
-  onCopy: (link: string) => void;
   onDisable: () => void;
   onReplace: () => void;
   onCreateNew: () => void;
@@ -18,10 +16,8 @@ type Confirmation = "disable" | "replace" | null;
 
 export function PrivateLinkControls({
   status,
-  link,
   pending,
   error,
-  onCopy,
   onDisable,
   onReplace,
   onCreateNew,
@@ -33,10 +29,6 @@ export function PrivateLinkControls({
   useEffect(() => {
     if (confirmation !== null) confirmationActionRef.current?.focus();
   }, [confirmation]);
-
-  const handleCopy = useCallback(() => {
-    if (link !== null) onCopy(link);
-  }, [link, onCopy]);
 
   if (status === "disabled") {
     return (
@@ -138,16 +130,7 @@ export function PrivateLinkControls({
     <div className="private-link-controls">
       <h3>Private link</h3>
       <p className="private-link-controls__status">Current link</p>
-      {link !== null && <p className="private-link-controls__link">{link}</p>}
       <div className="private-link-controls__actions">
-        <button
-          type="button"
-          className="secondary-button"
-          disabled={pending || link === null}
-          onClick={handleCopy}
-        >
-          Copy link
-        </button>
         <button
           type="button"
           className="secondary-button"

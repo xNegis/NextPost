@@ -13,6 +13,7 @@ import {
   disableOwnerLink,
   fetchConsultationPhotoUrl,
   fetchMyConsultation,
+  fetchMyConsultationResults,
   fetchOwnerLink,
 } from "./consultationApi";
 import { OwnerConsultationDetail } from "./OwnerConsultationDetail";
@@ -25,6 +26,7 @@ vi.mock("./consultationApi", async (importOriginal) => {
     fetchMyConsultation: vi.fn(),
     fetchConsultationPhotoUrl: vi.fn(),
     fetchOwnerLink: vi.fn(),
+    fetchMyConsultationResults: vi.fn(),
     disableOwnerLink: vi.fn(),
     replaceOwnerLink: vi.fn(),
     createOwnerLink: vi.fn(),
@@ -34,6 +36,7 @@ vi.mock("./consultationApi", async (importOriginal) => {
 const fetchDetailMock = vi.mocked(fetchMyConsultation);
 const fetchPhotoUrlMock = vi.mocked(fetchConsultationPhotoUrl);
 const fetchOwnerLinkMock = vi.mocked(fetchOwnerLink);
+const fetchResultsMock = vi.mocked(fetchMyConsultationResults);
 const disableOwnerLinkMock = vi.mocked(disableOwnerLink);
 
 const CONSULTATION_ID = "123e4567-e89b-12d3-a456-426614174000";
@@ -66,6 +69,12 @@ beforeEach(() => {
     generation: "1",
     token: ACTIVE_TOKEN,
   });
+  fetchResultsMock.mockResolvedValue({
+    consultation_id: CONSULTATION_ID,
+    state: "open",
+    total_votes: 0,
+    options: [{ photo_id: "photo-1", ordinal: 0, vote_count: 0 }],
+  });
 });
 
 function renderReturning() {
@@ -79,7 +88,63 @@ function renderReturning() {
   );
 }
 
+function renderVariant(variant: "success" | "returning" | "home" | "direct") {
+  return render(
+    <OwnerConsultationDetail
+      consultationId={CONSULTATION_ID}
+      variant={variant}
+      onBack={vi.fn()}
+      onSessionLost={vi.fn()}
+    />,
+  );
+}
+
 describe("OwnerConsultationDetail", () => {
+  it.each(["success", "returning", "home", "direct"] as const)(
+    "offers the token-free Public URL in the %s owner context",
+    async (variant) => {
+      renderVariant(variant);
+
+      expect(
+        await screen.findByRole("heading", { name: "Share consultation" }),
+      ).toBeInTheDocument();
+      expect(screen.getByLabelText("Consultation link")).toHaveValue(
+        `${window.location.origin}/consultations/${CONSULTATION_ID}`,
+      );
+      expect(screen.getByRole("button", { name: "Copy link" })).toBeEnabled();
+    },
+  );
+
+  it("offers only the current active Private fragment URL", async () => {
+    fetchDetailMock.mockResolvedValue({ ...openDetail, audience: "private" });
+    renderReturning();
+
+    expect(await screen.findByLabelText("Consultation link")).toHaveValue(
+      `${window.location.origin}/consultations/${CONSULTATION_ID}#access=${ACTIVE_TOKEN}`,
+    );
+    expect(fetchOwnerLinkMock).toHaveBeenCalledWith(CONSULTATION_ID);
+  });
+
+  it("exposes no shareable URL while the Private link is disabled", async () => {
+    fetchDetailMock.mockResolvedValue({ ...openDetail, audience: "private" });
+    fetchOwnerLinkMock.mockResolvedValue({
+      active: false,
+      generation: "2",
+      token: null,
+    });
+    renderReturning();
+
+    expect(
+      await screen.findByText("Share is unavailable right now."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Copy link" }),
+    ).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "Create new link" }),
+    ).toBeEnabled();
+  });
+
   it("releases partial URLs immediately on unmount and ignores the late 401", async () => {
     const revoke = vi
       .spyOn(URL, "revokeObjectURL")
@@ -195,6 +260,7 @@ describe("OwnerConsultationDetail", () => {
     expect(screen.getByText("Finalized")).toBeInTheDocument();
     expect(fetchOwnerLinkMock).not.toHaveBeenCalled();
     expect(fetchPhotoUrlMock).not.toHaveBeenCalled();
+    expect(fetchResultsMock).not.toHaveBeenCalled();
   });
 
   it("shows a generic unavailable view for unknown or non-owner targets", async () => {
@@ -365,5 +431,68 @@ describe("OwnerConsultationDetail", () => {
       />,
     );
     await waitFor(() => expect(onSessionLost).toHaveBeenCalledTimes(1));
+  });
+
+  it("shows the total and per-photo counts for an open consultation", async () => {
+    fetchResultsMock.mockResolvedValue({
+      consultation_id: CONSULTATION_ID,
+      state: "open",
+      total_votes: 1,
+      options: [{ photo_id: "photo-1", ordinal: 0, vote_count: 1 }],
+    });
+    renderReturning();
+    await waitFor(() => expect(screen.getAllByText("1 vote")).toHaveLength(2));
+    expect(
+      screen.getByText(
+        "These are participant opinions and may change while your consultation is open.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("shows a retryable error when results fail to load", async () => {
+    fetchResultsMock.mockRejectedValue(new Error("offline"));
+    renderReturning();
+    await waitFor(() =>
+      expect(screen.getByText("Could not load results.")).toBeInTheDocument(),
+    );
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+  });
+
+  it("shows a distinct unavailable-results state without stale counts", async () => {
+    fetchResultsMock.mockRejectedValue(
+      new ApiError("consultation_unavailable"),
+    );
+    renderReturning();
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          "Results are unavailable. Refresh the consultation to check its current state.",
+        ),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.queryByText("0 votes")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Refresh consultation" }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not restart photo loads when results refresh", async () => {
+    vi.useFakeTimers();
+    try {
+      renderReturning();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      expect(fetchPhotoUrlMock).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5000);
+      });
+      expect(fetchResultsMock).toHaveBeenCalledTimes(2);
+      expect(fetchPhotoUrlMock).toHaveBeenCalledTimes(1);
+      expect(fetchDetailMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

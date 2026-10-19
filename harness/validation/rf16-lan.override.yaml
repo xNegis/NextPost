@@ -1,0 +1,15 @@
+# Disposable RF-16 review instance exposed only on the local network.
+# Current Wi-Fi address: 192.168.1.130
+services:
+  backend:
+    environment:
+      CORS_ORIGINS: http://localhost:14175,http://192.168.1.130:14175
+    ports: !override
+      - "0.0.0.0:18002:8000"
+
+  frontend:
+    build:
+      args:
+        VITE_API_BASE_URL: http://192.168.1.130:18002
+    ports: !override
+      - "0.0.0.0:14175:80"

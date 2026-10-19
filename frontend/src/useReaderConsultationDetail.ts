@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiError } from "./api";
-import { PUBLIC } from "./audience";
 import {
   fetchConsultationDetail,
   fetchConsultationPhotoUrl,
@@ -22,16 +21,22 @@ export interface ReaderConsultationDetailController {
 export function useReaderConsultationDetail(
   consultationId: string,
   onSessionLost: () => void,
+  token: string | null = null,
 ): ReaderConsultationDetailController {
   const [phase, setPhase] = useState<ReaderPhase>({ kind: "loading" });
 
   const generationRef = useRef(0);
   const photoUrlsRef = useRef<string[]>([]);
   const onSessionLostRef = useRef(onSessionLost);
+  const tokenRef = useRef(token);
 
   useEffect(() => {
     onSessionLostRef.current = onSessionLost;
   }, [onSessionLost]);
+
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
 
   const revokeUrls = useCallback((urls: string[]) => {
     for (const url of urls) URL.revokeObjectURL(url);
@@ -54,13 +59,9 @@ export function useReaderConsultationDetail(
     revokeAll();
     setPhase({ kind: "loading" });
 
-    void fetchConsultationDetail(consultationId)
+    void fetchConsultationDetail(consultationId, tokenRef.current)
       .then(async (detail) => {
         if (generation !== generationRef.current) return;
-        if (detail.audience !== PUBLIC) {
-          setPhase({ kind: "unavailable" });
-          return;
-        }
 
         const urls: string[] = [];
         photoUrlsRef.current = urls;
@@ -69,6 +70,7 @@ export function useReaderConsultationDetail(
             const url = await fetchConsultationPhotoUrl(
               consultationId,
               photo.id,
+              tokenRef.current,
             );
             if (generation !== generationRef.current) {
               URL.revokeObjectURL(url);
@@ -122,7 +124,7 @@ export function useReaderConsultationDetail(
         }
         setPhase({ kind: "error" });
       });
-  }, [consultationId, isSessionLost, revokeAll, revokeUrls]);
+  }, [consultationId, isSessionLost, revokeAll, revokeUrls, token]);
 
   useEffect(() => {
     load();
