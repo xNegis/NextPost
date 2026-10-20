@@ -2,17 +2,21 @@ import { PRIVATE } from "./audience";
 import { ConsultationTextDisplay } from "./ConsultationTextDisplay";
 import { buildConsultationUrl } from "./consultationLink";
 import { formatPublishedDate } from "./consultationDate";
+import type { MyConsultationState } from "./consultationApi";
+import { DeleteConsultationDialog } from "./DeleteConsultationDialog";
 import { PrivateLinkControls } from "./PrivateLinkControls";
 import { ShareConsultation } from "./ShareConsultation";
 import { useOwnerConsultationDetail } from "./useOwnerConsultationDetail";
 import { useOwnerConsultationResults } from "./useOwnerConsultationResults";
 import { voteCountLabel } from "./voteCount";
+import { useState } from "react";
 
 interface OwnerConsultationDetailProps {
   consultationId: string;
   variant: "success" | "returning" | "home" | "direct";
   onBack: () => void;
   onViewInMyConsultations?: () => void;
+  onDeleted?: (state: MyConsultationState) => void;
   onSessionLost: () => void;
 }
 
@@ -50,8 +54,11 @@ export function OwnerConsultationDetail({
   variant,
   onBack,
   onViewInMyConsultations,
+  onDeleted,
   onSessionLost,
 }: OwnerConsultationDetailProps) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
   const {
     phase,
     link,
@@ -175,6 +182,26 @@ export function OwnerConsultationDetail({
         <button type="button" className="secondary-button" onClick={onBack}>
           {back}
         </button>
+        <button
+          type="button"
+          className="danger-button"
+          onClick={() => setDeleteOpen(true)}
+        >
+          Delete consultation
+        </button>
+        {deleteOpen && (
+          <DeleteConsultationDialog
+            consultationId={consultationId}
+            state="finalized"
+            onCancel={() => setDeleteOpen(false)}
+            onDeleted={() => onDeleted?.("finalized")}
+            onReload={() => {
+              setDeleteOpen(false);
+              retry();
+            }}
+            onSessionLost={onSessionLost}
+          />
+        )}
       </section>
     );
   }
@@ -381,6 +408,27 @@ export function OwnerConsultationDetail({
           {back}
         </button>
       </div>
+
+      <button
+        type="button"
+        className="danger-button"
+        onClick={() => setDeleteOpen(true)}
+      >
+        Delete consultation
+      </button>
+      {deleteOpen && (
+        <DeleteConsultationDialog
+          consultationId={consultationId}
+          state="open"
+          onCancel={() => setDeleteOpen(false)}
+          onDeleted={() => onDeleted?.("open")}
+          onReload={() => {
+            setDeleteOpen(false);
+            retry();
+          }}
+          onSessionLost={onSessionLost}
+        />
+      )}
     </section>
   );
 }

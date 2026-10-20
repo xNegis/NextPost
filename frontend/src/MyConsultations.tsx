@@ -31,6 +31,9 @@ interface MyConsultationsProps {
   onSelectionChange: (id: string | null) => void;
   onSessionLost: () => void;
   onCreate: () => void;
+  initialTab?: Tab;
+  initialNotice?: string | null;
+  onNoticeConsumed?: () => void;
 }
 
 function audienceLabel(audience: string): string {
@@ -42,8 +45,11 @@ export function MyConsultations({
   onSelectionChange,
   onSessionLost,
   onCreate,
+  initialTab = "open",
+  initialNotice = null,
+  onNoticeConsumed,
 }: MyConsultationsProps) {
-  const [tab, setTab] = useState<Tab>("open");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [items, setItems] = useState<MyConsultationListItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [status, setStatus] = useState<ListStatus>("loading");
@@ -51,6 +57,7 @@ export function MyConsultations({
   const [refreshFailed, setRefreshFailed] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreFailed, setLoadMoreFailed] = useState(false);
+  const [notice, setNotice] = useState<string | null>(initialNotice);
 
   const generationRef = useRef(0);
   const loadedPagesRef = useRef(0);
@@ -198,6 +205,26 @@ export function MyConsultations({
     else loadInitial(tab);
   }, [onSelectionChange, refresh, status, loadInitial, tab]);
 
+  const handleDeleted = useCallback(() => {
+    setNotice("Consultation deleted");
+    handleBackFromDetail();
+  }, [handleBackFromDetail]);
+
+  useEffect(() => {
+    if (notice === null) return;
+    const timer = setTimeout(() => setNotice(null), 5000);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
+  const noticeConsumedRef = useRef(false);
+
+  useEffect(() => {
+    if (initialNotice && !noticeConsumedRef.current) {
+      noticeConsumedRef.current = true;
+      onNoticeConsumed?.();
+    }
+  }, [initialNotice, onNoticeConsumed]);
+
   useEffect(() => {
     if (selectedId !== null) {
       generationRef.current += 1;
@@ -249,6 +276,7 @@ export function MyConsultations({
         consultationId={selectedId}
         variant="returning"
         onBack={handleBackFromDetail}
+        onDeleted={handleDeleted}
         onSessionLost={onSessionLost}
       />
     );
@@ -258,6 +286,16 @@ export function MyConsultations({
     <section className="card my-consultations" aria-labelledby="my-title">
       <p className="eyebrow">NextPost</p>
       <h1 id="my-title">My consultations</h1>
+
+      {notice !== null && (
+        <p
+          className="my-consultations__notice"
+          role="status"
+          aria-live="polite"
+        >
+          {notice}
+        </p>
+      )}
 
       <div
         className="my-consultations__tabs"

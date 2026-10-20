@@ -4,6 +4,7 @@ import { ApiError } from "./api";
 import {
   fetchConsultationEntry,
   type ConsultationEntryRole,
+  type MyConsultationState,
 } from "./consultationApi";
 import type { ConsultationDestination } from "./consultationLink";
 import { OwnerConsultationDetail } from "./OwnerConsultationDetail";
@@ -13,6 +14,7 @@ interface DirectConsultationEntryProps {
   destination: ConsultationDestination;
   onGoHome: () => void;
   onSessionLost: () => void;
+  onDeleted?: (state: MyConsultationState) => void;
 }
 
 type EntryState =
@@ -26,6 +28,7 @@ export function DirectConsultationEntry({
   destination,
   onGoHome,
   onSessionLost,
+  onDeleted,
 }: DirectConsultationEntryProps) {
   const [state, setState] = useState<EntryState>({ kind: "loading" });
   const [attempt, setAttempt] = useState(0);
@@ -87,6 +90,7 @@ export function DirectConsultationEntry({
         consultationId={destination.consultationId}
         variant="direct"
         onBack={onGoHome}
+        onDeleted={onDeleted}
         onSessionLost={onSessionLost}
       />
     );

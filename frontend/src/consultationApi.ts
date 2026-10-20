@@ -899,6 +899,44 @@ export async function fetchMyConsultationResults(
   return body;
 }
 
+export async function deleteConsultation(
+  consultationId: string,
+  expectedState: MyConsultationState,
+): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${API_BASE_URL}/api/my-consultations/${consultationId}/delete`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ expected_state: expectedState }),
+      },
+    );
+  } catch {
+    throw new ApiError("network");
+  }
+
+  if (response.status === 401) {
+    throw new ApiError("unauthenticated");
+  }
+  if (!response.ok) {
+    const body: unknown = await response.json().catch(() => null);
+    const code = extractErrorCode(body);
+    if (response.status === 409 && code === "consultation_conflict") {
+      throw new ApiError("consultation_conflict");
+    }
+    if (response.status === 404 && code === "consultation_unavailable") {
+      throw new ApiError("consultation_unavailable");
+    }
+    throw new ApiError(code ?? "unavailable");
+  }
+  if (response.status !== 204) {
+    throw new ApiError("unavailable");
+  }
+}
+
 export async function fetchOwnerLink(
   consultationId: string,
 ): Promise<OwnerLink> {

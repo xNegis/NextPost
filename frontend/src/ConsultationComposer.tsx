@@ -11,6 +11,7 @@ import type { ConsultationTextFieldsHandle } from "./ConsultationTextFields";
 import { DEFAULT_QUESTION, validateConsultationText } from "./consultationText";
 import type { ConsultationCapacity } from "./consultationApi";
 import { fetchConsultationCapacity } from "./consultationApi";
+import type { MyConsultationState } from "./consultationApi";
 import type { Destination } from "./Navigation";
 import { PhotoUploader } from "./PhotoUploader";
 import type {
@@ -37,6 +38,7 @@ interface ConsultationComposerProps {
   pendingNav: Destination | null;
   onCancelNavigation: () => void;
   onViewInMyConsultations: (consultationId: string) => void;
+  onDeleted?: (state: MyConsultationState) => void;
 }
 
 const STEP_ORDER: ComposerStep[] = ["photos", "details", "review"];
@@ -48,6 +50,7 @@ export function ConsultationComposer({
   pendingNav,
   onCancelNavigation,
   onViewInMyConsultations,
+  onDeleted,
 }: ConsultationComposerProps) {
   const {
     status: configStatus,
@@ -261,6 +264,7 @@ export function ConsultationComposer({
         consultationId={publishedId}
         onBack={() => onNavigate("home")}
         onViewInMyConsultations={() => onViewInMyConsultations(publishedId)}
+        onDeleted={onDeleted}
         onSessionLost={onSessionLost}
       />
     );

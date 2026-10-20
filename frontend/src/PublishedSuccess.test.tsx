@@ -1,10 +1,11 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "./api";
 import {
   createOwnerLink,
+  deleteConsultation,
   disableOwnerLink,
   fetchConsultationPhotoUrl,
   fetchMyConsultation,
@@ -23,6 +24,7 @@ vi.mock("./consultationApi", async (importOriginal) => {
     disableOwnerLink: vi.fn(),
     replaceOwnerLink: vi.fn(),
     createOwnerLink: vi.fn(),
+    deleteConsultation: vi.fn(),
   };
 });
 
@@ -32,6 +34,7 @@ const fetchOwnerLinkMock = vi.mocked(fetchOwnerLink);
 const disableOwnerLinkMock = vi.mocked(disableOwnerLink);
 const replaceOwnerLinkMock = vi.mocked(replaceOwnerLink);
 const createOwnerLinkMock = vi.mocked(createOwnerLink);
+const deleteMock = vi.mocked(deleteConsultation);
 
 const openDetail = {
   id: "123e4567-e89b-12d3-a456-426614174000",
@@ -74,6 +77,7 @@ beforeEach(() => {
     generation: "2",
     token: REPLACED_TOKEN,
   });
+  deleteMock.mockResolvedValue(undefined);
 });
 
 function renderSuccess(
@@ -182,6 +186,30 @@ describe("PublishedSuccess", () => {
     renderSuccess({ onSessionLost });
 
     await waitFor(() => expect(onSessionLost).toHaveBeenCalledTimes(1));
+  });
+
+  it("reports deletion of a freshly published consultation through onDeleted", async () => {
+    const onDeleted = vi.fn();
+    const user = userEvent.setup();
+    renderSuccess({ onDeleted });
+    await waitFor(() =>
+      expect(screen.getByText("Which one?")).toBeInTheDocument(),
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Delete consultation" }),
+    );
+    await user.click(
+      within(
+        screen.getByRole("dialog", { name: "Delete consultation?" }),
+      ).getByRole("button", { name: "Delete consultation" }),
+    );
+
+    await waitFor(() => expect(onDeleted).toHaveBeenCalledWith("open"));
+    expect(deleteMock).toHaveBeenCalledWith(
+      "123e4567-e89b-12d3-a456-426614174000",
+      "open",
+    );
   });
 
   it("disables a private link", async () => {

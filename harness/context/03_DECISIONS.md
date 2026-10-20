@@ -764,3 +764,84 @@ RF-19/RF-20 finalization next, and restricted RF-32 removal through the same bou
 Completion requires unit, real-PostgreSQL concurrency, storage-fault, migration/rollback, Docker,
 restart, restricted-status and supported-restore evidence on disposable resources. These decisions
 settle grooming behavior; implementation-plan finalisation and harness launch remain separate gates.
+
+---
+
+## DEC-042 - Author deletion preserves prior finalization and uses expected-state serialization
+
+**Status:** Accepted (2026-10-20)
+
+RF-13 represents voluntary deletion differently according to the consultation's committed history.
+Deleting an open consultation writes canonical lifecycle `deleted`. Deleting an already-finalized
+consultation preserves `state=finalized` and writes an irreversible author-deletion marker such as
+`author_deleted_at`. This records that finalization won its original terminal transition while the
+later voluntary withdrawal removes the consultation from every author-management view. Deleted
+consultations disappear from both My consultations tabs; there is no deleted tab, textual tombstone,
+trash, undo or recovery surface.
+
+Open deletion removes every raw vote and creates no declaration, match, aggregate snapshot or
+participant outcome. It sanitizes question, context, audience, publication fingerprint and link
+capability while retaining only the minimum stable consultation/owner/state/timestamp identity,
+stable option identity/order and RF-37 deletion markers required for idempotency, integrity and
+physical-erasure convergence. Post-finalization withdrawal may additionally retain only the future
+photo-free declarations, aggregate counts and per-participant private outcomes permitted by
+DEC-023. Raw text, image/link/storage data and raw per-voter choices do not become an archive.
+
+The author deletion request carries the state the author confirmed (`open` or `finalized`). The
+consumer locks and re-reads the consultation. A matching first request commits; an exact repeat is
+idempotent success; a different current state is a safe conflict. Therefore, if finalization wins a
+race against a deletion confirmed as open, the stale deletion does not silently withdraw the new
+finalized outcome. The author must reload and explicitly confirm the finalized warning. This uses
+the persisted consultation plus author-deletion marker as the natural operation identity and adds no
+general idempotency-key or request-ledger infrastructure.
+
+The database commit is the user-visible success boundary. It revokes access and records RF-37 work
+atomically; later total or partial storage failure is retried by durable startup/hourly/manual
+maintenance and never reopens access or changes the successful product result. No user-visible
+deletion-progress resource or polling state is introduced. RF-13 grooming choices `1A 2A 3A 4A
+5A` establish these durable rules only; API shape, confirmation experience, navigation,
+observability, migration detail and validation remain open, and no implementation-plan or harness
+gate is approved by this decision.
+
+---
+
+## DEC-043 - RF-13 uses an owner action, accessible confirmation and full terminal-consumer proof
+
+**Status:** Accepted (2026-10-20)
+
+RF-13 exposes voluntary deletion as the authenticated owner-management action
+`POST /api/my-consultations/{consultation_id}/delete` with a strict
+`expected_state: open|finalized` payload. The server derives ownership from the signed session,
+checks it under the consultation lock and applies the existing trusted-Origin protection. Client
+owner identifiers and Private-link capabilities never authorize deletion. Successful first
+execution and exact replay return no deleted content or cleanup internals; stale state conflicts and
+unknown, foreign or administratively removed targets retain the safe semantics settled in DEC-042.
+
+The client uses one state-specific accessible destructive dialog, not typed confirmation or
+`window.confirm`. Open deletion warns that access ends, photographs are permanently scheduled for
+erasure, votes are discarded without a result and the action cannot be undone. Finalized deletion
+warns that the consultation disappears, photographs remain unavailable, only DEC-023 minimum
+private photo-free outcomes may survive and the action cannot be undone. The dialog has explicit
+Cancel and Delete consultation actions, safe initial focus, trapped/restored focus, Escape support,
+labelled/described semantics, duplicate-submit protection, responsive mobile layout and usable
+pre-commit error/retry behavior.
+
+After server success, the client returns to My consultations on the originating state tab, removes
+the row only after confirmed success, refetches authoritatively and announces a transient success.
+It does not create a deleted-detail receipt. Direct links and browser history remain unauthorized
+and resolve to generic unavailability from current server state.
+
+Deletion observability is limited to sanitized structured outcome/conflict/retry events and counts
+of votes removed, images marked and RF-37 pending/completed/failed/overdue work. Question/context,
+link tokens, storage keys, image data and individual vote choices are never logged. Migration is
+additive: existing open/finalized rows begin with no author-deletion marker, existing
+`deleted/removed` rows stay excluded, no synthetic historical backfill is invented, and downgrade
+must refuse after irreversible marker use.
+
+Completion evidence must include unit, API/security, accessible frontend, additive-migration,
+real-PostgreSQL vote/finalize/delete concurrency, total and partial storage-failure, RF-37 retry,
+Docker startup, restart and supported non-resurrecting recovery validation on isolated resources.
+RF-13 remains a narrow voluntary-author-deletion consumer: it does not implement RF-19/RF-20
+finalization/results, RF-21 participation history or RF-32 administrator authority. The owner
+selected RF-13 options `6A 7A 8A 9A 10A 11A 12A`. These choices complete material grooming but do
+not approve implementation-plan finalisation or a harness launch.

@@ -639,9 +639,12 @@ def read_my_consultation(
             Consultation.owner_id,
             Consultation.state,
             Consultation.published_at,
+            Consultation.author_deleted_at,
         ).where(Consultation.id == consultation_id)
     ).first()
     if row is None or row.owner_id != account_id:
+        raise ConsultationUnavailableError()
+    if row.author_deleted_at is not None:
         raise ConsultationUnavailableError()
     if row.state == ConsultationState.open:
         consultation = db.get(Consultation, consultation_id)
@@ -681,6 +684,7 @@ def list_my_consultations(
         ).where(
             Consultation.owner_id == account_id,
             Consultation.state == lifecycle,
+            Consultation.author_deleted_at.is_(None),
         )
     else:
         statement = select(
@@ -689,6 +693,7 @@ def list_my_consultations(
         ).where(
             Consultation.owner_id == account_id,
             Consultation.state == lifecycle,
+            Consultation.author_deleted_at.is_(None),
         )
     if cursor is not None:
         cursor_published_at, cursor_id = cursor

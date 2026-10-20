@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { FeedItem } from "./consultationApi";
+import type { FeedItem, MyConsultationState } from "./consultationApi";
 import { FeedCard } from "./FeedCard";
 import { OwnerConsultationDetail } from "./OwnerConsultationDetail";
 import { ReaderConsultationDetail } from "./ReaderConsultationDetail";
@@ -9,9 +9,10 @@ import { useHomeFeed } from "./useHomeFeed";
 
 interface HomeFeedProps {
   onSessionLost: () => void;
+  onDeleted?: (state: MyConsultationState) => void;
 }
 
-export function HomeFeed({ onSessionLost }: HomeFeedProps) {
+export function HomeFeed({ onSessionLost, onDeleted }: HomeFeedProps) {
   const [selected, setSelected] = useState<FeedItem | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const pendingFocusRef = useRef<string | null>(null);
@@ -63,6 +64,7 @@ export function HomeFeed({ onSessionLost }: HomeFeedProps) {
           consultationId={selected.id}
           variant="home"
           onBack={handleBackFromDetail}
+          onDeleted={onDeleted}
           onSessionLost={onSessionLost}
         />
       );

@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "./api";
 import {
+  deleteConsultation,
   disableOwnerLink,
   fetchConsultationPhotoUrl,
   fetchMyConsultation,
@@ -30,6 +31,7 @@ vi.mock("./consultationApi", async (importOriginal) => {
     disableOwnerLink: vi.fn(),
     replaceOwnerLink: vi.fn(),
     createOwnerLink: vi.fn(),
+    deleteConsultation: vi.fn(),
   };
 });
 
@@ -38,6 +40,7 @@ const fetchPhotoUrlMock = vi.mocked(fetchConsultationPhotoUrl);
 const fetchOwnerLinkMock = vi.mocked(fetchOwnerLink);
 const fetchResultsMock = vi.mocked(fetchMyConsultationResults);
 const disableOwnerLinkMock = vi.mocked(disableOwnerLink);
+const deleteConsultationMock = vi.mocked(deleteConsultation);
 
 const CONSULTATION_ID = "123e4567-e89b-12d3-a456-426614174000";
 
@@ -75,6 +78,7 @@ beforeEach(() => {
     total_votes: 0,
     options: [{ photo_id: "photo-1", ordinal: 0, vote_count: 0 }],
   });
+  deleteConsultationMock.mockResolvedValue(undefined);
 });
 
 function renderReturning() {
@@ -494,5 +498,48 @@ describe("OwnerConsultationDetail", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("offers deletion on an open owned detail", async () => {
+    renderReturning();
+    await waitFor(() =>
+      expect(screen.getByText("Which one?")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("button", { name: "Delete consultation" }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers deletion on a finalized owned detail", async () => {
+    fetchDetailMock.mockResolvedValue(finalizedDetail);
+    renderReturning();
+    await waitFor(() =>
+      expect(
+        screen.getByText("Photos are no longer available."),
+      ).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("button", { name: "Delete consultation" }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the accessible confirmation dialog from an open detail", async () => {
+    const user = userEvent.setup();
+    renderReturning();
+    await waitFor(() =>
+      expect(screen.getByText("Which one?")).toBeInTheDocument(),
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Delete consultation" }),
+    );
+    expect(
+      screen.getByRole("dialog", { name: "Delete consultation?" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Access ends immediately\. Every photograph is permanently scheduled for deletion/,
+      ),
+    ).toBeInTheDocument();
   });
 });

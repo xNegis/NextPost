@@ -41,9 +41,11 @@ logger = logging.getLogger(__name__)
 # DEC-023 terminal persistence allowlist. After a terminal consumer has persisted its permitted
 # replacement data, a consultation may retain only identifiers, relevant dates/state, stable option
 # ordinals/media-deletion markers, declared option IDs, aggregate counts and participant outcomes.
-# Every other stored field is disallowed and must be removed by the owning consumer through
-# ``sanitize_terminal_content``. Absence from this list is not permission to keep data for
-# analytics, debugging, moderation or models.
+# RF-13 adds the single irreversible author-deletion marker (``author_deleted_at``) required to
+# record a voluntary withdrawal without reopening the consultation. Every other stored field is
+# disallowed and must be removed by the owning consumer through ``sanitize_terminal_content``.
+# Absence from this list is not permission to keep data for analytics, debugging, moderation or
+# models.
 TERMINAL_CONTENT_ALLOWLIST = frozenset(
     {
         "id",
@@ -52,6 +54,7 @@ TERMINAL_CONTENT_ALLOWLIST = frozenset(
         "published_at",
         "created_at",
         "updated_at",
+        "author_deleted_at",
         "private_link_generation",
         "private_link_active",
     }

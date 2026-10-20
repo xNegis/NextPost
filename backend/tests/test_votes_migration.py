@@ -90,20 +90,26 @@ def _seed_consultation(url: str) -> tuple[uuid.UUID, uuid.UUID, list[uuid.UUID]]
         )
         db.add(second_image)
         db.flush()
-        consultation = Consultation(
-            owner_id=owner.id,
-            question="Q",
-            context=None,
-            audience="public",
-            state=ConsultationState.open,
-            published_at=datetime(2026, 1, 1, 12, 0, 0),
-            source_session_id=session.id,
-            fingerprint=uuid.uuid4().hex[:32],
+        consultation_id = uuid.uuid4()
+        db.execute(
+            text(
+                "INSERT INTO consultations (id, owner_id, question, context, audience, state, "
+                "published_at, source_session_id, fingerprint, private_link_generation, "
+                "private_link_active) VALUES (:id, :owner_id, :question, :context, :audience, "
+                ":state, :published_at, :source_session_id, :fingerprint, 0, false)"
+            ),
+            {
+                "id": str(consultation_id),
+                "owner_id": str(owner.id),
+                "question": "Q",
+                "context": None,
+                "audience": "public",
+                "state": ConsultationState.open.value,
+                "published_at": datetime(2026, 1, 1, 12, 0, 0),
+                "source_session_id": str(session.id),
+                "fingerprint": uuid.uuid4().hex[:32],
+            },
         )
-        db.add(consultation)
-        db.flush()
-        # Insert ordered photos with raw SQL so the seed remains compatible with later revisions
-        # that add consultation_photos columns (RF-37 adds media_deleted_at).
         photo_id = uuid.uuid4()
         second_photo_id = uuid.uuid4()
         db.execute(
@@ -114,13 +120,13 @@ def _seed_consultation(url: str) -> tuple[uuid.UUID, uuid.UUID, list[uuid.UUID]]
             {
                 "id": str(photo_id),
                 "id2": str(second_photo_id),
-                "c": str(consultation.id),
+                "c": str(consultation_id),
                 "i": str(image.id),
                 "i2": str(second_image.id),
             },
         )
         db.commit()
-        return owner.id, consultation.id, [photo_id, second_photo_id]
+        return owner.id, consultation_id, [photo_id, second_photo_id]
     # unreachable; keep mypy/readability honest
     raise AssertionError
 

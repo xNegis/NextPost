@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.api.photos import get_photo_storage
 from app.auth import get_current_account
 from app.config import get_settings
+from app.consultation_deletion_service import delete_consultation
 from app.consultation_service import (
     ConsultationCapReachedError,
     ConsultationConflictError,
@@ -35,6 +36,7 @@ from app.models import Account
 from app.photo_service import InactiveSessionError, NotFoundError, PublicationInvalidError
 from app.schemas import (
     ConsultationCapacityResponse,
+    ConsultationDeleteRequest,
     ConsultationDetailResponse,
     ConsultationEntryResponse,
     ConsultationPhotoResponse,
@@ -206,6 +208,33 @@ def my_consultation_detail(
             ConsultationPhotoResponse(id=photo.id, width=photo.width, height=photo.height)
             for photo in detail.photos
         ],
+    )
+
+
+@router.post(
+    "/my-consultations/{consultation_id}/delete",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_my_consultation(
+    consultation_id: uuid.UUID,
+    payload: ConsultationDeleteRequest,
+    account: Account = Depends(get_current_account),
+    db: Session = Depends(get_db_session),
+    _origin: None = Depends(require_trusted_origin),
+) -> Response:
+    try:
+        delete_consultation(db, consultation_id, account.id, payload.expected_state)
+    except ConsultationUnavailableError as exc:
+        raise HTTPException(status_code=404, detail={"code": exc.code}) from exc
+    except ConsultationConflictError as exc:
+        raise HTTPException(status_code=409, detail={"code": exc.code}) from exc
+    return Response(
+        status_code=status.HTTP_204_NO_CONTENT,
+        headers={
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+            "Referrer-Policy": "no-referrer",
+        },
     )
 
 

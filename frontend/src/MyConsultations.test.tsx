@@ -4,12 +4,14 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "./api";
 import {
+  deleteConsultation,
   fetchConsultationPhotoUrl,
   fetchMyConsultation,
   fetchMyConsultations,
@@ -28,6 +30,7 @@ vi.mock("./consultationApi", async (importOriginal) => {
     disableOwnerLink: vi.fn(),
     replaceOwnerLink: vi.fn(),
     createOwnerLink: vi.fn(),
+    deleteConsultation: vi.fn(),
   };
 });
 
@@ -35,6 +38,7 @@ const listMock = vi.mocked(fetchMyConsultations);
 const detailMock = vi.mocked(fetchMyConsultation);
 const photoMock = vi.mocked(fetchConsultationPhotoUrl);
 const linkMock = vi.mocked(fetchOwnerLink);
+const deleteMock = vi.mocked(deleteConsultation);
 
 const OPEN_ITEM = {
   id: "123e4567-e89b-12d3-a456-426614174000",
@@ -68,6 +72,7 @@ beforeEach(() => {
   detailMock.mockResolvedValue(OPEN_DETAIL);
   photoMock.mockResolvedValue("blob:photo");
   linkMock.mockResolvedValue({ active: true, generation: "1", token: null });
+  deleteMock.mockResolvedValue(undefined);
 });
 
 function renderList(
@@ -110,6 +115,43 @@ describe("MyConsultations", () => {
       ).toBeInTheDocument(),
     );
     expect(listMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns to the list, announces and refetches after deletion", async () => {
+    const onSelectionChange = vi.fn();
+    const view = renderList({ selectedId: OPEN_ITEM.id, onSelectionChange });
+    await waitFor(() =>
+      expect(screen.getByText("Which one?")).toBeInTheDocument(),
+    );
+
+    const user = userEvent.setup();
+    await user.click(
+      screen.getByRole("button", { name: "Delete consultation" }),
+    );
+    const dialog = screen.getByRole("dialog", {
+      name: "Delete consultation?",
+    });
+    await user.click(
+      within(dialog).getByRole("button", { name: "Delete consultation" }),
+    );
+
+    await waitFor(() =>
+      expect(deleteMock).toHaveBeenCalledWith(OPEN_ITEM.id, "open"),
+    );
+    expect(onSelectionChange).toHaveBeenCalledWith(null);
+
+    view.rerender(
+      <MyConsultations
+        selectedId={null}
+        onSelectionChange={onSelectionChange}
+        onSessionLost={vi.fn()}
+        onCreate={vi.fn()}
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByText("Consultation deleted")).toBeInTheDocument(),
+    );
+    expect(listMock).toHaveBeenCalled();
   });
 
   it("shows heading and Open/Finalized tabs with Open selected", async () => {

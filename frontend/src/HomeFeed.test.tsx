@@ -1,9 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "./api";
 import {
+  deleteConsultation,
   fetchConsultationDetail,
   fetchConsultationPhotoUrl,
   fetchFeed,
@@ -26,6 +27,7 @@ vi.mock("./consultationApi", async (importOriginal) => {
     fetchOwnerLink: vi.fn(),
     fetchMyVote: vi.fn(),
     submitVote: vi.fn(),
+    deleteConsultation: vi.fn(),
   };
 });
 
@@ -36,6 +38,7 @@ const ownerDetailMock = vi.mocked(fetchMyConsultation);
 const linkMock = vi.mocked(fetchOwnerLink);
 const myVoteMock = vi.mocked(fetchMyVote);
 const submitVoteMock = vi.mocked(submitVote);
+const deleteMock = vi.mocked(deleteConsultation);
 
 const FEED_ITEM: FeedItem = {
   id: "123e4567-e89b-12d3-a456-426614174000",
@@ -112,6 +115,7 @@ beforeEach(() => {
     status: "voted",
     photo_id: READER_DETAIL.photos[0].id,
   });
+  deleteMock.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -224,6 +228,30 @@ describe("HomeFeed", () => {
     expect(
       screen.getByRole("button", { name: "Back to Home" }),
     ).toBeInTheDocument();
+  });
+
+  it("reports deletion of an own consultation through onDeleted", async () => {
+    feedMock.mockResolvedValue({ items: [OWN_ITEM], next_cursor: null });
+    const user = userEvent.setup();
+    const onDeleted = vi.fn();
+    render(<HomeFeed onSessionLost={vi.fn()} onDeleted={onDeleted} />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "View consultation" }),
+    );
+    await screen.findByRole("heading", { name: "Your consultation" });
+
+    await user.click(
+      await screen.findByRole("button", { name: "Delete consultation" }),
+    );
+    await user.click(
+      within(
+        screen.getByRole("dialog", { name: "Delete consultation?" }),
+      ).getByRole("button", { name: "Delete consultation" }),
+    );
+
+    await waitFor(() => expect(onDeleted).toHaveBeenCalledWith("open"));
+    expect(deleteMock).toHaveBeenCalledWith(OWN_ITEM.id, "open");
   });
 
   it("appends the next page on Load more", async () => {

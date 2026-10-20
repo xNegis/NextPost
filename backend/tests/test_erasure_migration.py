@@ -82,18 +82,26 @@ def _seed_consultation(url: str) -> tuple[uuid.UUID, uuid.UUID, list[uuid.UUID]]
             db.add(image)
             db.flush()
             images.append(image)
-        consultation = Consultation(
-            owner_id=owner.id,
-            question="Q",
-            context=None,
-            audience="public",
-            state=ConsultationState.open,
-            published_at=datetime(2026, 1, 1, 12, 0, 0),
-            source_session_id=session.id,
-            fingerprint=uuid.uuid4().hex[:32],
+        consultation_id = uuid.uuid4()
+        db.execute(
+            text(
+                "INSERT INTO consultations (id, owner_id, question, context, audience, state, "
+                "published_at, source_session_id, fingerprint, private_link_generation, "
+                "private_link_active) VALUES (:id, :owner_id, :question, :context, :audience, "
+                ":state, :published_at, :source_session_id, :fingerprint, 0, false)"
+            ),
+            {
+                "id": str(consultation_id),
+                "owner_id": str(owner.id),
+                "question": "Q",
+                "context": None,
+                "audience": "public",
+                "state": ConsultationState.open.value,
+                "published_at": datetime(2026, 1, 1, 12, 0, 0),
+                "source_session_id": str(session.id),
+                "fingerprint": uuid.uuid4().hex[:32],
+            },
         )
-        db.add(consultation)
-        db.flush()
 
         # Insert ordered photos with raw SQL so the seed also works at revision 0005, before
         # consultation_photos.media_deleted_at exists.
@@ -105,7 +113,7 @@ def _seed_consultation(url: str) -> tuple[uuid.UUID, uuid.UUID, list[uuid.UUID]]
                 ),
                 {
                     "id": str(uuid.uuid4()),
-                    "c": str(consultation.id),
+                    "c": str(consultation_id),
                     "i": str(image.id),
                     "o": ordinal,
                 },
@@ -117,10 +125,10 @@ def _seed_consultation(url: str) -> tuple[uuid.UUID, uuid.UUID, list[uuid.UUID]]
                 text(
                     "SELECT id FROM consultation_photos WHERE consultation_id = :c ORDER BY ordinal"
                 ),
-                {"c": str(consultation.id)},
+                {"c": str(consultation_id)},
             ).all()
         ]
-        return owner.id, consultation.id, photo_ids
+        return owner.id, consultation_id, photo_ids
 
 
 def _seed_vote(url: str, consultation_id: uuid.UUID, photo_id: uuid.UUID) -> None:

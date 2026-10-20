@@ -163,6 +163,18 @@ class Consultation(Base):
             "AND source_session_id IS NOT NULL AND fingerprint IS NOT NULL)",
             name="ck_consultations_open_complete",
         ),
+        # A voluntary author-deletion marker is only ever written alongside a terminal
+        # ``deleted`` (open deletion) or ``finalized`` (post-finalization withdrawal) row.
+        CheckConstraint(
+            "author_deleted_at IS NULL OR state IN ('deleted', 'finalized')",
+            name="ck_consultations_author_deleted",
+        ),
+        Index(
+            "ix_consultations_owner_state_author_deleted",
+            "owner_id",
+            "state",
+            "author_deleted_at",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
@@ -188,6 +200,9 @@ class Consultation(Base):
     private_link_generation: Mapped[int] = mapped_column(Numeric(20, 0), nullable=False, default=0)
     private_link_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
+    )
+    author_deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

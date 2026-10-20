@@ -1,0 +1,28 @@
+# Isolated RF-13 product-owner review instance. Combine with the root Compose file under the
+# project name nextpost-rf13-manual-20261020. Never target ordinary user or RF-37 volumes.
+services:
+  db:
+    ports: !override
+      - "127.0.0.1:15437:5432"
+    environment:
+      POSTGRES_DB: rf13_manual
+      POSTGRES_USER: rf13
+      POSTGRES_PASSWORD: rf13-disposable-local
+
+  backend:
+    ports: !override
+      - "127.0.0.1:18005:8000"
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://rf13:rf13-disposable-local@db:5432/rf13_manual
+      CORS_ORIGINS: http://localhost:14178
+      SESSION_SECRET: rf13-disposable-local-session-secret
+      PRIVATE_LINK_SECRET: rf13-disposable-local-private-link-secret
+      PHOTO_STORAGE_ROOT: /app/data/photos
+
+  frontend:
+    ports: !override
+      - "127.0.0.1:14178:80"
+    build:
+      args:
+        VITE_API_BASE_URL: http://localhost:18005

@@ -310,6 +310,12 @@ class LinkMutationRequest(BaseModel):
         return value
 
 
+class ConsultationDeleteRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_state: Literal["open", "finalized"]
+
+
 class FeedPhotoResponse(BaseModel):
     id: str
     width: int

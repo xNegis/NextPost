@@ -1,10 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "./App";
 import { createAccount, fetchProfile, fetchSession, signIn } from "./api";
 import {
+  deleteConsultation,
   fetchConsultationDetail,
   fetchConsultationEntry,
   fetchConsultationPhotoUrl,
@@ -55,6 +56,7 @@ vi.mock("./consultationApi", async (importOriginal) => {
     fetchOwnerLink: vi.fn(),
     fetchFeed: vi.fn(),
     fetchMyConsultations: vi.fn(),
+    deleteConsultation: vi.fn(),
   };
 });
 
@@ -69,6 +71,7 @@ const detailMock = vi.mocked(fetchConsultationDetail);
 const myVoteMock = vi.mocked(fetchMyVote);
 const feedMock = vi.mocked(fetchFeed);
 const myListMock = vi.mocked(fetchMyConsultations);
+const deleteMock = vi.mocked(deleteConsultation);
 
 const CONSULTATION_ID = "123e4567-e89b-12d3-a456-426614174000";
 const DIRECT_PATH = `/consultations/${CONSULTATION_ID}`;
@@ -111,6 +114,7 @@ beforeEach(() => {
   myVoteMock.mockResolvedValue({ status: "not_voted" });
   feedMock.mockResolvedValue({ items: [], next_cursor: null });
   myListMock.mockResolvedValue({ items: [], next_cursor: null });
+  deleteMock.mockResolvedValue(undefined);
 });
 
 function fetchProfileMockSafe() {
@@ -274,5 +278,35 @@ describe("App direct consultation routing", () => {
       await screen.findByText("Sign in to view this consultation."),
     ).toBeInTheDocument();
     expect(window.location.pathname).toBe(DIRECT_PATH);
+  });
+
+  it("clears the direct route and renders the matching My consultations tab after deletion", async () => {
+    const user = userEvent.setup();
+    goTo(DIRECT_PATH);
+    fetchSessionMock.mockResolvedValue({
+      authenticated: true,
+      account: { id: "account-1", alias: "Ana" },
+    });
+    entryMock.mockResolvedValue({ role: "owner" });
+    ownerDetailMock.mockResolvedValue(ownerDetail);
+
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Your consultation" });
+    await user.click(
+      await screen.findByRole("button", { name: "Delete consultation" }),
+    );
+    await user.click(
+      within(
+        screen.getByRole("dialog", { name: "Delete consultation?" }),
+      ).getByRole("button", { name: "Delete consultation" }),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "My consultations" }),
+    ).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/");
+    expect(screen.getByText("Consultation deleted")).toBeInTheDocument();
+    expect(deleteMock).toHaveBeenCalledWith(CONSULTATION_ID, "open");
   });
 });

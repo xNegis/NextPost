@@ -1,5 +1,230 @@
 # Project State
 
+## RF-13 completed and validated - 2026-10-20
+
+The product owner exercised the isolated built RF-13 stack and explicitly reported `Funciona`.
+Together with the completed implementation, full harness validation and independent technical
+review recorded in `harness/grooming/RF-13-implementation-review.md`, this closes RF-13 as
+`Completed and validated` under DEC-034. The isolated acceptance stack remains running for now; no
+commit, push, deployment beyond that localhost stack or Trello mutation occurred.
+
+## RF-13 isolated local acceptance stack running - 2026-10-20
+
+At the product owner's request, the current RF-13 worktree was rebuilt and deployed as the isolated
+Compose project `nextpost-rf13-manual-20261020`. It uses dedicated PostgreSQL and photo-storage
+volumes and localhost-only ports: frontend `14178`, backend `18005` and PostgreSQL `15437`.
+Alembic upgraded the disposable database through `20261020_0007`; the backend health check and
+fresh frontend request both returned HTTP 200. The retained `nextpost-rf37-manual` project and its
+volumes remain untouched. This deployment is for product-owner acceptance and does not itself mark
+RF-13 completed.
+
+## RF-13 independent technical review passed; owner acceptance pending - 2026-10-20
+
+The coordinator reviewed the corrected RF-13 implementation against the approved plan and found no
+remaining technical blocker. The review and acceptance-criterion assessment are recorded in
+`harness/grooming/RF-13-implementation-review.md`.
+
+Independent focused reruns passed 32 backend deletion/API/observability tests and 70 frontend
+dialog/navigation tests. The coordinator verified the direct-route unmount/navigation fix,
+sanitized `first`/`replay`/`conflict`/`error` observability, original-lifecycle replay reporting,
+foreign-owner generic denial, focus containment/restoration and the RF-13 terminal allowlist entry.
+The harness's complete post-correction evidence remains 468 local backend passes, 50 isolated
+PostgreSQL passes and 516 frontend passes plus the static, build, audit and Docker checks recorded
+below.
+
+RF-13 is technically validated but is not yet `Completed and validated`: DEC-034 still requires the
+product owner's visual/mobile acceptance of the destructive confirmation and successful open and
+finalized deletion flows. The retained `nextpost-rf37-manual` stack remains untouched. No commit,
+push, deployment or Trello mutation occurred.
+
+## RF-13 independent-review corrections applied and revalidated - 2026-10-20
+
+The implementation harness applied the four independent-review corrections within the approved
+RF-13 scope. This records the harness's own evidence, not independent acceptance.
+
+1. Functional blocker: `App.handleConsultationDeleted` now calls `navigateToRoot()` before
+   switching to My consultations, so a successful deletion from a direct `/consultations/{id}` owner
+   route leaves the consultation route, unmounts the detail/dialog and renders the matching tab plus
+   the notice.
+2. Observability: `consultation_deletion_service` now emits sanitized `classification=first`,
+   `replay`, `conflict` and `error` records. Replay reports the original source lifecycle (`open`
+   for `deleted`+marker, `finalized` for `finalized`+marker). Missing/foreign/removed rows emit no
+   deletion log (no enumeration leakage), and no text/context/token/cookie/key/path/image data or
+   sensitive exception text is logged.
+3. Contract: RF-37's `TERMINAL_CONTENT_ALLOWLIST` now includes the single `author_deleted_at`
+   marker with documentation, without widening retention.
+4. Tests: added dialog focus-containment/restoration tests, an API foreign-owner generic-404
+   assertion, and successful-return regression tests for direct, Home, post-publication and My
+   consultations entry points; added caplog tests for the observability contract.
+
+Revalidated on disposable resources: 468 backend tests passed (SQLite; 50 PostgreSQL-only skipped
+without `TEST_DATABASE_URL`); 50 PostgreSQL tests passed against an isolated disposable PostgreSQL 18
+(16 migration/downgrade + 34 concurrency/storage); 516 frontend tests passed; Ruff check/format,
+strict MyPy on `backend/app`, Prettier, ESLint, strict TypeScript and the production build passed;
+`npm audit --audit-level=high` found 0 vulnerabilities; `docker compose config --quiet` and
+`docker compose build backend frontend` passed. The disposable `nextpost-rf13-test-db` container was
+removed afterwards.
+
+The retained `nextpost-rf37-manual` stack was not touched. No commit, push, deployment or Trello
+mutation occurred. RF-19/RF-20, RF-21 and RF-32 remain unimplemented. Remaining gates: independent
+review against every acceptance criterion and the product owner's visual/mobile acceptance
+(DEC-034).
+
+## RF-13 implemented and technically validated; independent review pending - 2026-10-20
+
+The implementation harness completed RF-13 against
+`harness/features/RF-13-Implementation-plan.md`. This entry records the harness's own evidence; it
+is not an independent acceptance and does not claim `Completed and validated`.
+
+Delivered: additive nullable `consultations.author_deleted_at` plus a marker/state check constraint
+and owner/state/marker index (Alembic `20261020_0007_author_deletion.py`, downgrade refused once a
+marker exists); row-locked `consultation_deletion_service.delete_consultation` (ownership + expected
+state under `FOR UPDATE`, idempotent exact replay, raw-vote removal, RF-37
+`mark_media_for_erasure`/`sanitize_terminal_content`, one commit; open -> `deleted`, finalized ->
+`finalized` + marker); strict `POST /api/my-consultations/{id}/delete` with trusted-Origin and
+`204`/`404`/`409`; owner list/detail queries exclude marked rows before pagination; accessible
+`DeleteConsultationDialog` + state-specific confirmation wired into every owner-detail variant with
+return-to-originating-tab and a transient `Consultation deleted` announcement.
+
+Evidence (disposable resources only): 461 backend tests passed (SQLite; 50 PostgreSQL-only cases
+skip without `TEST_DATABASE_URL`); 50 PostgreSQL tests passed against an isolated disposable
+PostgreSQL 18 (16 migration/downgrade + 34 concurrency/storage, including vote/finalize/delete races
+and RF-37 reconciliation convergence); 511 frontend tests passed; Ruff check/format, strict MyPy on
+`backend/app`, Prettier, ESLint, strict TypeScript and the production build passed;
+`npm audit --audit-level=high` found 0 vulnerabilities; `docker compose config --quiet` and
+`docker compose build backend frontend` passed. The disposable `nextpost-rf13-test-db` container was
+removed afterwards. A pre-existing `E501` on `20261019_0006_media_erasure.py` line 83 remains
+unaddressed (that RF-37 migration must not be edited).
+
+The retained `nextpost-rf37-manual` stack was not touched. No commit, push, deployment or Trello
+mutation occurred. RF-19/RF-20, RF-21 and RF-32 remain unimplemented. Remaining gates: independent
+review against every acceptance criterion and the product owner's visual/mobile acceptance (DEC-034).
+
+## RF-13 harness resumed again and frontend implementation started - 2026-10-20
+
+At the product owner's request, OpenCode session `ses_ea6801776ffeUK1C0mt8p5Lim3` resumed in
+retained execution session `23144`. The coordinator checked only until real continuation was
+confirmed: after inspecting the existing frontend navigation/dialog patterns, the harness edited
+`frontend/src/consultationApi.ts` to add the strict RF-13 deletion request and safe response/error
+handling while preserving the existing results reader.
+
+This verifies that the continuation is actively implementing the remaining frontend scope rather
+than merely rereading the repository. Per the owner's instruction, periodic checks stopped at this
+point. Completion, tests and independent review remain pending until the next requested status
+check.
+
+## RF-13 harness stopped after partial backend implementation - 2026-10-20
+
+The owner-requested status check found retained execution session `75704` no longer available.
+OpenCode session `ses_ea6801776ffeUK1C0mt8p5Lim3` made a partial backend implementation before
+stopping without a final report: it modified consultation model/schema/service/API boundaries and
+added `20261020_0007_author_deletion.py` plus `consultation_deletion_service.py`. No frontend file or
+test file has yet changed.
+
+The session reported that a targeted existing backend subset passed, then stopped while designing
+the frontend deletion flow. That report has not yet been independently re-run by the coordinator,
+and the complete approved validation matrix has not run. RF-13 is therefore neither implemented nor
+validated. Continuation should resume the same OpenCode session, preserve the partial work and finish
+frontend, focused tests, PostgreSQL concurrency, storage/recovery and full validation before review.
+
+## RF-13 harness resumed and implementation started - 2026-10-20
+
+OpenCode session `ses_ea6801776ffeUK1C0mt8p5Lim3` was resumed in retained execution session
+`75704` with the required `opencode-go/deepseek-v4-pro` model and `high` variant. After completing
+its initial inspection it created the RF-13 implementation task list and began editing
+`backend/app/models.py` to add the accepted author-deletion marker, constraint and owner-query
+index. This is the first verified implementation change.
+
+Per the product owner's instruction, the coordinator stopped polling immediately after confirming
+that implementation had genuinely started. Completion and worktree validation remain pending until
+the owner requests the next check.
+
+## RF-13 implementation harness interrupted before code changes - 2026-10-20
+
+The owner-requested status check found that retained execution session `63441` no longer exists.
+OpenCode session `ses_ea6801776ffeUK1C0mt8p5Lim3` stopped during repository inspection without a
+final report. Its exported summary records zero changed files, zero additions and zero deletions,
+and the worktree contains no RF-13 implementation changes or validation evidence.
+
+This is an interrupted launch, not an implementation result or product blocker. RF-13 remains
+`Ready for implementation`; continuity can resume from the recorded OpenCode session without
+starting a second independent conversation. No commit, push, deployment or Trello mutation
+occurred.
+
+## RF-13 implementation harness launched - 2026-10-20
+
+The explicitly authorized external implementation harness is running from
+`harness/features/RF-13-Implementation-plan.md` with the required
+`opencode-go/deepseek-v4-pro` model and `high` variant. The coordinator retained execution session
+`63441`. The harness was instructed to preserve all uncommitted RF-13 documentation, avoid the
+retained `nextpost-rf37-manual` environment, use separate disposable validation resources and not
+commit, push, deploy or modify Trello.
+
+At the product owner's explicit request, the coordinator will not poll this process periodically.
+Its worktree output and retained execution status will be inspected only when the owner returns and
+asks for review.
+
+## RF-13 plan ready; autonomous implementation harness authorized - 2026-10-20
+
+The product owner explicitly approved the settled RF-13 scope, finalisation of the English
+implementation plan and autonomous external-harness launch. The self-contained contract is
+`harness/features/RF-13-Implementation-plan.md`, marked `Ready for implementation` with
+`Remaining questions: None`. It covers voluntary deletion of open and finalized consultations,
+expected-state row-lock serialization, RF-37 integration, lifecycle-specific minimization,
+accessible confirmation, owner-list reconciliation, additive migration, sanitized observability and
+the complete validation matrix.
+
+RF-13 is `Ready for implementation`. The harness must preserve the existing uncommitted RF-13
+grooming, decisions, state and plan, must not touch the retained `nextpost-rf37-manual` environment,
+and must not commit, push, deploy or modify Trello. The product owner requested that the coordinator
+not poll the harness periodically after launch; its status will be inspected only when the owner
+returns and asks.
+
+## RF-13 material grooming complete; plan finalisation not yet approved - 2026-10-20
+
+The product owner confirmed every remaining RF-13 recommendation as
+`6A 7A 8A 9A 10A 11A 12A`, after the previously accepted `1A 2A 3A 4A 5A`. DEC-043 records the
+owner-action API boundary, accessible state-specific confirmation, return to the originating My
+consultations tab, sanitized observability, additive no-backfill migration, complete validation
+matrix and strict separation from RF-19/RF-20, RF-21 and RF-32.
+
+RF-13 is now `Grooming complete - awaiting explicit plan-finalisation approval`; no material
+question remains. This does not create or approve an implementation plan and does not authorize a
+harness launch. No implementation, tests, containers, commit, push, deployment or Trello mutation
+occurred.
+
+## RF-13 first material decision batch confirmed - 2026-10-20
+
+The product owner confirmed RF-13 choices `1A 2A 3A 4A 5A`. Open deletion will use lifecycle
+`deleted`; voluntary deletion after finalization will preserve `state=finalized` plus an irreversible
+author-deletion marker. Both disappear from My consultations without a tombstone. Open deletion
+removes votes without outcomes; finalized withdrawal preserves only future DEC-023 photo-free
+minimum outcomes. Requests use expected-state row-lock serialization with idempotent exact retries,
+and the database commit remains success even when RF-37 physical erasure must retry afterwards.
+DEC-042 records the durable cross-feature contract.
+
+RF-13 remains `Grooming - awaiting product-owner decisions`: Q6-Q12 covering API shape,
+confirmation UX, post-success navigation, observability, migration compatibility, validation and
+adjacent-ticket boundaries remain open. No implementation plan has been created and no
+implementation, tests, containers, harness, commit, push, deployment or Trello mutation occurred.
+
+## RF-13 grooming started - 2026-10-20
+
+The product owner explicitly selected `RF-13 · Eliminar una consulta propia`. The current card was
+consumed read-only from the configured APP - NextPost board:
+https://trello.com/c/NEYa01VK/16-rf-13-eliminar-una-consulta-propia. It is open and incomplete in
+`Próximo · completar el MVP`, with no labels, members, dates, checklists, comments, attachments or
+custom-field values. The complete ticket snapshot, repository findings, inherited decisions,
+dependencies, proposed scope, exclusions and initial validation outline are recorded in
+`harness/grooming/RF-13-grooming.md`.
+
+RF-13 is `Grooming - awaiting product-owner decisions`. The first material question is an accepted-
+contract conflict: DEC-033 and the implemented lifecycle reject `finalized -> deleted`, while RF-13
+requires voluntary deletion after finalization. The grooming proposes preserving `finalized` plus an
+irreversible author-withdrawal marker, but this and all other recommendations remain unaccepted until
+the owner confirms them. No implementation plan has been created. No implementation, tests,
+containers, harness, commit, push, deployment or Trello mutation occurred.
+
 ## RF-37 completed and validated by the product owner - 2026-10-20
 
 The product owner completed the private-LAN mobile review and confirmed that the RF-37 behavior

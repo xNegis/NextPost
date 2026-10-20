@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { fetchSession, signOut, type AccountSummary } from "./api";
+import type { MyConsultationState } from "./consultationApi";
 import { ConsultationComposer } from "./ConsultationComposer";
 import { DirectConsultationEntry } from "./DirectConsultationEntry";
 import { HomeFeed } from "./HomeFeed";
@@ -50,6 +51,11 @@ export function App() {
   const [composerDirty, setComposerDirty] = useState(false);
   const [pendingNav, setPendingNav] = useState<Destination | null>(null);
   const [selectedMyConsultationId, setSelectedMyConsultationId] = useState<
+    string | null
+  >(null);
+  const [myConsultationsTab, setMyConsultationsTab] =
+    useState<MyConsultationState>("open");
+  const [myConsultationsNotice, setMyConsultationsNotice] = useState<
     string | null
   >(null);
 
@@ -147,6 +153,16 @@ export function App() {
     setDestination("my");
   }
 
+  function handleConsultationDeleted(state: MyConsultationState) {
+    navigateToRoot();
+    setPendingNav(null);
+    setComposerDirty(false);
+    setSelectedMyConsultationId(null);
+    setMyConsultationsTab(state);
+    setMyConsultationsNotice("Consultation deleted");
+    setDestination("my");
+  }
+
   function handleCreateConsultation() {
     setSelectedMyConsultationId(null);
     setDestination("create");
@@ -172,7 +188,10 @@ export function App() {
           {route.kind === "root" && (
             <>
               {destination === "home" && (
-                <HomeFeed onSessionLost={returnToSignIn} />
+                <HomeFeed
+                  onSessionLost={returnToSignIn}
+                  onDeleted={handleConsultationDeleted}
+                />
               )}
 
               {destination === "create" && (
@@ -183,6 +202,7 @@ export function App() {
                   pendingNav={pendingNav}
                   onCancelNavigation={() => setPendingNav(null)}
                   onViewInMyConsultations={handleViewInMyConsultations}
+                  onDeleted={handleConsultationDeleted}
                 />
               )}
 
@@ -192,6 +212,9 @@ export function App() {
                   onSelectionChange={setSelectedMyConsultationId}
                   onSessionLost={returnToSignIn}
                   onCreate={handleCreateConsultation}
+                  initialTab={myConsultationsTab}
+                  initialNotice={myConsultationsNotice}
+                  onNoticeConsumed={() => setMyConsultationsNotice(null)}
                 />
               )}
 
@@ -212,6 +235,7 @@ export function App() {
               destination={route.destination}
               onGoHome={handleGoHome}
               onSessionLost={returnToSignIn}
+              onDeleted={handleConsultationDeleted}
             />
           )}
         </main>
