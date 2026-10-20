@@ -6,7 +6,24 @@ from pathlib import Path
 
 _NORMALIZED_KEY_PATTERN = re.compile(r"^[0-9a-f]{32}$")
 
+_SHARD_PATTERN = re.compile(r"^[0-9a-f]{2}$")
+
 _TMP_SUFFIX = ".part"
+
+
+def _classify_normalized_file(shard_name: str, name: str) -> str:
+    """Classify a file name within a shard directory as ``key``, ``partial`` or ``anomaly``.
+
+    A valid key or atomic-write partial must also live in the shard matching its first two
+    characters; a valid-looking key stored under the wrong shard is an anomaly.
+    """
+    if _NORMALIZED_KEY_PATTERN.fullmatch(name) is not None:
+        return "key" if name[:2] == shard_name else "anomaly"
+    if name.endswith(_TMP_SUFFIX):
+        stripped = name.removesuffix(_TMP_SUFFIX)
+        if _NORMALIZED_KEY_PATTERN.fullmatch(stripped) is not None:
+            return "partial" if stripped[:2] == shard_name else "anomaly"
+    return "anomaly"
 
 
 class StorageError(Exception):
@@ -93,25 +110,23 @@ class PhotoStorage:
         Files newer than ``min_age_seconds`` are left alone so a cleanup pass
         cannot race a database transaction that has written its derivative but
         has not committed the corresponding row yet. Stale atomic-write partials
-        are removed by the same pass.
+        are removed by the same pass. Malformed shard directories, symlinks,
+        nested entries and keys stored under the wrong shard are never deleted.
         """
         removed = 0
         current_timestamp = now_timestamp if now_timestamp is not None else time.time()
         if not self.normalized_dir.exists():
             return 0
         for entry in self.normalized_dir.iterdir():
-            if not entry.is_dir():
+            if entry.is_symlink() or not entry.is_dir():
+                continue
+            if _SHARD_PATTERN.fullmatch(entry.name) is None:
                 continue
             for file in entry.iterdir():
-                if not file.is_file():
+                if file.is_symlink() or not file.is_file():
                     continue
-                key = file.name.removesuffix(_TMP_SUFFIX)
-                is_normalized = _NORMALIZED_KEY_PATTERN.fullmatch(file.name) is not None
-                is_partial = (
-                    file.name.endswith(_TMP_SUFFIX)
-                    and _NORMALIZED_KEY_PATTERN.fullmatch(key) is not None
-                )
-                if not is_normalized and not is_partial:
+                kind = _classify_normalized_file(entry.name, file.name)
+                if kind == "anomaly":
                     continue
                 try:
                     if (
@@ -119,7 +134,7 @@ class PhotoStorage:
                         and current_timestamp - file.stat().st_mtime < min_age_seconds
                     ):
                         continue
-                    if is_partial or file.name not in valid_keys:
+                    if kind == "partial" or file.name not in valid_keys:
                         file.unlink(missing_ok=True)
                         removed += 1
                 except OSError:
@@ -146,3 +161,41 @@ class PhotoStorage:
                 except OSError:
                     continue
         return removed
+
+    def count_normalized_anomalies(self) -> int:
+        """Count unexpected objects under the normalized root without deleting them.
+
+        A valid object is a 32-hex-key file (or its ``.part`` atomic-write partial) inside the
+        matching two-character shard directory. Malformed shard directories, symlinks, nested or
+        unexpected entries, non-key/partial files, and valid-looking keys stored under the wrong
+        shard are anomalies left untouched for restricted operator handling.
+        """
+        anomalies = 0
+        if not self.normalized_dir.exists():
+            return 0
+        try:
+            entries = list(self.normalized_dir.iterdir())
+        except OSError:
+            return 1
+        for entry in entries:
+            if entry.is_symlink() or not entry.is_dir():
+                anomalies += 1
+                continue
+            if _SHARD_PATTERN.fullmatch(entry.name) is None:
+                anomalies += 1
+                continue
+            try:
+                files = list(entry.iterdir())
+            except OSError:
+                anomalies += 1
+                continue
+            for file in files:
+                if file.is_symlink():
+                    anomalies += 1
+                    continue
+                if not file.is_file():
+                    anomalies += 1
+                    continue
+                if _classify_normalized_file(entry.name, file.name) == "anomaly":
+                    anomalies += 1
+        return anomalies

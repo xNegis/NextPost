@@ -229,8 +229,71 @@ authenticated account, never a count). An already-voted Public card keeps its po
 `Votes cannot be changed`, and never exposes aggregate or other-voter information. Private
 consultations never appear in Home.
 
+## Published-photo protection and deletion
 
+`backend/app/photo_erasure_service.py` defines the single reusable published-media erasure contract
+(RF-37) that the later author-deletion (RF-13), finalization (RF-19/RF-20) and restricted
+administrator-removal (RF-32) terminal writers must call. A terminal consumer locks the consultation
+row `FOR UPDATE`, persists its own terminal effects, and calls `mark_media_for_erasure(...)` before
+its single commit. That marker deactivates the Private capability and marks every object in the
+consultation's unique consumed source upload session deletion-pending without committing or touching
+the filesystem. Access is revoked at that commit; a storage failure can never reopen it.
 
+After commit, the existing startup, hourly and restricted manual maintenance (`cleanup.py`) calls
+`reconcile_terminal_media(...)` to discover terminal consultations that still retain a consumed
+source session, commit logical revocation first, delete each exact validated storage key, and verify
+real absence before detaching the stable option (`media_deleted_at`) and removing the visual/upload
+ledger rows. Already-absent objects are idempotent; partial or failed work retains its exact key and
+retry metadata. No originals, thumbnails, public copies, archives, backups or model datasets exist,
+and filename/directory inference is never used to broaden deletion.
+
+Maintenance uses a narrow PostgreSQL session advisory lock (`pg_try_advisory_lock`) so multiple API
+replicas cannot sweep the shared photo volume concurrently. A periodic/startup replica that cannot
+acquire it skips; the manual command reports `busy` and exits with code `2`. Startup and hourly
+passes always release the lock in `finally` so a crash cannot leak it.
+
+### Restricted cleanup command and alerting
+
+`python -m app.cleanup` emits sanitized, machine-readable counters
+(`deleted_files`, `terminal_objects_deleted`, `terminal_objects_failed`, `anomalies`, and so on)
+and never logs storage keys, paths, content, questions or account data. Exit codes:
+
+- `0` — normal completion with no overdue work and no anomalies;
+- `1` — pending deletion work older than `PHOTO_DELETION_ALERT_SECONDS` (default 24 hours), or
+  malformed/unexpected objects in the normalized photo volume that require operator handling;
+- `2` — another maintenance pass already holds the leader lock.
+
+API liveness/readiness remain independent of deletion state, so overdue or failed physical deletion
+cannot take the API offline or reopen access. Before beta, deployment must route these error logs
+and a scheduled non-zero status check to the operator alert channel; no monitoring vendor is built
+into the application.
+
+### Terminal persistence and DEC-023
+
+After a terminal consumer has persisted its permitted replacement data, it calls
+`sanitize_terminal_content(...)` to remove disallowed stored content: question, context, audience,
+the publication fingerprint and the Private link capability. The persisted consultation then retains
+only the DEC-023 allowlist (identifiers, relevant dates/state, stable option ordinals and
+media-deletion markers, declared option IDs, aggregate counts and participant outcomes). RF-37
+defines this seam but never invents final selections, aggregates or participant outcomes, and it
+does not delete finalized raw `Vote` choices before the owning consumer persists their permitted
+outcome replacement.
+
+### Supported restore (proof of concept)
+
+Published photographs are not backed up (DEC-032). The only supported POC restore restores the
+PostgreSQL database into an empty photo volume or the current (non-restored) volume, never an older
+photo-volume snapshot:
+
+1. Keep public traffic disabled.
+2. Restore PostgreSQL only.
+3. Run `python -m alembic upgrade head` followed by `python -m app.cleanup` (reconciliation and
+   status) with traffic still disabled.
+4. Resolve any non-zero status, then re-enable traffic.
+
+A database-only restore can lose photographs belonging to still-open consultations; that is the
+accepted durability limitation. Restoring an older photo-volume snapshot is unsupported and
+prohibited because it could resurrect bytes whose revocation occurred after that snapshot.
 
 ## Local backend development
 

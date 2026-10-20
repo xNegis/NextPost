@@ -14,6 +14,13 @@ function defineClipboard(writeText: (text: string) => Promise<void>) {
   });
 }
 
+function defineLegacyCopy(copy: () => boolean) {
+  Object.defineProperty(document, "execCommand", {
+    configurable: true,
+    value: copy,
+  });
+}
+
 function defineShare(
   share: (data: ShareData) => Promise<void>,
   canShare: (data: ShareData) => boolean = () => true,
@@ -30,6 +37,10 @@ function defineShare(
 
 afterEach(() => {
   Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: undefined,
+  });
+  Object.defineProperty(document, "execCommand", {
     configurable: true,
     value: undefined,
   });
@@ -63,6 +74,36 @@ describe("ShareConsultation", () => {
     await user.click(screen.getByRole("button", { name: "Copy link" }));
 
     expect(writeText).toHaveBeenCalledWith(LINK);
+    expect(await screen.findByText("Link copied.")).toBeInTheDocument();
+  });
+
+  it("uses selection-based copy when the Clipboard API is unavailable", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: undefined,
+    });
+    const legacyCopy = vi.fn().mockReturnValue(true);
+    defineLegacyCopy(legacyCopy);
+
+    render(<ShareConsultation link={LINK} />);
+    await user.click(screen.getByRole("button", { name: "Copy link" }));
+
+    expect(legacyCopy).toHaveBeenCalledWith("copy");
+    expect(screen.getByLabelText("Consultation link")).toHaveFocus();
+    expect(await screen.findByText("Link copied.")).toBeInTheDocument();
+  });
+
+  it("falls back to selection-based copy when Clipboard API access is denied", async () => {
+    const user = userEvent.setup();
+    defineClipboard(vi.fn().mockRejectedValue(new Error("denied")));
+    const legacyCopy = vi.fn().mockReturnValue(true);
+    defineLegacyCopy(legacyCopy);
+
+    render(<ShareConsultation link={LINK} />);
+    await user.click(screen.getByRole("button", { name: "Copy link" }));
+
+    expect(legacyCopy).toHaveBeenCalledWith("copy");
     expect(await screen.findByText("Link copied.")).toBeInTheDocument();
   });
 

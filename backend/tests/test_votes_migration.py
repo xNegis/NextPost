@@ -13,7 +13,6 @@ from alembic import command
 from app.models import (
     Account,
     Consultation,
-    ConsultationPhoto,
     ConsultationState,
     PhotoUploadImage,
     PhotoUploadSession,
@@ -103,13 +102,25 @@ def _seed_consultation(url: str) -> tuple[uuid.UUID, uuid.UUID, list[uuid.UUID]]
         )
         db.add(consultation)
         db.flush()
-        photo = ConsultationPhoto(consultation_id=consultation.id, image_id=image.id, ordinal=0)
-        second_photo = ConsultationPhoto(
-            consultation_id=consultation.id, image_id=second_image.id, ordinal=1
+        # Insert ordered photos with raw SQL so the seed remains compatible with later revisions
+        # that add consultation_photos columns (RF-37 adds media_deleted_at).
+        photo_id = uuid.uuid4()
+        second_photo_id = uuid.uuid4()
+        db.execute(
+            text(
+                "INSERT INTO consultation_photos (id, consultation_id, image_id, ordinal) "
+                "VALUES (:id, :c, :i, 0), (:id2, :c, :i2, 1)"
+            ),
+            {
+                "id": str(photo_id),
+                "id2": str(second_photo_id),
+                "c": str(consultation.id),
+                "i": str(image.id),
+                "i2": str(second_image.id),
+            },
         )
-        db.add_all([photo, second_photo])
         db.commit()
-        return owner.id, consultation.id, [photo.id, second_photo.id]
+        return owner.id, consultation.id, [photo_id, second_photo_id]
     # unreachable; keep mypy/readability honest
     raise AssertionError
 

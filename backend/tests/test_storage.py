@@ -82,3 +82,53 @@ def test_sweep_tmp_removes_stale_files(storage) -> None:
 
     assert removed == 1
     assert not stale.exists()
+
+
+def test_count_anomalies_detects_malformed_shard_directory(storage) -> None:
+    malformed = storage.normalized_dir / "notshard"
+    malformed.mkdir(parents=True, exist_ok=True)
+    (malformed / "whatever.bin").write_bytes(b"x")
+
+    assert storage.count_normalized_anomalies() == 1
+    assert storage.sweep_normalized(set()) == 0
+    assert (malformed / "whatever.bin").exists()
+
+
+def test_count_anomalies_detects_wrong_shard_key(storage) -> None:
+    key = "ab" + "0" * 30
+    wrong_shard = storage.normalized_dir / "cd"
+    wrong_shard.mkdir(parents=True, exist_ok=True)
+    (wrong_shard / key).write_bytes(b"x")
+
+    assert storage.count_normalized_anomalies() == 1
+    assert storage.sweep_normalized(set()) == 0
+    assert (wrong_shard / key).exists()
+
+
+def test_count_anomalies_detects_nested_entry(storage) -> None:
+    shard = storage.normalized_dir / "ab"
+    shard.mkdir(parents=True, exist_ok=True)
+    nested = shard / "nested"
+    nested.mkdir()
+    (nested / "x").write_bytes(b"x")
+
+    assert storage.count_normalized_anomalies() == 1
+    assert storage.sweep_normalized(set()) == 0
+    assert (nested / "x").exists()
+
+
+def test_sweep_skips_anomalies_but_removes_genuine_orphans(storage) -> None:
+    wrong_key = "ab" + "0" * 30
+    wrong_shard = storage.normalized_dir / "cd"
+    wrong_shard.mkdir(parents=True, exist_ok=True)
+    (wrong_shard / wrong_key).write_bytes(b"x")
+
+    orphan_key = storage.new_key()
+    storage.write_normalized(orphan_key, b"orphan")
+
+    removed = storage.sweep_normalized(set())
+
+    assert removed == 1
+    assert not storage.exists(orphan_key)
+    assert (wrong_shard / wrong_key).exists()
+    assert storage.count_normalized_anomalies() == 1

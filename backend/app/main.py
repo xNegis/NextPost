@@ -14,7 +14,7 @@ from app.api.accounts import router as accounts_router
 from app.api.consultations import router as consultations_router
 from app.api.health import router as health_router
 from app.api.photos import router as photos_router
-from app.cleanup import run_cleanup
+from app.cleanup import build_maintenance_lock, run_cleanup
 from app.config import get_settings
 from app.consultation_service import ConsultationError
 from app.db import get_session_factory
@@ -40,7 +40,7 @@ def _run_cleanup_once() -> None:
     storage.ensure_dirs()
     session_factory = get_session_factory()
     with session_factory() as db:
-        run_cleanup(db, storage)
+        run_cleanup(db, storage, lock=build_maintenance_lock())
 
 
 async def _maintenance_loop() -> None:

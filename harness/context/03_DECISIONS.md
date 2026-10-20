@@ -721,3 +721,46 @@ wrong browser-visible production/proxy origin would appear in copied links, so d
 present the intended public origin. The owner selected RF-26 choices
 `1A 2A 3A 4A 5A 6A 7A 8B`; implementation-plan finalisation and harness launch remain separate
 approval gates.
+
+---
+
+## DEC-041 - Database-first revocation and verifiable published-photo erasure
+
+**Status:** Accepted (2026-10-19)
+
+Finalization, author deletion and restricted administrator removal use one RF-37 media contract.
+Their consumer transaction locks the consultation row, writes its own terminal outcome semantics,
+deactivates any Private capability, marks every object in the consultation's unique consumed source
+upload session for deletion, writes terminal lifecycle and commits once. Access ends at that commit;
+fallible filesystem work occurs afterwards and can never reopen access. Votes and terminal writers
+serialize on the same consultation row with no priority hierarchy. A photo request authorized before
+terminal commit may finish, but no authorization beginning after commit succeeds.
+
+Deletion retains exact keys and sanitized retry metadata only while pending or failed. Startup,
+hourly and restricted manual maintenance claims durable work and uses a narrow PostgreSQL advisory
+lock for filesystem reconciliation; no general worker or queue is introduced. Every exact object is
+deleted idempotently and explicitly checked absent. Partial work retains only remaining keys.
+Malformed or unexpected objects are denied and reported for restricted handling rather than ignored
+or deleted through broadened path inference. After verified absence, visual/upload rows and metadata
+are removed; stable option identity/order and a minimal non-visual deletion-completion marker remain.
+
+Cleanup emits sanitized structured counters. Failures are visible immediately, and work beyond the
+existing configurable 24-hour threshold makes restricted status fail and must reach the operator's
+alert channel before beta; API readiness remains independent. The supported POC restore restores
+PostgreSQL with an empty or current private-photo volume, never an older image snapshot, and runs
+migration plus reconciliation before traffic. This accepts possible loss of still-open photos under
+DEC-032 in exchange for guaranteeing supported restoration cannot resurrect revoked bytes.
+
+Terminal persistence is allowlisted to DEC-023: required identifiers, relevant dates/state, stable
+options and deletion markers, declared option identifiers, aggregates and participant
+`Matched`/`Not matched`/`No choice` outcomes. Question/context, audience/link state, publication
+fingerprint, upload/session/attempt data, keys/dimensions/byte lengths and raw per-voter photo choices
+do not survive once their owning terminal consumer has produced the permitted replacement data.
+Deletion/removal before finalization produces no outcomes. An additive compatibility migration
+supports detachment/minimization; downgrade must refuse after irreversible use.
+
+The implementation order is RF-37 foundation, RF-13 as the first terminal consumer, coordinated
+RF-19/RF-20 finalization next, and restricted RF-32 removal through the same boundary before beta.
+Completion requires unit, real-PostgreSQL concurrency, storage-fault, migration/rollback, Docker,
+restart, restricted-status and supported-restore evidence on disposable resources. These decisions
+settle grooming behavior; implementation-plan finalisation and harness launch remain separate gates.

@@ -147,13 +147,21 @@ class Consultation(Base):
     __table_args__ = (
         Index("ix_consultations_owner_state_created", "owner_id", "state", "created_at"),
         CheckConstraint(
-            "audience IN ('public', 'private')",
+            "audience IS NULL OR audience IN ('public', 'private')",
             name="ck_consultations_audience",
         ),
         CheckConstraint(
+            "(audience IS NULL) OR "
             "(audience = 'public' AND private_link_active = false) OR "
             "(audience = 'private' AND private_link_generation >= 1)",
             name="ck_consultations_audience_link",
+        ),
+        # Open consultations must keep the complete publication contract; only terminal
+        # consumers may detach the source session, fingerprint, question and audience.
+        CheckConstraint(
+            "(state <> 'open') OR (question IS NOT NULL AND audience IS NOT NULL "
+            "AND source_session_id IS NOT NULL AND fingerprint IS NOT NULL)",
+            name="ck_consultations_open_complete",
         ),
     )
 
@@ -161,22 +169,22 @@ class Consultation(Base):
     owner_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("accounts.id", ondelete="RESTRICT"), nullable=False
     )
-    question: Mapped[str] = mapped_column(Text, nullable=False)
+    question: Mapped[str | None] = mapped_column(Text, nullable=True)
     context: Mapped[str | None] = mapped_column(Text, nullable=True)
-    audience: Mapped[str] = mapped_column(String(8), nullable=False)
+    audience: Mapped[str | None] = mapped_column(String(8), nullable=True)
     state: Mapped[ConsultationState] = mapped_column(
         Enum(ConsultationState, native_enum=False, length=16),
         nullable=False,
         default=ConsultationState.open,
     )
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    source_session_id: Mapped[uuid.UUID] = mapped_column(
+    source_session_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid,
         ForeignKey("photo_upload_sessions.id", ondelete="RESTRICT"),
-        nullable=False,
+        nullable=True,
         unique=True,
     )
-    fingerprint: Mapped[str] = mapped_column(String(FINGERPRINT_MAX_LENGTH), nullable=False)
+    fingerprint: Mapped[str | None] = mapped_column(String(FINGERPRINT_MAX_LENGTH), nullable=True)
     private_link_generation: Mapped[int] = mapped_column(Numeric(20, 0), nullable=False, default=0)
     private_link_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
@@ -202,6 +210,13 @@ class ConsultationPhoto(Base):
         # Candidate key so a Vote can prove (via a composite foreign key) that its selected
         # option belongs to the same consultation it references.
         UniqueConstraint("consultation_id", "id", name="uq_consultation_photos_consultation_id"),
+        # A stable option is either visual (image present, deletion marker absent) or
+        # post-erasure (image detached, verified-absence completion marker present).
+        CheckConstraint(
+            "(image_id IS NOT NULL AND media_deleted_at IS NULL) OR "
+            "(image_id IS NULL AND media_deleted_at IS NOT NULL)",
+            name="ck_consultation_photos_media",
+        ),
         Index("ix_consultation_photos_consultation_id", "consultation_id"),
         Index("ix_consultation_photos_image_id", "image_id"),
     )
@@ -210,10 +225,13 @@ class ConsultationPhoto(Base):
     consultation_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("consultations.id", ondelete="CASCADE"), nullable=False
     )
-    image_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("photo_upload_images.id", ondelete="RESTRICT"), nullable=False
+    image_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("photo_upload_images.id", ondelete="RESTRICT"), nullable=True
     )
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    media_deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const SHARE_TITLE = "NextPost";
 const SHARE_TEXT = "Vote on a photo consultation in NextPost";
@@ -26,21 +26,37 @@ function canSharePayload(url: string): boolean {
   return true;
 }
 
-async function copyText(text: string): Promise<boolean> {
+function legacyCopyText(source: HTMLTextAreaElement): boolean {
+  try {
+    source.focus();
+    source.select();
+    source.setSelectionRange(0, source.value.length);
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  }
+}
+
+async function copyText(
+  text: string,
+  source: HTMLTextAreaElement | null,
+): Promise<boolean> {
   try {
     if (typeof navigator.clipboard?.writeText === "function") {
       await navigator.clipboard.writeText(text);
       return true;
     }
   } catch {
-    return false;
+    // Fall through to the selection-based copy used by browsers that block
+    // Clipboard API access on a private-network HTTP origin.
   }
-  return false;
+  return source !== null && legacyCopyText(source);
 }
 
 export function ShareConsultation({ link }: ShareConsultationProps) {
   const [feedback, setFeedback] = useState<Feedback>({ kind: "idle" });
   const [sharePending, setSharePending] = useState(false);
+  const linkFieldRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setFeedback({ kind: "idle" });
@@ -50,7 +66,7 @@ export function ShareConsultation({ link }: ShareConsultationProps) {
   const handleCopy = useCallback(() => {
     if (link === null) return;
     setFeedback({ kind: "idle" });
-    void copyText(link).then((ok) => {
+    void copyText(link, linkFieldRef.current).then((ok) => {
       setFeedback(ok ? { kind: "copied" } : { kind: "copy_failed" });
     });
   }, [link]);
@@ -111,6 +127,7 @@ export function ShareConsultation({ link }: ShareConsultationProps) {
         Consultation link
       </label>
       <textarea
+        ref={linkFieldRef}
         key={link}
         id="share-consultation-url"
         className="share-consultation__url"

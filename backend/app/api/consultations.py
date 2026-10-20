@@ -294,7 +294,7 @@ def create_consultation(
     return ConsultationPublishedResponse(
         id=str(consultation.id),
         state=cast(Literal["open"], consultation.state.value),
-        audience=consultation.audience,
+        audience=cast(str, consultation.audience),
     )
 
 

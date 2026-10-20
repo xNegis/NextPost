@@ -1,5 +1,163 @@
 # Project State
 
+## RF-37 completed and validated by the product owner - 2026-10-20
+
+The product owner completed the private-LAN mobile review and confirmed that the RF-37 behavior
+works as expected. The only issue found during review was RF-26's Copy link action on an insecure
+private-network HTTP origin: mobile Safari could not use the secure-context Clipboard API. The
+frontend now falls back to selection-based copying, retains the manual-copy failure path, and has
+focused coverage for an unavailable or rejected Clipboard API. The rebuilt manual stack was
+rechecked successfully by the product owner.
+
+Together with the approved plan, harness implementation, independent review, complete automated
+matrix and successful mobile validation, this closes RF-37 as `Completed and validated`. The
+reusable revocation/erasure foundation is ready for its first terminal consumer, RF-13. Complete
+finalization remains the later coordinated RF-19/RF-20 increment, and restricted RF-32 removal must
+consume the same contract before beta exposure.
+
+The isolated `nextpost-rf37-manual` stack and its dedicated data remain running until the product
+owner requests cleanup. No Trello mutation has been performed.
+
+## RF-37 isolated manual-validation stack running - 2026-10-20
+
+At the product owner's request, the coordinator started an isolated Docker Compose project named
+`nextpost-rf37-manual` using dedicated `postgres_data` and `photo_storage` volumes. PostgreSQL and
+the backend are healthy, migrations through `20261019_0006` applied successfully, `/api/health` and
+`/api/ready` return `200`, and the frontend is available at `http://localhost:4173`.
+
+The stack contains no ordinary project data and remains running for product-owner validation. It can
+later be removed, including only its dedicated volumes, with
+`docker compose -p nextpost-rf37-manual down -v` after explicit confirmation that testing is done.
+
+## RF-37 implemented and independently validated - 2026-10-20
+
+The approved RF-37 foundation is implemented in the working tree and has passed coordinator review
+after one corrective harness continuation. It now provides transaction-local whole-consumed-session
+revocation, immediate fail-closed access, verified and retryable physical erasure, stable option/vote
+retention, post-absence visual-ledger removal, PostgreSQL maintenance leadership, fail-closed anomaly
+handling, DEC-023 terminal minimization seams, an additive migration with irreversible-use downgrade
+refusal, and documented database-only restore behavior. RF-13, RF-19/RF-20 and restricted RF-32 remain
+future consumers and were not implemented.
+
+Independent evidence on 2026-10-20: 436 backend tests passed locally; 51 focused RF-37/storage/live
+PostgreSQL tests passed in the coordinator rerun, while the harness ran all 40 PostgreSQL-dependent
+tests by file; 486 frontend tests passed; Ruff, formatting, the repository-root MyPy invocation,
+frontend formatting/lint/typecheck, frontend build and `npm audit --audit-level=high` passed; both
+Docker images built; and the disposable
+restart/startup plus database-with-empty-volume restore rehearsal passed without re-exposing media.
+The disposable `nextpost-rf37-test-db` container and its anonymous volume were removed afterwards.
+
+The stricter `backend`-directory `mypy app` invocation still reports the same seven errors present
+before RF-37 in `consultation_service.py`, `api/consultations.py` and `main.py`; none is introduced by
+the RF-37 diff. This baseline quality debt is recorded rather than silently claimed green.
+
+No commit, push, deployment or Trello mutation has been performed. The RF-37 implementation and its
+grooming/decision/plan documentation remain uncommitted pending the product owner's next instruction.
+
+## RF-37 harness continued after baseline-test interruption - 2026-10-19
+
+The first RF-37 harness process completed without code changes after the pre-change PostgreSQL suite
+repeatedly stalled near 49 percent and a diagnostic write to the external temporary directory was
+auto-rejected. The coordinator preserved continuity with OpenCode session
+`ses_eaa61bf47ffeGduRF0hvQiapbz` in retained execution session `77125`, using the same required model
+and variant. The continuation was instructed to avoid external paths, stop repeating the full
+baseline, isolate tests with bounded runs and proceed with the approved implementation.
+
+This is an execution interruption, not an RF-37 scope or product blocker. Completion still requires
+the code, migration, focused PostgreSQL/storage/concurrency recovery evidence and independent review.
+
+## RF-37 implementation harness launched - 2026-10-19
+
+The explicitly authorized external implementation harness is running from
+`harness/features/RF-37-Implementation-plan.md` with the required
+`opencode-go/deepseek-v4-pro` model and `high` variant. The coordinator retained execution session
+`3234` and recorded the pre-launch worktree in
+`C:\Users\anton\AppData\Local\Temp\NextPost-RF37-prelaunch-20261019-212303`.
+
+The harness must preserve the uncommitted RF-37 grooming, decision, state and plan documents and
+must not commit, push, deploy or modify Trello. Completion remains subject to independent review
+against the approved plan and validation matrix.
+
+## RF-37 plan ready; autonomous implementation harness authorized - 2026-10-19
+
+The product owner explicitly approved the settled RF-37 scope, finalisation of the English
+implementation plan and autonomous launch of the external implementation harness.
+`harness/features/RF-37-Implementation-plan.md` is `Ready for implementation` with
+`Remaining questions: None`. It defines database-first whole-consumed-session revocation, verified
+idempotent physical erasure, post-absence visual-ledger minimization, startup/hourly/manual
+maintenance leadership, anomaly/overdue operation, supported non-resurrecting restore, DEC-023
+allowlisting, additive migration with irreversible-use downgrade refusal and the full validation
+matrix.
+
+RF-37 is `Ready for implementation`. The implementation must add only the reusable foundation;
+RF-13, coordinated RF-19/RF-20 and restricted RF-32 remain separate future consumers. Existing
+uncommitted RF-37 documentation must be preserved. The harness is authorized now. Commit, push,
+deployment, Trello mutation and operation on ordinary user volumes remain unauthorized.
+
+## RF-37 material choices confirmed - 2026-10-19
+
+The product owner accepted every recommended second-batch choice, `7A 8A 9A 10A 11A 12A 13A
+14A`, after previously settling `1A 2B`, refined `3C`, `4A 5A 6A`. DEC-041 records the durable
+cross-feature contract: database-first revocation, whole-consumed-session manifest, verified
+absence before visual-ledger removal, consultation-row terminal serialization, request-time read
+semantics, narrow startup/hourly/manual maintenance with advisory leadership, fail-closed anomaly
+handling, structured overdue alerting, database-only supported restore, DEC-023 terminal allowlist,
+additive migration with irreversible-use downgrade refusal and the complete validation matrix.
+
+RF-37 is now `Grooming - awaiting product-owner confirmation`. No material question remains. The
+settled scope orders RF-37 before RF-13, coordinated RF-19/RF-20 and restricted RF-32 removal. The
+complete intake, code findings, accepted choices, exclusions and validation direction are recorded
+in `harness/grooming/RF-37-grooming.md`. No implementation plan has been created: explicit approval
+to finalise the self-contained English plan remains required, and harness launch would require a
+later independent request. No implementation, tests, commit, push, deployment or Trello mutation
+occurred.
+
+## RF-37 grooming started - 2026-10-19
+
+The product owner explicitly selected `RF-37 · Proteger y borrar fotografías`. The current card
+was consumed read-only from the configured APP - NextPost board:
+https://trello.com/c/Dodf7k4R/40-rf-37-proteger-y-borrar-fotograf%C3%ADas. It is open and incomplete
+in `Próximo · completar el MVP`, with no labels, members, dates, checklists, comments, attachments
+or custom-field values. Its complete current description, criteria, metadata and available activity
+are captured in `harness/grooming/RF-37-grooming.md`. RF-37 is
+`Grooming - questions open`.
+
+Repository-first inspection confirms RF-07 already supplies private normalized storage, durable
+per-image revocation/deletion metadata, verified idempotent unlink, startup/hourly/manual retry and
+orphan cleanup for temporary media. RF-10 publishes without copying bytes: each ordered
+`ConsultationPhoto` points to the same ready `PhotoUploadImage` and normalized JPEG in the private
+volume. Strict-open request authorization already denies every terminal lifecycle, while RF-11 and
+RF-16 provide the shared consultation-row serialization protocol for terminal operations and votes.
+No real finalization, author deletion, administrator removal or published-photo marker/purge exists.
+
+The first unaccepted decision batch recommends database-first logical revocation in the terminal
+transaction, exact association-led deletion manifests, reuse and minimization of the durable image
+ledger, verified absence as completion, one consultation-row lock for votes/terminal writers and an
+honest request-time boundary for already in-flight reads. A second recorded batch remains for
+maintenance leadership, recovery/edge files, observability, restore safety, DEC-023 minimization,
+migration/rollback, validation and RF-13/RF-19/RF-20/restricted-RF-32 ordering. No recommendation is
+accepted at that intake checkpoint.
+
+The owner subsequently confirmed batch choices `1A 5A 6A`: database-first revocation, the shared
+consultation-row serialization point and request-time semantics for already in-flight reads. The
+owner selected `2B` while stating that `2A` was not understood, so the deletion-set choice remains
+open pending a concrete explanation. The owner also selected `3C 4B`; that original combination
+would remove the retry reference after an unverified delete call and conflicts with the binding
+verifiable-deletion/retry criteria. Q3/Q4 therefore remain open for a compatible clarification
+rather than being silently accepted or reinterpreted.
+
+After clarification, the owner confirmed `2B`, refined `3C` and `4A`. The deletion set is the whole
+unique consumed source session. Retry keys/metadata remain only while deletion is pending or failed;
+after an explicit absence check, visual ledger/upload metadata is removed while stable option
+identity/ordinal and a minimal non-visual completion marker survive. The second material batch is
+now presented in the grooming file as Q7-Q14, covering maintenance leadership, anomaly recovery,
+observability/alerting, supported restore, DEC-023 terminal allowlist, migration/rollback, required
+validation and consumer implementation order. Those choices remain unconfirmed.
+
+The previously dirty RF-16/RF-18/RF-26 work was committed first at the owner's request as
+`1df5694` (`feat: implement RF-16 RF-18 and RF-26`). RF-37 has changed documentation only. No plan,
+implementation, harness launch, test run, deployment, push or Trello mutation occurred.
+
 ## RF-26 completed and validated - 2026-10-19
 
 The product owner completed the private-LAN mobile review and explicitly reported `VALIDADO`.

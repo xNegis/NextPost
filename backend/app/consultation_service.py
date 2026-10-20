@@ -558,7 +558,7 @@ def _build_open_detail(db: Session, consultation: Consultation) -> ConsultationD
 
     photos: list[ConsultationPhotoDetail] = []
     for photo in photo_rows:
-        image = db.get(PhotoUploadImage, photo.image_id)
+        image = db.get(PhotoUploadImage, cast(uuid.UUID, photo.image_id))
         photos.append(
             ConsultationPhotoDetail(
                 id=str(photo.id),
@@ -570,9 +570,9 @@ def _build_open_detail(db: Session, consultation: Consultation) -> ConsultationD
     return ConsultationDetail(
         id=str(consultation.id),
         owner_nickname=nickname,
-        question=consultation.question,
+        question=cast(str, consultation.question),
         context=consultation.context,
-        audience=consultation.audience,
+        audience=cast(str, consultation.audience),
         state=cast(Literal["open"], consultation.state.value),
         published_at=_as_naive_utc(consultation.published_at),
         photos=photos,
@@ -715,8 +715,8 @@ def list_my_consultations(
                 MyConsultationOpenItem(
                     id=str(row.id),
                     state="open",
-                    question=row.question,
-                    audience=row.audience,
+                    question=cast(str, row.question),
+                    audience=cast(str, row.audience),
                     published_at=_as_naive_utc(row.published_at),
                     total_votes=total_votes.get(row.id, 0),
                 )
@@ -922,7 +922,7 @@ def list_feed(
             FeedItem(
                 id=str(row.id),
                 owner_nickname=nicknames.get(row.owner_id, ""),
-                question=row.question,
+                question=cast(str, row.question),
                 context_excerpt=_context_excerpt(row.context),
                 audience="public",
                 state="open",
@@ -962,7 +962,16 @@ def read_consultation_photo(
     if photo is None:
         raise ConsultationUnavailableError()
 
-    image = db.get(PhotoUploadImage, photo.image_id)
+    image_id = photo.image_id
+    if image_id is None:
+        logger.error(
+            "consultation photo is detached: photo_id=%s consultation_id=%s",
+            photo_id,
+            consultation_id,
+        )
+        raise ImageUnavailableError()
+
+    image = db.get(PhotoUploadImage, image_id)
     if image is None or image.state != PhotoImageState.ready or image.storage_key is None:
         logger.error(
             "consultation photo is not ready: photo_id=%s consultation_id=%s",
