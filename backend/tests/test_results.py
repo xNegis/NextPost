@@ -275,4 +275,5 @@ def test_finalized_list_rows_remain_minimal(client, session_factory) -> None:
         db.commit()
 
     body = client.get("/api/my-consultations?state=finalized").json()
-    assert set(body["items"][0]) == {"id", "state", "published_at"}
+    assert set(body["items"][0]) == {"id", "state", "published_at", "result"}
+    assert body["items"][0]["result"] is None

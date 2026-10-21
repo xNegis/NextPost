@@ -39,6 +39,7 @@ interface ConsultationComposerProps {
   onCancelNavigation: () => void;
   onViewInMyConsultations: (consultationId: string) => void;
   onDeleted?: (state: MyConsultationState) => void;
+  onFinalized?: (consultationId: string) => void;
 }
 
 const STEP_ORDER: ComposerStep[] = ["photos", "details", "review"];
@@ -51,6 +52,7 @@ export function ConsultationComposer({
   onCancelNavigation,
   onViewInMyConsultations,
   onDeleted,
+  onFinalized,
 }: ConsultationComposerProps) {
   const {
     status: configStatus,
@@ -265,6 +267,7 @@ export function ConsultationComposer({
         onBack={() => onNavigate("home")}
         onViewInMyConsultations={() => onViewInMyConsultations(publishedId)}
         onDeleted={onDeleted}
+        onFinalized={onFinalized}
         onSessionLost={onSessionLost}
       />
     );

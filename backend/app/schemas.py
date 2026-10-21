@@ -257,10 +257,27 @@ class ConsultationResultResponse(BaseModel):
     options: list[ConsultationResultOptionResponse]
 
 
+class FinalizedOptionResponse(BaseModel):
+    ordinal: int = Field(ge=0)
+    vote_count: int = Field(ge=0)
+    selected: bool
+
+
+class FinalResultSummaryResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    finalized_at: str
+    total_votes: int = Field(ge=0)
+    declaration: Literal["selected", "none"]
+    selected_ordinals: list[int]
+    options: list[FinalizedOptionResponse]
+
+
 class MyConsultationFinalizedListItem(BaseModel):
     id: str
     state: Literal["finalized"]
     published_at: str
+    result: FinalResultSummaryResponse | None
 
 
 MyConsultationListItem = Annotated[
@@ -289,6 +306,7 @@ class MyConsultationFinalizedDetail(BaseModel):
     id: str
     state: Literal["finalized"]
     published_at: str
+    result: FinalResultSummaryResponse | None
 
 
 MyConsultationOwnerDetail = Annotated[
@@ -314,6 +332,33 @@ class ConsultationDeleteRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     expected_state: Literal["open", "finalized"]
+
+
+class FinalizationDeclarationRequest(BaseModel):
+    """Strict tagged declaration: a selected set or an explicit none (RF-19/RF-20)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["selected", "none"]
+    option_ids: list[uuid.UUID] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _check_option_ids(self) -> "FinalizationDeclarationRequest":
+        if self.kind == "none" and self.option_ids:
+            raise ValueError("No options may be declared when the choice is none.")
+        if self.kind == "selected" and not self.option_ids:
+            raise ValueError("Select at least one option.")
+        if self.kind == "selected" and len(set(self.option_ids)) != len(self.option_ids):
+            raise ValueError("Options must be unique.")
+        return self
+
+
+class ConsultationFinalizeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    operation_id: uuid.UUID
+    expected_state: Literal["open"]
+    declaration: FinalizationDeclarationRequest
 
 
 class FeedPhotoResponse(BaseModel):

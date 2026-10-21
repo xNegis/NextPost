@@ -845,3 +845,38 @@ RF-13 remains a narrow voluntary-author-deletion consumer: it does not implement
 finalization/results, RF-21 participation history or RF-32 administrator authority. The owner
 selected RF-13 options `6A 7A 8A 9A 10A 11A 12A`. These choices complete material grooming but do
 not approve implementation-plan finalisation or a harness launch.
+
+---
+
+## DEC-044 - Atomic finalization replaces raw votes with minimum photo-free outcomes
+
+**Status:** Accepted (2026-10-20)
+
+RF-19 and RF-20 are one indivisible author operation. The authenticated author finalizes an open
+consultation by explicitly declaring one or more stable options or `none` in one accessible
+confirmation. The winning transaction locks the consultation, snapshots a count for every stable
+option and the total denominator, creates one private participant outcome per valid voter, deletes
+the raw vote choices, marks all media through RF-37, sanitizes forbidden content, writes
+`finalized` and commits once. `Matched` means the voted option belongs to the declared set;
+`Not matched` means it does not; an explicit none produces `No choice` for every voter. Non-voters
+receive no outcome. Zero votes, ties and disagreement with the majority remain valid.
+
+The retained final record is normalized and limited to the DEC-023 allowlist: consultation/owner
+identity and relevant dates/state, stable option identity/order/deletion marker, declared options,
+per-option counts and denominator, account-linked semantic outcomes, and RF-37 retry metadata only
+while needed. Raw choices, images, free text, audience/link state, publication fingerprint and
+upload/storage metadata do not survive convergence. Existing finalized rows receive no fabricated
+backfill and display an honest unavailable-result summary.
+
+The request uses `expected_state=open`, a client-generated operation UUID and a canonical payload
+fingerprint. Only the same operation identity and payload may replay success. Voting, finalization,
+open author deletion and restricted removal serialize on the consultation row; first commit wins
+without priority. PostgreSQL commit is product success and immediately revokes access. Later storage
+failure is retried by RF-37 and never reopens access or changes the result.
+
+The author initiates finalization only from open owner detail and receives a photo-free finalized
+list/detail summary with dates, declaration and count-only final aggregates. RF-21 continues to own
+participant history; RF-32 owns administrator authority; RF-34 owns later account deletion or
+anonymization. One coordinated RF-19/RF-20 implementation plan preserves both ticket traces and
+requires unit, API, accessible frontend, migration, real-PostgreSQL concurrency, storage-fault,
+Docker, restart and supported-recovery evidence. The owner selected `Q1A` through `Q14A`.

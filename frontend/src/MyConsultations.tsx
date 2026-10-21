@@ -14,6 +14,7 @@ import {
   type MyConsultationState,
 } from "./consultationApi";
 import { formatPublishedDate } from "./consultationDate";
+import { selectedPhotosLabel } from "./finalizedResult";
 import { OwnerConsultationDetail } from "./OwnerConsultationDetail";
 import { usePeriodicRefresh } from "./usePeriodicRefresh";
 import { voteCountLabel } from "./voteCount";
@@ -210,6 +211,11 @@ export function MyConsultations({
     handleBackFromDetail();
   }, [handleBackFromDetail]);
 
+  const handleFinalized = useCallback(() => {
+    setNotice("Consultation finalized");
+    setTab("finalized");
+  }, []);
+
   useEffect(() => {
     if (notice === null) return;
     const timer = setTimeout(() => setNotice(null), 5000);
@@ -277,6 +283,7 @@ export function MyConsultations({
         variant="returning"
         onBack={handleBackFromDetail}
         onDeleted={handleDeleted}
+        onFinalized={handleFinalized}
         onSessionLost={onSessionLost}
       />
     );
@@ -408,7 +415,26 @@ export function MyConsultations({
                         <time dateTime={item.published_at}>
                           {formatPublishedDate(item.published_at)}
                         </time>
+                        {item.result !== null && (
+                          <>
+                            {" "}
+                            · Finalized{" "}
+                            <time dateTime={item.result.finalized_at}>
+                              {formatPublishedDate(item.result.finalized_at)}
+                            </time>
+                          </>
+                        )}
                       </p>
+                      {item.result === null ? (
+                        <p className="my-consultations__result">
+                          Final result unavailable
+                        </p>
+                      ) : (
+                        <p className="my-consultations__result">
+                          {selectedPhotosLabel(item.result)} ·{" "}
+                          {voteCountLabel(item.result.total_votes)}
+                        </p>
+                      )}
                     </>
                   )}
                   <button

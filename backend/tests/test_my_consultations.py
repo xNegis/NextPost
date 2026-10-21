@@ -217,11 +217,12 @@ def test_finalized_list_exposes_exactly_minimum_fields(client, session_factory) 
     assert response.status_code == 200
     items = response.json()["items"]
     assert len(items) == 1
-    assert set(items[0]) == {"id", "state", "published_at"}
+    assert set(items[0]) == {"id", "state", "published_at", "result"}
     assert items[0] == {
         "id": consultation_id,
         "state": "finalized",
         "published_at": items[0]["published_at"],
+        "result": None,
     }
 
 
@@ -313,8 +314,9 @@ def test_owner_finalized_detail_returns_minimum_summary(client, session_factory)
     response = client.get(f"/api/my-consultations/{consultation_id}")
     assert response.status_code == 200
     body = response.json()
-    assert set(body) == {"id", "state", "published_at"}
+    assert set(body) == {"id", "state", "published_at", "result"}
     assert body["state"] == "finalized"
+    assert body["result"] is None
 
 
 @pytest.mark.parametrize("state", ["deleted", "removed"])
@@ -473,7 +475,7 @@ def test_finalized_owner_read_never_builds_open_projection(session_factory, monk
         result = consultation_service.read_my_consultation(db, consultation.id, account.id)
 
     assert result.state == "finalized"
-    assert set(vars(result)) == {"id", "state", "published_at"}
+    assert set(vars(result)) == {"id", "state", "published_at", "result"}
 
 
 def test_finalized_owner_read_checks_ownership_before_state(session_factory) -> None:
@@ -505,4 +507,4 @@ def test_finalized_owner_read_selects_only_minimal_columns(session_factory, monk
         result = consultation_service.read_my_consultation(db, consultation.id, account.id)
 
     assert result.state == "finalized"
-    assert set(vars(result)) == {"id", "state", "published_at"}
+    assert set(vars(result)) == {"id", "state", "published_at", "result"}

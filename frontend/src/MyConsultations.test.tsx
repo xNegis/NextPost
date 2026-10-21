@@ -16,6 +16,7 @@ import {
   fetchMyConsultation,
   fetchMyConsultations,
   fetchOwnerLink,
+  finalizeConsultation,
 } from "./consultationApi";
 import { MyConsultations } from "./MyConsultations";
 
@@ -31,6 +32,7 @@ vi.mock("./consultationApi", async (importOriginal) => {
     replaceOwnerLink: vi.fn(),
     createOwnerLink: vi.fn(),
     deleteConsultation: vi.fn(),
+    finalizeConsultation: vi.fn(),
   };
 });
 
@@ -38,6 +40,7 @@ const listMock = vi.mocked(fetchMyConsultations);
 const detailMock = vi.mocked(fetchMyConsultation);
 const photoMock = vi.mocked(fetchConsultationPhotoUrl);
 const linkMock = vi.mocked(fetchOwnerLink);
+const finalizeMock = vi.mocked(finalizeConsultation);
 const deleteMock = vi.mocked(deleteConsultation);
 
 const OPEN_ITEM = {
@@ -53,6 +56,7 @@ const FINALIZED_ITEM = {
   id: "123e4567-e89b-12d3-a456-426614174001",
   state: "finalized" as const,
   published_at: "2026-09-28T12:00:00Z",
+  result: null,
 };
 
 const OPEN_DETAIL = {
@@ -66,6 +70,13 @@ const OPEN_DETAIL = {
   photos: [{ id: "photo-1", width: 100, height: 200 }],
 };
 
+const FINALIZED_DETAIL = {
+  id: OPEN_ITEM.id,
+  state: "finalized" as const,
+  published_at: "2026-09-28T12:00:00Z",
+  result: null,
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   listMock.mockResolvedValue({ items: [], next_cursor: null });
@@ -73,6 +84,12 @@ beforeEach(() => {
   photoMock.mockResolvedValue("blob:photo");
   linkMock.mockResolvedValue({ active: true, generation: "1", token: null });
   deleteMock.mockResolvedValue(undefined);
+  finalizeMock.mockResolvedValue({
+    id: OPEN_ITEM.id,
+    state: "finalized",
+    published_at: "2026-09-28T12:00:00Z",
+    result: null,
+  });
 });
 
 function renderList(
@@ -220,6 +237,88 @@ describe("MyConsultations", () => {
       ).toBeInTheDocument(),
     );
     expect(screen.getByText(/Finalized · Published/)).toBeInTheDocument();
+  });
+
+  it("renders the finalized result in list rows", async () => {
+    const user = userEvent.setup();
+    listMock.mockResolvedValue({
+      items: [
+        {
+          ...FINALIZED_ITEM,
+          result: {
+            finalized_at: "2026-09-28T12:05:00Z",
+            total_votes: 3,
+            declaration: "selected",
+            selected_ordinals: [0],
+            options: [
+              { ordinal: 0, vote_count: 2, selected: true },
+              { ordinal: 1, vote_count: 1, selected: false },
+            ],
+          },
+        },
+      ],
+      next_cursor: null,
+    });
+    const { container } = renderList();
+    await user.click(screen.getByRole("tab", { name: "Finalized" }));
+    await waitFor(() =>
+      expect(screen.getByText("Photo 1 · 3 votes")).toBeInTheDocument(),
+    );
+    expect(
+      container.querySelector('time[datetime="2026-09-28T12:05:00Z"]'),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the detail open and refetches the finalized detail after finalizing", async () => {
+    const user = userEvent.setup();
+    const onSelectionChange = vi.fn();
+    detailMock
+      .mockResolvedValueOnce(OPEN_DETAIL)
+      .mockResolvedValueOnce(FINALIZED_DETAIL);
+    render(
+      <MyConsultations
+        selectedId={OPEN_ITEM.id}
+        onSelectionChange={onSelectionChange}
+        onSessionLost={vi.fn()}
+        onCreate={vi.fn()}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Finalize consultation" }),
+      ).toBeInTheDocument(),
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Finalize consultation" }),
+    );
+
+    const dialog = await screen.findByRole("dialog", {
+      name: "Finalize consultation?",
+    });
+    await user.click(within(dialog).getByRole("checkbox", { name: "Photo 1" }));
+    await user.click(
+      within(dialog).getByRole("button", { name: "Review finalization" }),
+    );
+    await user.click(
+      within(dialog).getByRole("button", { name: "Finalize consultation" }),
+    );
+
+    await waitFor(() =>
+      expect(finalizeMock).toHaveBeenCalledWith(
+        OPEN_ITEM.id,
+        expect.any(String),
+        { kind: "selected", option_ids: ["photo-1"] },
+      ),
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByText("Photos are no longer available."),
+      ).toBeInTheDocument(),
+    );
+    expect(onSelectionChange).not.toHaveBeenCalledWith(null);
   });
 
   it("shows a retryable error state that is distinct from empty", async () => {

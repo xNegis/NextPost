@@ -1,0 +1,30 @@
+# Disposable RF-19/RF-20 product-owner review instance exposed on the current local network.
+# Current Wi-Fi address: 192.168.1.130 (verified 2026-10-21).
+# Combine with docker-compose.yml under project nextpost-rf1920-lan-20261021.
+# Never target ordinary user or retained validation volumes.
+services:
+  db:
+    ports: !override
+      - "127.0.0.1:15439:5432"
+    environment:
+      POSTGRES_DB: rf1920_manual
+      POSTGRES_USER: rf1920
+      POSTGRES_PASSWORD: rf1920-disposable-local
+
+  backend:
+    ports: !override
+      - "0.0.0.0:18006:8000"
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://rf1920:rf1920-disposable-local@db:5432/rf1920_manual
+      CORS_ORIGINS: http://localhost:14179,http://192.168.1.130:14179
+      SESSION_SECRET: rf1920-disposable-local-session-secret
+      PRIVATE_LINK_SECRET: rf1920-disposable-local-private-link-secret
+      PHOTO_STORAGE_ROOT: /app/data/photos
+
+  frontend:
+    ports: !override
+      - "0.0.0.0:14179:80"
+    build:
+      args:
+        VITE_API_BASE_URL: http://192.168.1.130:18006

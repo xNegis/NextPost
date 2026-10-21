@@ -6,6 +6,7 @@ interface PublishedSuccessProps {
   onBack: () => void;
   onViewInMyConsultations?: () => void;
   onDeleted?: (state: MyConsultationState) => void;
+  onFinalized?: (consultationId: string) => void;
   onSessionLost: () => void;
 }
 
@@ -14,6 +15,7 @@ export function PublishedSuccess({
   onBack,
   onViewInMyConsultations,
   onDeleted,
+  onFinalized,
   onSessionLost,
 }: PublishedSuccessProps) {
   return (
@@ -23,6 +25,7 @@ export function PublishedSuccess({
       onBack={onBack}
       onViewInMyConsultations={onViewInMyConsultations}
       onDeleted={onDeleted}
+      onFinalized={onFinalized}
       onSessionLost={onSessionLost}
     />
   );

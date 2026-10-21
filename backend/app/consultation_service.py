@@ -33,6 +33,7 @@ from app.consultation_access import (
     can_access,
 )
 from app.consultation_text import validate_consultation_text
+from app.finalization_summary import FinalizedResultSummary, build_finalized_summaries
 from app.models import (
     Account,
     Consultation,
@@ -155,6 +156,7 @@ class MyConsultationFinalizedItem:
     id: str
     state: Literal["finalized"]
     published_at: datetime
+    result: FinalizedResultSummary | None
 
 
 @dataclass(frozen=True)
@@ -168,6 +170,7 @@ class MyConsultationFinalizedDetail:
     id: str
     state: Literal["finalized"]
     published_at: datetime
+    result: FinalizedResultSummary | None
 
 
 @dataclass(frozen=True)
@@ -652,10 +655,12 @@ def read_my_consultation(
             raise ConsultationUnavailableError()
         return _build_open_detail(db, consultation)
     if row.state == ConsultationState.finalized:
+        summary = build_finalized_summaries(db, [row.id]).get(row.id)
         return MyConsultationFinalizedDetail(
             id=str(row.id),
             state="finalized",
             published_at=_as_naive_utc(row.published_at),
+            result=summary,
         )
     raise ConsultationUnavailableError()
 
@@ -714,6 +719,9 @@ def list_my_consultations(
     items: list[MyConsultationOpenItem | MyConsultationFinalizedItem] = []
     page_rows = rows[:limit]
     total_votes = _open_vote_totals(db, [row.id for row in page_rows])
+    finalized_summaries = (
+        build_finalized_summaries(db, [row.id for row in page_rows]) if state == "finalized" else {}
+    )
     for row in page_rows:
         if state == "open":
             items.append(
@@ -732,6 +740,7 @@ def list_my_consultations(
                     id=str(row.id),
                     state="finalized",
                     published_at=_as_naive_utc(row.published_at),
+                    result=finalized_summaries.get(row.id),
                 )
             )
 

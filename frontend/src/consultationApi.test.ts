@@ -193,10 +193,21 @@ describe("fetchMyConsultations", () => {
     published_at: "2026-09-28T12:00:00Z",
     total_votes: 0,
   };
+  const finalResult = {
+    finalized_at: "2026-09-28T12:05:00Z",
+    total_votes: 3,
+    declaration: "selected",
+    selected_ordinals: [0],
+    options: [
+      { ordinal: 0, vote_count: 2, selected: true },
+      { ordinal: 1, vote_count: 1, selected: false },
+    ],
+  };
   const finalizedItem = {
     id: "123e4567-e89b-12d3-a456-426614174001",
     state: "finalized",
     published_at: "2026-09-28T12:00:00Z",
+    result: null,
   };
 
   it("returns a valid open list", async () => {
@@ -213,6 +224,32 @@ describe("fetchMyConsultations", () => {
       items: [finalizedItem],
       next_cursor: "abc",
     });
+  });
+
+  it("returns a valid finalized list with a result", async () => {
+    const item = { ...finalizedItem, result: finalResult };
+    respond(200, { items: [item], next_cursor: null });
+    await expect(fetchMyConsultations("finalized", 20, null)).resolves.toEqual({
+      items: [item],
+      next_cursor: null,
+    });
+  });
+
+  it.each([
+    { ...finalizedItem, result: {} },
+    { ...finalizedItem, result: { ...finalResult, total_votes: -1 } },
+    { ...finalizedItem, result: { ...finalResult, declaration: "winner" } },
+    {
+      ...finalizedItem,
+      result: { ...finalResult, finalized_at: "not-a-date" },
+    },
+    { ...finalizedItem, result: { ...finalResult, selected_ordinals: [0, 0] } },
+    { ...finalizedItem, result: { ...finalResult, total_votes: 1 } },
+  ])("rejects a malformed finalized result %# as unavailable", async (item) => {
+    respond(200, { items: [item], next_cursor: null });
+    await expect(fetchMyConsultations("finalized", 20, null)).rejects.toEqual(
+      new ApiError("unavailable"),
+    );
   });
 
   it("maps 401 to unauthenticated", async () => {
@@ -322,6 +359,7 @@ describe("fetchMyConsultation", () => {
     id: "123e4567-e89b-12d3-a456-426614174000",
     state: "finalized",
     published_at: "2026-09-28T12:00:00Z",
+    result: null,
   };
 
   it("returns a valid open detail", async () => {
@@ -336,6 +374,22 @@ describe("fetchMyConsultation", () => {
     await expect(fetchMyConsultation(finalizedDetail.id)).resolves.toEqual(
       finalizedDetail,
     );
+  });
+
+  it("returns a valid finalized detail with a result", async () => {
+    const detail = {
+      ...finalizedDetail,
+      id: "123e4567-e89b-12d3-a456-426614174000",
+      result: {
+        finalized_at: "2026-09-28T12:05:00Z",
+        total_votes: 0,
+        declaration: "none",
+        selected_ordinals: [],
+        options: [],
+      },
+    };
+    respond(200, detail);
+    await expect(fetchMyConsultation(detail.id)).resolves.toEqual(detail);
   });
 
   it("maps 404 to consultation_unavailable", async () => {

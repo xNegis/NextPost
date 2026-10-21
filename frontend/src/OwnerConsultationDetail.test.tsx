@@ -59,6 +59,7 @@ const finalizedDetail = {
   id: CONSULTATION_ID,
   state: "finalized" as const,
   published_at: "2026-09-28T12:00:00Z",
+  result: null,
 };
 
 const ACTIVE_TOKEN = `v1.${"a".repeat(43)}`;
@@ -265,6 +266,38 @@ describe("OwnerConsultationDetail", () => {
     expect(fetchOwnerLinkMock).not.toHaveBeenCalled();
     expect(fetchPhotoUrlMock).not.toHaveBeenCalled();
     expect(fetchResultsMock).not.toHaveBeenCalled();
+  });
+
+  it("renders the finalized result summary", async () => {
+    fetchDetailMock.mockResolvedValue({
+      ...finalizedDetail,
+      result: {
+        finalized_at: "2026-09-28T12:05:00Z",
+        total_votes: 3,
+        declaration: "selected",
+        selected_ordinals: [0],
+        options: [
+          { ordinal: 0, vote_count: 2, selected: true },
+          { ordinal: 1, vote_count: 1, selected: false },
+        ],
+      },
+    });
+    renderReturning();
+    await waitFor(() =>
+      expect(screen.getByText("Final result")).toBeInTheDocument(),
+    );
+    expect(screen.getByText("3 votes")).toBeInTheDocument();
+    expect(screen.getByText("Photo 1")).toBeInTheDocument();
+    expect(screen.getByText("Photo 2 · 1 vote")).toBeInTheDocument();
+  });
+
+  it("offers Finalize on an open owned detail", async () => {
+    renderReturning();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Finalize consultation" }),
+      ).toBeInTheDocument(),
+    );
   });
 
   it("shows a generic unavailable view for unknown or non-owner targets", async () => {

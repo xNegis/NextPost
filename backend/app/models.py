@@ -280,3 +280,119 @@ class Vote(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class FinalizationOutcome(str, enum.Enum):
+    """A voter's private photo-free semantic outcome (RF-19/RF-20, DEC-023)."""
+
+    matched = "matched"
+    not_matched = "not_matched"
+    no_choice = "no_choice"
+
+
+class ConsultationFinalization(Base):
+    """One-to-one immutable finalization header for a consultation (RF-19/RF-20)."""
+
+    __tablename__ = "consultation_finalizations"
+    __table_args__ = (CheckConstraint("total_votes >= 0", name="ck_finalizations_total_votes"),)
+
+    consultation_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("consultations.id", ondelete="CASCADE"), primary_key=True
+    )
+    operation_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, unique=True)
+    payload_fingerprint: Mapped[str] = mapped_column(String(FINGERPRINT_MAX_LENGTH), nullable=False)
+    finalized_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    total_votes: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class ConsultationFinalSelection(Base):
+    """Declared selections for a finalized consultation; zero rows means ``none``."""
+
+    __tablename__ = "consultation_final_selections"
+    __table_args__ = (
+        UniqueConstraint(
+            "consultation_id",
+            "consultation_photo_id",
+            name="uq_final_selections_consultation_photo",
+        ),
+        ForeignKeyConstraint(
+            ["consultation_id", "consultation_photo_id"],
+            ["consultation_photos.consultation_id", "consultation_photos.id"],
+            name="fk_final_selections_photo",
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["consultation_id"],
+            ["consultation_finalizations.consultation_id"],
+            name="fk_final_selections_finalization",
+            ondelete="CASCADE",
+        ),
+        Index("ix_final_selections_consultation", "consultation_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    consultation_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    consultation_photo_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class ConsultationFinalOptionCount(Base):
+    """One definitive non-negative vote count per stable option in ordinal order."""
+
+    __tablename__ = "consultation_final_option_counts"
+    __table_args__ = (
+        UniqueConstraint(
+            "consultation_id",
+            "consultation_photo_id",
+            name="uq_final_option_counts_consultation_photo",
+        ),
+        CheckConstraint("vote_count >= 0", name="ck_final_option_counts_vote_count"),
+        ForeignKeyConstraint(
+            ["consultation_id", "consultation_photo_id"],
+            ["consultation_photos.consultation_id", "consultation_photos.id"],
+            name="fk_final_option_counts_photo",
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["consultation_id"],
+            ["consultation_finalizations.consultation_id"],
+            name="fk_final_option_counts_finalization",
+            ondelete="CASCADE",
+        ),
+        Index("ix_final_option_counts_consultation", "consultation_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    consultation_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    consultation_photo_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    vote_count: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class ConsultationOutcome(Base):
+    """One private account-linked semantic outcome per valid voter (DEC-023)."""
+
+    __tablename__ = "consultation_outcomes"
+    __table_args__ = (
+        UniqueConstraint("consultation_id", "voter_id", name="uq_outcomes_consultation_voter"),
+        CheckConstraint(
+            "outcome IN ('matched', 'not_matched', 'no_choice')",
+            name="ck_outcomes_outcome",
+        ),
+        Index("ix_outcomes_consultation", "consultation_id"),
+        Index("ix_outcomes_voter", "voter_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    consultation_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("consultations.id", ondelete="CASCADE"), nullable=False
+    )
+    voter_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("accounts.id", ondelete="RESTRICT"), nullable=False
+    )
+    outcome: Mapped[FinalizationOutcome] = mapped_column(
+        Enum(FinalizationOutcome, native_enum=False, length=16), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

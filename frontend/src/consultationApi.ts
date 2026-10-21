@@ -105,10 +105,25 @@ export interface MyConsultationOpenListItem {
   total_votes: number;
 }
 
+export interface FinalizedOption {
+  ordinal: number;
+  vote_count: number;
+  selected: boolean;
+}
+
+export interface FinalResultSummary {
+  finalized_at: string;
+  total_votes: number;
+  declaration: "selected" | "none";
+  selected_ordinals: number[];
+  options: FinalizedOption[];
+}
+
 export interface MyConsultationFinalizedListItem {
   id: string;
   state: "finalized";
   published_at: string;
+  result: FinalResultSummary | null;
 }
 
 export type MyConsultationListItem =
@@ -134,6 +149,7 @@ export interface MyConsultationFinalizedDetail {
   id: string;
   state: "finalized";
   published_at: string;
+  result: FinalResultSummary | null;
 }
 
 export type MyConsultationOwnerDetail =
@@ -334,7 +350,7 @@ const OPEN_LIST_ITEM_KEYS = [
   "published_at",
   "total_votes",
 ];
-const FINALIZED_LIST_ITEM_KEYS = ["id", "state", "published_at"];
+const FINALIZED_LIST_ITEM_KEYS = ["id", "state", "published_at", "result"];
 const OPEN_DETAIL_KEYS = [
   "id",
   "state",
@@ -345,7 +361,7 @@ const OPEN_DETAIL_KEYS = [
   "published_at",
   "photos",
 ];
-const FINALIZED_DETAIL_KEYS = ["id", "state", "published_at"];
+const FINALIZED_DETAIL_KEYS = ["id", "state", "published_at", "result"];
 
 function isMyConsultationOpenListItem(
   value: unknown,
@@ -363,6 +379,75 @@ function isMyConsultationOpenListItem(
   );
 }
 
+const FINALIZED_OPTION_KEYS = ["ordinal", "vote_count", "selected"];
+const FINAL_RESULT_KEYS = [
+  "finalized_at",
+  "total_votes",
+  "declaration",
+  "selected_ordinals",
+  "options",
+];
+
+function isFinalizedOption(value: unknown): value is FinalizedOption {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  if (!hasExactKeys(record, FINALIZED_OPTION_KEYS)) return false;
+  return (
+    isNonNegativeInteger(record.ordinal) &&
+    isNonNegativeInteger(record.vote_count) &&
+    typeof record.selected === "boolean"
+  );
+}
+
+function isFinalResultSummary(value: unknown): value is FinalResultSummary {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  if (!hasExactKeys(record, FINAL_RESULT_KEYS)) return false;
+  if (
+    !isValidPublishedAt(record.finalized_at) ||
+    !isNonNegativeInteger(record.total_votes) ||
+    (record.declaration !== "selected" && record.declaration !== "none")
+  ) {
+    return false;
+  }
+  if (
+    !Array.isArray(record.selected_ordinals) ||
+    !record.selected_ordinals.every(isNonNegativeInteger)
+  ) {
+    return false;
+  }
+  if (
+    !Array.isArray(record.options) ||
+    !record.options.every(isFinalizedOption)
+  ) {
+    return false;
+  }
+  const selectedOrdinals = record.selected_ordinals;
+  if (new Set(selectedOrdinals).size !== selectedOrdinals.length) return false;
+  if (
+    record.declaration === "none"
+      ? selectedOrdinals.length !== 0
+      : selectedOrdinals.length === 0
+  ) {
+    return false;
+  }
+  const ordinals = record.options.map(
+    (option: FinalizedOption) => option.ordinal,
+  );
+  if (new Set(ordinals).size !== ordinals.length) return false;
+  const sum = record.options.reduce(
+    (total: number, option: FinalizedOption) => total + option.vote_count,
+    0,
+  );
+  return sum === record.total_votes;
+}
+
+function isFinalResultSummaryOrNull(
+  value: unknown,
+): value is FinalResultSummary | null {
+  return value === null || isFinalResultSummary(value);
+}
+
 function isMyConsultationFinalizedListItem(
   value: unknown,
 ): value is MyConsultationFinalizedListItem {
@@ -372,7 +457,8 @@ function isMyConsultationFinalizedListItem(
   return (
     isUuid(record.id) &&
     record.state === "finalized" &&
-    isValidPublishedAt(record.published_at)
+    isValidPublishedAt(record.published_at) &&
+    isFinalResultSummaryOrNull(record.result)
   );
 }
 
@@ -431,7 +517,8 @@ function isMyConsultationFinalizedDetail(
   return (
     isUuid(record.id) &&
     record.state === "finalized" &&
-    isValidPublishedAt(record.published_at)
+    isValidPublishedAt(record.published_at) &&
+    isFinalResultSummaryOrNull(record.result)
   );
 }
 
@@ -935,6 +1022,61 @@ export async function deleteConsultation(
   if (response.status !== 204) {
     throw new ApiError("unavailable");
   }
+}
+
+export interface FinalizeDeclaration {
+  kind: "selected" | "none";
+  option_ids: string[];
+}
+
+export async function finalizeConsultation(
+  consultationId: string,
+  operationId: string,
+  declaration: FinalizeDeclaration,
+): Promise<MyConsultationFinalizedDetail> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${API_BASE_URL}/api/my-consultations/${consultationId}/finalize`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          operation_id: operationId,
+          expected_state: "open",
+          declaration,
+        }),
+      },
+    );
+  } catch {
+    throw new ApiError("network");
+  }
+
+  const body: unknown = await response.json().catch(() => null);
+  if (response.status === 401) {
+    throw new ApiError("unauthenticated");
+  }
+  if (!response.ok) {
+    const code = extractErrorCode(body);
+    if (response.status === 409 && code === "consultation_conflict") {
+      throw new ApiError("consultation_conflict");
+    }
+    if (response.status === 404 && code === "consultation_unavailable") {
+      throw new ApiError("consultation_unavailable");
+    }
+    if (response.status === 422 && code === "invalid_declaration") {
+      throw new ApiError("invalid_declaration");
+    }
+    if (response.status === 422 && code === "validation_error") {
+      throw new ApiError("validation_error", extractFieldErrors(body));
+    }
+    throw new ApiError(code ?? "unavailable");
+  }
+  if (!isMyConsultationFinalizedDetail(body) || body.id !== consultationId) {
+    throw new ApiError("unavailable");
+  }
+  return body;
 }
 
 export async function fetchOwnerLink(

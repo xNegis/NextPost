@@ -1,5 +1,122 @@
 # Project State
 
+## RF-19/RF-20 completed and validated - 2026-10-21
+
+At the product owner's request, an isolated Docker Compose project named
+`nextpost-rf1920-lan-20261021` was used for manual visual and behavioural acceptance. The frontend
+was exposed to the local network at `http://192.168.1.130:14179`, the backend at
+`http://192.168.1.130:18006`, and its dedicated PostgreSQL port was bound to localhost only at
+`127.0.0.1:15439`. The stack uses dedicated Compose volumes and does not touch ordinary development
+data.
+
+All three containers started successfully. PostgreSQL was healthy, the backend applied the complete
+migration chain through `20261020_0008`, and both frontend and `/api/ready` returned HTTP 200 through
+the localhost and private-LAN addresses. The product owner then exercised the supplied manual test
+journey and reported that it worked perfectly, satisfying the remaining DEC-034 visual/interaction
+acceptance gate. RF-19/RF-20 are therefore `Completed and validated`.
+
+After acceptance, the isolated frontend, backend and database containers, Compose network and both
+dedicated test-data volumes were removed as previously requested. No ordinary development data was
+affected. No commit, push, deployment or Trello mutation occurred.
+
+## RF-19/RF-20 corrections implemented and independently reviewed - 2026-10-20
+
+The corrective harness pass resolved all four findings from the first independent review: the
+irreversible finalization dialog now has a separate review step; success keeps and authoritatively
+reloads the finalized detail; finalized list rows include the finalization date; and normalized
+selection/count rows are owned by the finalization header with complete downgrade refusal.
+
+Independent correction checks passed with 85 focused backend tests, 83 focused frontend tests and
+a clean diff check. Harness evidence records 557 frontend tests; seven PostgreSQL migration tests,
+including the new orphan/downgrade cases; six finalization concurrency tests; 63 total PostgreSQL/
+migration tests; and clean lint, formatting, types and production build. The disposable PostgreSQL
+container was removed. The full details and the pre-existing Alembic/caplog test-isolation note are
+in `harness/grooming/RF-19-RF-20-implementation-review.md`.
+
+RF-19/RF-20 are now `Implemented and independently reviewed - awaiting product-owner visual
+acceptance`. They are not yet `Completed and validated`; DEC-034 visual/responsive/mobile acceptance
+remains. No commit, push, deployment or Trello mutation occurred.
+
+## RF-19/RF-20 corrective harness launch blocked by provider - 2026-10-20
+
+The product owner explicitly authorized the corrective pass for the four findings recorded in
+`harness/grooming/RF-19-RF-20-implementation-review.md`. Two new OpenCode conversations were started
+with the required `opencode-go/deepseek-v4-pro` model and `high` variant after the complete
+coordinator preflight. Both reached the provider stream but produced no model output or repository
+activity. OpenCode's own log records repeated `AI_APICallError: Upstream request failed: Endpoint is
+unavailable` responses.
+
+Both inert processes were terminated after verification; neither modified the worktree. The
+correction round remains `Implementation review - corrections required` and can be relaunched when
+the required endpoint recovers. No fallback model was selected because DEC-003 requires explicit
+product-owner approval for that change. No product code, commit, push, deployment or Trello state
+was changed.
+
+## RF-19/RF-20 implementation reviewed; corrections required - 2026-10-20
+
+The completed harness work was independently reviewed against every approved RF-19/RF-20
+requirement. The atomic backend path, revocation model and focused regression coverage are broadly
+sound, but the increment is not accepted yet. Four actionable findings remain: the irreversible UI
+submits from the selection screen without the approved review step; success returns to the
+Finalized list instead of the authoritative finalized detail; finalized list rows omit the
+finalization date; and the migration downgrade guard can silently drop orphan selection/count
+records despite its stated refusal contract.
+
+The review and exact evidence are recorded in
+`harness/grooming/RF-19-RF-20-implementation-review.md`. Independent focused validation passed with
+85 backend tests, 81 frontend tests and a clean frontend TypeScript check. RF-19/RF-20 remain
+`Implementation review - corrections required`; no product code, commit, push, deployment or Trello
+state was changed by this review.
+
+## RF-19/RF-20 implementation harness relaunched with verified activity - 2026-10-20
+
+The first OpenCode process remained responsive but produced no model output, repository reads or
+implementation changes after startup. At the product owner's explicit request it was terminated and
+replaced with a new conversation using the same approved plan, required
+`opencode-go/deepseek-v4-pro` model and `high` variant.
+
+The replacement launch was verified beyond process creation: the harness emitted model output,
+read every required `harness/context` document, inspected the preserved worktree, read the complete
+coordinated implementation plan and both grooming notes, and began inspecting the backend models,
+lifecycle, vote, deletion, media-erasure, service and API boundaries. It is actively working; no
+implementation completion claim is made yet.
+
+## RF-19/RF-20 implementation harness launched - 2026-10-20
+
+At the product owner's explicit request, a new OpenCode implementation conversation was launched
+against `harness/features/RF-19-RF-20-Implementation-plan.md` using the verified required
+`opencode-go/deepseek-v4-pro` model with the `high` reasoning variant. The harness was instructed to
+implement and validate the complete coordinated contract autonomously, preserve the intentional
+coordinator-authored worktree changes, and avoid commits, pushes, deployment and Trello mutations.
+
+The product owner explicitly requested no monitoring after launch. The process was therefore left
+running after startup confirmation; no implementation progress or completion is claimed here. A
+later explicit owner request is required before Codex reads its output or reviews the worktree.
+
+## RF-19/RF-20 plan ready; implementation harness authorized - 2026-10-20
+
+The product owner confirmed all coordinated grooming recommendations (`Q1A` through `Q14A`) and
+explicitly approved finalisation of
+`harness/features/RF-19-RF-20-Implementation-plan.md` as `Ready for implementation`. The same
+request explicitly authorizes launching the OpenCode implementation harness. Both tickets retain
+their Trello snapshots and one inseparable implementation contract; remaining questions are `None`.
+
+No implementation result is claimed by this transition. The harness must preserve the current
+coordinator-authored uncommitted grooming, plan, decision and project-state changes and must not
+commit, push, deploy or modify Trello.
+
+## RF-19/RF-20 coordinated grooming started - 2026-10-20
+
+The product owner explicitly selected `RF-19 · Finalizar una consulta` and
+`RF-20 · Declarar la elección final` for one coordinated grooming operation. Both current Trello
+cards were consumed read-only from `Próximo · completar el MVP`; their independent snapshots are in
+`harness/grooming/RF-19-grooming.md` and `harness/grooming/RF-20-grooming.md`.
+
+Repository context, related plans/reviews and the current terminal/vote/result/media implementation
+were inspected. The coordinated grooming is now `Grooming - questions open`; Q1-Q14 record the
+complete first material decision batch and recommended answers. No implementation plan has been
+created or finalized, no harness has been launched, and Trello was not modified.
+
 ## RF-13 completed and validated - 2026-10-20
 
 The product owner exercised the isolated built RF-13 stack and explicitly reported `Funciona`.

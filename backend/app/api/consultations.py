@@ -8,6 +8,11 @@ from app.api.photos import get_photo_storage
 from app.auth import get_current_account
 from app.config import get_settings
 from app.consultation_deletion_service import delete_consultation
+from app.consultation_finalization_service import (
+    FinalizationDeclaration,
+    FinalizationInvalidError,
+    finalize_consultation,
+)
 from app.consultation_service import (
     ConsultationCapReachedError,
     ConsultationConflictError,
@@ -32,6 +37,7 @@ from app.consultation_service import (
     read_owner_link,
 )
 from app.db import get_db_session
+from app.finalization_summary import FinalizedResultSummary
 from app.models import Account
 from app.photo_service import InactiveSessionError, NotFoundError, PublicationInvalidError
 from app.schemas import (
@@ -39,6 +45,7 @@ from app.schemas import (
     ConsultationDeleteRequest,
     ConsultationDetailResponse,
     ConsultationEntryResponse,
+    ConsultationFinalizeRequest,
     ConsultationPhotoResponse,
     ConsultationPublishedResponse,
     ConsultationPublishRequest,
@@ -47,6 +54,8 @@ from app.schemas import (
     FeedItemResponse,
     FeedPhotoResponse,
     FeedResponse,
+    FinalizedOptionResponse,
+    FinalResultSummaryResponse,
     LinkMutationRequest,
     MyConsultationFinalizedListItem,
     MyConsultationListResponse,
@@ -117,6 +126,27 @@ def _detail_response(detail) -> ConsultationDetailResponse:
     )
 
 
+def _final_result_response(
+    result: FinalizedResultSummary | None,
+) -> FinalResultSummaryResponse | None:
+    if result is None:
+        return None
+    return FinalResultSummaryResponse(
+        finalized_at=_published_at_iso(result.finalized_at),
+        total_votes=result.total_votes,
+        declaration=result.declaration,
+        selected_ordinals=result.selected_ordinals,
+        options=[
+            FinalizedOptionResponse(
+                ordinal=option.ordinal,
+                vote_count=option.vote_count,
+                selected=option.selected,
+            )
+            for option in result.options
+        ],
+    )
+
+
 @router.get(
     "/my-consultations",
     response_model=MyConsultationListResponse,
@@ -166,6 +196,7 @@ def my_consultations(
                     id=item.id,
                     state="finalized",
                     published_at=_published_at_iso(item.published_at),
+                    result=_final_result_response(item.result),
                 )
             )
 
@@ -194,6 +225,7 @@ def my_consultation_detail(
             id=detail.id,
             state="finalized",
             published_at=_published_at_iso(detail.published_at),
+            result=_final_result_response(detail.result),
         )
 
     return MyConsultationOpenDetail(
@@ -235,6 +267,43 @@ def delete_my_consultation(
             "X-Content-Type-Options": "nosniff",
             "Referrer-Policy": "no-referrer",
         },
+    )
+
+
+@router.post(
+    "/my-consultations/{consultation_id}/finalize",
+    response_model=MyConsultationFinalizedDetailSchema,
+)
+def finalize_my_consultation(
+    consultation_id: uuid.UUID,
+    payload: ConsultationFinalizeRequest,
+    account: Account = Depends(get_current_account),
+    db: Session = Depends(get_db_session),
+    _origin: None = Depends(require_trusted_origin),
+    response: Response = Response(),
+) -> MyConsultationFinalizedDetailSchema:
+    _set_private_read_headers(response)
+
+    declaration = FinalizationDeclaration(
+        kind=payload.declaration.kind,
+        option_ids=tuple(payload.declaration.option_ids),
+    )
+    try:
+        result = finalize_consultation(
+            db, consultation_id, account.id, payload.operation_id, declaration
+        )
+    except ConsultationUnavailableError as exc:
+        raise HTTPException(status_code=404, detail={"code": exc.code}) from exc
+    except ConsultationConflictError as exc:
+        raise HTTPException(status_code=409, detail={"code": exc.code}) from exc
+    except FinalizationInvalidError as exc:
+        raise HTTPException(status_code=422, detail={"code": exc.code}) from exc
+
+    return MyConsultationFinalizedDetailSchema(
+        id=str(result.consultation_id),
+        state="finalized",
+        published_at=_published_at_iso(result.published_at),
+        result=_final_result_response(result.summary),
     )
 
 

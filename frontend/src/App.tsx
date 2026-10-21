@@ -163,6 +163,16 @@ export function App() {
     setDestination("my");
   }
 
+  function handleConsultationFinalized(consultationId: string) {
+    navigateToRoot();
+    setPendingNav(null);
+    setComposerDirty(false);
+    setSelectedMyConsultationId(consultationId);
+    setMyConsultationsTab("finalized");
+    setMyConsultationsNotice("Consultation finalized");
+    setDestination("my");
+  }
+
   function handleCreateConsultation() {
     setSelectedMyConsultationId(null);
     setDestination("create");
@@ -191,6 +201,7 @@ export function App() {
                 <HomeFeed
                   onSessionLost={returnToSignIn}
                   onDeleted={handleConsultationDeleted}
+                  onFinalized={handleConsultationFinalized}
                 />
               )}
 
@@ -203,6 +214,7 @@ export function App() {
                   onCancelNavigation={() => setPendingNav(null)}
                   onViewInMyConsultations={handleViewInMyConsultations}
                   onDeleted={handleConsultationDeleted}
+                  onFinalized={handleConsultationFinalized}
                 />
               )}
 
@@ -236,6 +248,7 @@ export function App() {
               onGoHome={handleGoHome}
               onSessionLost={returnToSignIn}
               onDeleted={handleConsultationDeleted}
+              onFinalized={handleConsultationFinalized}
             />
           )}
         </main>

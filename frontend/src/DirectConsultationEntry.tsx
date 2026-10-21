@@ -15,6 +15,7 @@ interface DirectConsultationEntryProps {
   onGoHome: () => void;
   onSessionLost: () => void;
   onDeleted?: (state: MyConsultationState) => void;
+  onFinalized?: (consultationId: string) => void;
 }
 
 type EntryState =
@@ -29,6 +30,7 @@ export function DirectConsultationEntry({
   onGoHome,
   onSessionLost,
   onDeleted,
+  onFinalized,
 }: DirectConsultationEntryProps) {
   const [state, setState] = useState<EntryState>({ kind: "loading" });
   const [attempt, setAttempt] = useState(0);
@@ -91,6 +93,7 @@ export function DirectConsultationEntry({
         variant="direct"
         onBack={onGoHome}
         onDeleted={onDeleted}
+        onFinalized={onFinalized}
         onSessionLost={onSessionLost}
       />
     );

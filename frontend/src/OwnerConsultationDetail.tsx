@@ -4,6 +4,8 @@ import { buildConsultationUrl } from "./consultationLink";
 import { formatPublishedDate } from "./consultationDate";
 import type { MyConsultationState } from "./consultationApi";
 import { DeleteConsultationDialog } from "./DeleteConsultationDialog";
+import { FinalizeConsultationDialog } from "./FinalizeConsultationDialog";
+import { selectedPhotosLabel } from "./finalizedResult";
 import { PrivateLinkControls } from "./PrivateLinkControls";
 import { ShareConsultation } from "./ShareConsultation";
 import { useOwnerConsultationDetail } from "./useOwnerConsultationDetail";
@@ -17,6 +19,7 @@ interface OwnerConsultationDetailProps {
   onBack: () => void;
   onViewInMyConsultations?: () => void;
   onDeleted?: (state: MyConsultationState) => void;
+  onFinalized?: (consultationId: string) => void;
   onSessionLost: () => void;
 }
 
@@ -55,9 +58,11 @@ export function OwnerConsultationDetail({
   onBack,
   onViewInMyConsultations,
   onDeleted,
+  onFinalized,
   onSessionLost,
 }: OwnerConsultationDetailProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [finalizeOpen, setFinalizeOpen] = useState(false);
 
   const {
     phase,
@@ -150,6 +155,7 @@ export function OwnerConsultationDetail({
   }
 
   if (phase.kind === "finalized") {
+    const result = phase.detail.result;
     return (
       <section
         className="card owner-consultation"
@@ -176,6 +182,51 @@ export function OwnerConsultationDetail({
             </dd>
           </div>
         </dl>
+
+        {result === null ? (
+          <div
+            className="owner-consultation__final-unavailable"
+            role="status"
+            aria-live="polite"
+          >
+            Final result unavailable.
+          </div>
+        ) : (
+          <section
+            className="owner-consultation__final-result"
+            aria-labelledby="final-result-title"
+          >
+            <h2 id="final-result-title">Final result</h2>
+            <dl className="owner-consultation__meta-list">
+              <div className="owner-consultation__meta-row">
+                <dt>Finalized</dt>
+                <dd>
+                  <time dateTime={result.finalized_at}>
+                    {formatPublishedDate(result.finalized_at)}
+                  </time>
+                </dd>
+              </div>
+              <div className="owner-consultation__meta-row">
+                <dt>Total votes</dt>
+                <dd>{voteCountLabel(result.total_votes)}</dd>
+              </div>
+              <div className="owner-consultation__meta-row">
+                <dt>Your choice</dt>
+                <dd>{selectedPhotosLabel(result)}</dd>
+              </div>
+            </dl>
+            <ul className="owner-consultation__final-options">
+              {result.options.map((option) => (
+                <li key={option.ordinal}>
+                  Photo {option.ordinal + 1}
+                  {option.selected ? " · Selected" : ""} ·{" "}
+                  {voteCountLabel(option.vote_count)}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         <button type="button" className="primary-button" onClick={retry}>
           Refresh
         </button>
@@ -408,6 +459,31 @@ export function OwnerConsultationDetail({
           {back}
         </button>
       </div>
+
+      <button
+        type="button"
+        className="finalize-button"
+        onClick={() => setFinalizeOpen(true)}
+      >
+        Finalize consultation
+      </button>
+      {finalizeOpen && (
+        <FinalizeConsultationDialog
+          consultationId={consultationId}
+          photos={phase.detail.photos}
+          onCancel={() => setFinalizeOpen(false)}
+          onFinalized={() => {
+            setFinalizeOpen(false);
+            retry();
+            onFinalized?.(consultationId);
+          }}
+          onReload={() => {
+            setFinalizeOpen(false);
+            retry();
+          }}
+          onSessionLost={onSessionLost}
+        />
+      )}
 
       <button
         type="button"

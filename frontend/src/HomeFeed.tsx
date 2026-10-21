@@ -10,9 +10,14 @@ import { useHomeFeed } from "./useHomeFeed";
 interface HomeFeedProps {
   onSessionLost: () => void;
   onDeleted?: (state: MyConsultationState) => void;
+  onFinalized?: (consultationId: string) => void;
 }
 
-export function HomeFeed({ onSessionLost, onDeleted }: HomeFeedProps) {
+export function HomeFeed({
+  onSessionLost,
+  onDeleted,
+  onFinalized,
+}: HomeFeedProps) {
   const [selected, setSelected] = useState<FeedItem | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const pendingFocusRef = useRef<string | null>(null);
@@ -65,6 +70,7 @@ export function HomeFeed({ onSessionLost, onDeleted }: HomeFeedProps) {
           variant="home"
           onBack={handleBackFromDetail}
           onDeleted={onDeleted}
+          onFinalized={onFinalized}
           onSessionLost={onSessionLost}
         />
       );
