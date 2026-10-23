@@ -371,17 +371,33 @@ h1 {
   }
 
   .navigation__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+    gap: 0;
     width: 100%;
     max-width: 420px;
-    justify-content: space-around;
+    box-sizing: border-box;
     padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  }
+
+  .navigation__item {
+    min-width: 0;
   }
 
   .navigation__link {
     flex-direction: column;
     gap: 4px;
-    padding: 8px 12px;
+    width: 100%;
+    min-width: 44px;
+    padding: 8px 2px;
     font-size: 0.75rem;
+    line-height: 1.1;
+  }
+
+  .navigation__link span {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   .navigation__link[aria-current="page"] {
@@ -389,7 +405,13 @@ h1 {
   }
 
   .app-content {
-    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+    padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 240px) {
+  .app-content {
+    padding-bottom: calc(14rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -1119,6 +1141,73 @@ h1 {
 }
 
 .my-consultations__view {
+  justify-self: start;
+  width: auto;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.my-participation {
+  display: grid;
+  gap: 16px;
+}
+
+.my-participation__help {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.my-participation__empty {
+  display: grid;
+  gap: 12px;
+}
+
+.my-participation__empty p {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.my-participation__list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.my-participation__row {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.my-participation__reference {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.my-participation__status {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.my-participation__facts {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.my-participation__view {
   justify-self: start;
   width: auto;
   min-width: 44px;

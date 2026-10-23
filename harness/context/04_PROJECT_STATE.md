@@ -1,5 +1,151 @@
 # Project State
 
+## RF-21 corrective implementation technically validated; owner acceptance pending - 2026-10-22
+
+After both corrective harness launches were blocked by the exhausted OpenCode Go usage limit, the
+product owner explicitly asked the coordinator to implement the corrections directly. Findings
+F1-F4 are now resolved: the five-destination mobile navigation has responsive equal-share/wrapping
+layout with 44px targets and preserved safe-area/focus behavior; the frontend decoder enforces the
+semantic result union; outcomes take precedence over residual votes even in inconsistent open state;
+and Ruff evidence accurately distinguishes changed-file success from the inherited RF-37 failure.
+
+Validation passed: 31 focused backend tests, 43 focused frontend tests, the complete backend suite,
+596 complete frontend tests across 45 files, strict MyPy, changed-file Ruff/format, Prettier, ESLint,
+strict TypeScript, production build, Compose config/build and a clean diff check. Six RF-21
+query/migration tests passed against disposable PostgreSQL 18, including the new open-state outcome
+precedence regression. Built-stack inspection at a 320px viewport confirmed five visible labels,
+usable content clearance and visible keyboard focus; a separate 160px viewport stress capture also
+retained every destination. Real-device 200% zoom remains part of DEC-034 owner acceptance. All
+disposable containers, networks and volumes were removed.
+
+The full backend Ruff check still reports only the pre-existing RF-37 `E501` in
+`20261019_0006_media_erasure.py:83`. The dependency audit still reports the pinned Vite high advisory
+and two moderate Vitest advisories; no forced dependency update was made because remediation is
+outside RF-21. RF-21 is technically ready for DEC-034 product-owner visual/interaction acceptance,
+but that acceptance is not recorded here and the ticket is not yet claimed `Completed and
+validated`. No commit, push, deployment or Trello mutation occurred.
+
+## RF-21 corrective harness retry blocked by provider usage limit - 2026-10-22
+
+At the product owner's request, the coordinator retried the RF-21 corrective harness in a new
+OpenCode conversation with the required `opencode-go/deepseek-v4-pro` model and `high` variant. The
+provider returned `Go usage limit exceeded` on the first model call, before the harness could read
+repository files or make any edit. The inert process was terminated after the failure was verified;
+no fallback provider, model or variant was selected.
+
+The first-pass implementation, four open review findings and all coordinator documents remain
+intact. RF-21 stays `Implementation review - corrections required`; no validation claim or DEC-034
+acceptance state changed. No commit, push, deployment or Trello mutation occurred.
+
+## RF-21 corrective harness blocked by provider usage limit - 2026-10-21
+
+After the independent review, a new corrective harness conversation was launched with the required
+`opencode-go/deepseek-v4-pro` model and `high` variant to resolve findings F1-F4. The harness read the
+mandatory context, RF-21 plan, grooming, review and relevant implementation files, then its provider
+returned `Go usage limit exceeded` before any edit was made. The inert process was terminated after
+the failure was verified. No fallback provider, model or variant was selected.
+
+The first-pass RF-21 implementation and all coordinator documents remain intact. RF-21 stays
+`Implementation review - corrections required`; the responsive navigation, fail-safe decoder,
+complete outcome-precedence invariant and evidence wording still need correction before DEC-034
+visual acceptance. No commit, push, deployment or Trello mutation occurred.
+
+## RF-21 independently reviewed; corrective pass required - 2026-10-21
+
+The coordinator reviewed the first harness pass against every approved RF-21 requirement and
+independently reran 30 focused backend tests, 34 focused frontend tests, strict MyPy and a clean diff
+check. The core account-scoped projection, privacy allowlist, pagination, migration and participant
+screen are broadly sound, but four corrections remain before visual acceptance: adapt the fifth
+mobile destination to provably fit at 320px/200% zoom; reject impossible status/event/view
+combinations in the frontend decoder; apply outcome precedence even to an anomalous open-state
+residual vote; and correct the Ruff evidence wording.
+
+Exact findings and corrective validation are recorded in
+`harness/grooming/RF-21-implementation-review.md`. RF-21 is now `Implementation review -
+corrections required`; it is not completed or ready for DEC-034 product-owner acceptance. The
+pre-existing Vite audit advisory remains visible and no forced dependency change is included.
+
+No commit, push, deployment or Trello mutation occurred.
+
+## RF-21 implemented and technically validated; independent review and DEC-034 acceptance pending - 2026-10-21
+
+The implementation harness completed the approved RF-21 contract. This entry records the harness's
+own evidence; it is not independent acceptance and does not claim `Completed and validated`.
+
+Delivered: a dedicated `GET /api/my-participation` read endpoint (session-derived account scope,
+exact `consultation_id/status/event_kind/event_at/can_view` allowlist, private/no-store headers)
+backed by a focused `participation_service` mixed projection that unions current-account open votes,
+retained `ConsultationOutcome` rows and an exceptional terminal residual-vote branch; a versioned
+snapshot+keyset cursor with strict validation; a fifth primary `History` destination rendering the
+`My participation` screen with neutral status copy, Voted/Finalized event labels, Public-only View
+navigation, empty/loading/error/retry and load-more states; one additive Alembic revision
+`20261021_0009` adding the voter-first `votes(voter_id, created_at, consultation_id)` index with
+downgrade dropping only that index.
+
+Evidence (disposable resources only):
+
+- Backend: 540 local SQLite tests passed (PostgreSQL-dependent cases skip without
+  `TEST_DATABASE_URL`); 68 PostgreSQL/migration tests passed against a disposable PostgreSQL 18
+  container `nextpost-rf21-test-db` on `127.0.0.1:15441` (removed afterwards), including the three
+  new migration tests and two new real-PostgreSQL ordering tests.
+- Frontend: 587 tests passed (45 files).
+- Ruff check and format pass for the new and changed RF-21 files. The full-tree Ruff check remains
+  failing only on the pre-existing `E501` in `20261019_0006_media_erasure.py` line 83; that RF-37
+  migration must not be edited. Strict MyPy on `backend/app` passes. Prettier, ESLint, strict
+  TypeScript and the production build pass.
+- `docker compose config --quiet` and `docker compose build backend frontend` pass.
+- `npm audit --audit-level=high` reports one high-severity advisory against the pinned `vite@8.3.0`
+  (launch-editor), a pre-existing dev-dependency advisory not introduced by RF-21; no
+  `--force` dependency change was made.
+- `git diff --check` is clean (only line-ending normalization notices).
+
+Remaining gates: independent review against every acceptance criterion and the product owner's
+DEC-034 visual/interaction acceptance. No commit, push, deployment or Trello mutation occurred.
+
+## RF-21 plan ready; harness launch authorised - 2026-10-21
+
+The product owner explicitly approved implementation-plan finalisation and external harness launch.
+`harness/features/RF-21-Implementation-plan.md` is now `Ready for implementation`, contains all
+accepted `Q1A` through `Q7A` decisions, and has `Remaining questions: None`.
+
+The approved increment is a separate private participant-history API and fifth primary History
+destination. It reads real open votes and retained semantic outcomes, never fabricates legacy
+results or grants Private access, creates no deletion tombstone, and keeps RF-32/RF-34/RF-42 outside
+scope. The coordinator documentation changes are intentional uncommitted worktree changes that the
+harness must preserve. No product implementation, commit, push, deployment or Trello mutation has
+yet occurred in this transition.
+
+## RF-21 material grooming complete; plan finalisation not yet approved - 2026-10-21
+
+The product owner accepted all recommended RF-21 decisions (`Q1A` through `Q7A`) in one consolidated
+response. RF-21 will use a separate primary History destination, preserve Private capability
+boundaries, use truthful mixed event dates, create no tombstone for open deletion, consume stored
+final outcomes without deciding RF-32 policy, avoid fabricated legacy backfill and use neutral
+outcome language. The accepted durable contract is recorded in DEC-045 and
+`harness/grooming/RF-21-grooming.md`.
+
+All material grooming questions are resolved. The separate gate to create and finalise the
+implementation plan has not been explicitly approved, so no plan was created and no harness was
+launched. No product code, commit, push, deployment or Trello mutation occurred.
+
+## RF-21 grooming opened; consolidated decisions pending - 2026-10-21
+
+The exact Trello card `RF-21 · Consultar mi historial de participación` was consumed read-only and
+captured in `harness/grooming/RF-21-grooming.md`. The clean baseline was verified as `main` at
+`b4c8232fe71225444287863c001c31bdf53d37dd`, matching `origin/main`, with RF-19/RF-20 completed and
+validated.
+
+Repository inspection confirms that RF-19/RF-20 already produce the three minimum photo-free
+participant outcomes and remove raw votes, but there is no participant-history API or UI. The main
+open product conflict is that a durable `Unavailable` entry after an open consultation is deleted
+would require a new account-linked tombstone, whereas DEC-041/043 currently require no outcome or
+retained vote. Seven material questions covering navigation, open-row privacy, date semantics,
+Unavailable, later removal, legacy data and outcome language are now awaiting one consolidated
+product-owner response. Recommendations remain proposals only.
+
+No implementation plan was created or finalised. No harness, code implementation, commit, push,
+deployment or Trello mutation occurred.
+
 ## RF-19/RF-20 completed and validated - 2026-10-21
 
 At the product owner's request, an isolated Docker Compose project named

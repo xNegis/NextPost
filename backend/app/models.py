@@ -267,6 +267,12 @@ class Vote(Base):
             "consultation_id",
             "consultation_photo_id",
         ),
+        Index(
+            "ix_votes_voter_created",
+            "voter_id",
+            "created_at",
+            "consultation_id",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)

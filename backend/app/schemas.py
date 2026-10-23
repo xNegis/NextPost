@@ -404,3 +404,18 @@ VoteStatusResponse = Annotated[
     Union[VoteNotVotedResponse, VoteVotedResponse],
     Field(discriminator="status"),
 ]
+
+
+class ParticipationItemResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    consultation_id: str
+    status: Literal["open", "matched", "not_matched", "no_choice", "unavailable"]
+    event_kind: Literal["voted", "finalized"]
+    event_at: str
+    can_view: bool
+
+
+class ParticipationListResponse(BaseModel):
+    items: list[ParticipationItemResponse]
+    next_cursor: str | None

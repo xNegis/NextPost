@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-export type Destination = "home" | "create" | "my" | "profile";
+export type Destination = "home" | "create" | "my" | "history" | "profile";
 
 interface NavigationProps {
   active?: Destination;
@@ -90,6 +90,27 @@ function MyConsultationsIcon(): ReactElement {
   );
 }
 
+function HistoryIcon(): ReactElement {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <path d="M3 4v5h5" />
+      <path d="M12 8v4l3 2" />
+    </svg>
+  );
+}
+
 const DESTINATIONS: {
   key: Destination;
   label: string;
@@ -98,6 +119,7 @@ const DESTINATIONS: {
   { key: "home", label: "Home", icon: HomeIcon },
   { key: "create", label: "Create", icon: CreateIcon },
   { key: "my", label: "My consultations", icon: MyConsultationsIcon },
+  { key: "history", label: "History", icon: HistoryIcon },
   { key: "profile", label: "Profile", icon: ProfileIcon },
 ];
 

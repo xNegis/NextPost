@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Navigation } from "./Navigation";
 
 describe("Navigation", () => {
-  it("renders Home, Create, My consultations and Profile with visible labels", () => {
+  it("renders Home, Create, My consultations, History and Profile with visible labels", () => {
     render(<Navigation active="home" onSelect={() => {}} />);
 
     expect(
@@ -16,7 +16,9 @@ describe("Navigation", () => {
     expect(
       screen.getByRole("button", { name: "My consultations" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "History" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Profile" })).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")).toHaveLength(5);
   });
 
   it("marks the My consultations destination when active", () => {
@@ -53,5 +55,21 @@ describe("Navigation", () => {
     await user.click(screen.getByRole("button", { name: "Create" }));
 
     expect(onSelect).toHaveBeenCalledWith("create");
+  });
+
+  it("keeps every destination keyboard reachable in display order", async () => {
+    const user = userEvent.setup();
+    render(<Navigation active="home" onSelect={() => {}} />);
+
+    for (const label of [
+      "Home",
+      "Create",
+      "My consultations",
+      "History",
+      "Profile",
+    ]) {
+      await user.tab();
+      expect(screen.getByRole("button", { name: label })).toHaveFocus();
+    }
   });
 });

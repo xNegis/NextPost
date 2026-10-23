@@ -13,6 +13,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.api.accounts import router as accounts_router
 from app.api.consultations import router as consultations_router
 from app.api.health import router as health_router
+from app.api.participation import router as participation_router
 from app.api.photos import router as photos_router
 from app.cleanup import build_maintenance_lock, run_cleanup
 from app.config import get_settings
@@ -104,6 +105,7 @@ def create_app() -> FastAPI:
             path.startswith("/api/consultations/")
             or path == "/api/my-consultations"
             or path.startswith("/api/my-consultations/")
+            or path == "/api/my-participation"
         ):
             response.headers.setdefault("Cache-Control", "private, no-store")
             response.headers.setdefault("X-Content-Type-Options", "nosniff")
@@ -155,6 +157,7 @@ def create_app() -> FastAPI:
     application.include_router(health_router, prefix="/api")
     application.include_router(accounts_router, prefix="/api")
     application.include_router(photos_router, prefix="/api")
+    application.include_router(participation_router, prefix="/api")
     application.include_router(consultations_router, prefix="/api")
     return application
 

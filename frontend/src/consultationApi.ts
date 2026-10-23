@@ -1158,3 +1158,109 @@ export function createOwnerLink(
 ): Promise<OwnerLink> {
   return mutateOwnerLink(consultationId, "create", expectedGeneration);
 }
+
+export type ParticipationStatus =
+  "open" | "matched" | "not_matched" | "no_choice" | "unavailable";
+
+export type ParticipationEventKind = "voted" | "finalized";
+
+interface ParticipationItemBase {
+  consultation_id: string;
+  event_at: string;
+}
+
+export type ParticipationItem = ParticipationItemBase &
+  (
+    | { status: "open"; event_kind: "voted"; can_view: boolean }
+    | {
+        status: "matched" | "not_matched" | "no_choice";
+        event_kind: "finalized";
+        can_view: false;
+      }
+    | { status: "unavailable"; event_kind: "voted"; can_view: false }
+  );
+
+export interface ParticipationList {
+  items: ParticipationItem[];
+  next_cursor: string | null;
+}
+
+const PARTICIPATION_ITEM_KEYS = [
+  "consultation_id",
+  "status",
+  "event_kind",
+  "event_at",
+  "can_view",
+];
+
+function isParticipationItem(value: unknown): value is ParticipationItem {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  if (!hasExactKeys(record, PARTICIPATION_ITEM_KEYS)) return false;
+  if (!isUuid(record.consultation_id) || !isValidPublishedAt(record.event_at)) {
+    return false;
+  }
+
+  if (record.status === "open") {
+    return (
+      record.event_kind === "voted" && typeof record.can_view === "boolean"
+    );
+  }
+  if (
+    record.status === "matched" ||
+    record.status === "not_matched" ||
+    record.status === "no_choice"
+  ) {
+    return record.event_kind === "finalized" && record.can_view === false;
+  }
+  if (record.status === "unavailable") {
+    return record.event_kind === "voted" && record.can_view === false;
+  }
+  return false;
+}
+
+function isParticipationList(
+  value: unknown,
+  limit: number,
+): value is ParticipationList {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  if (!hasExactKeys(record, ["items", "next_cursor"])) return false;
+  if (!Array.isArray(record.items)) return false;
+  if (record.items.length > limit) return false;
+  if (!isValidCursor(record.next_cursor)) return false;
+  return record.items.every(isParticipationItem);
+}
+
+export async function fetchParticipationHistory(
+  limit = 20,
+  cursor: string | null = null,
+): Promise<ParticipationList> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (cursor !== null) params.set("cursor", cursor);
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `${API_BASE_URL}/api/my-participation?${params.toString()}`,
+      { credentials: "include" },
+    );
+  } catch {
+    throw new ApiError("network");
+  }
+
+  const body: unknown = await response.json().catch(() => null);
+  if (response.status === 401) {
+    throw new ApiError("unauthenticated");
+  }
+  if (response.status === 422) {
+    throw new ApiError("validation_error", extractFieldErrors(body));
+  }
+  if (!response.ok) {
+    throw new ApiError(extractErrorCode(body) ?? "unavailable");
+  }
+  if (!isParticipationList(body, limit)) {
+    throw new ApiError("unavailable");
+  }
+  return body;
+}

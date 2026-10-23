@@ -2,10 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 
 import { fetchSession, signOut, type AccountSummary } from "./api";
 import type { MyConsultationState } from "./consultationApi";
+import { buildConsultationPath } from "./consultationLink";
 import { ConsultationComposer } from "./ConsultationComposer";
 import { DirectConsultationEntry } from "./DirectConsultationEntry";
 import { HomeFeed } from "./HomeFeed";
 import { MyConsultations } from "./MyConsultations";
+import { MyParticipation } from "./MyParticipation";
 import { Navigation, type Destination } from "./Navigation";
 import { ProfileView } from "./ProfileView";
 import { RegistrationForm } from "./RegistrationForm";
@@ -178,6 +180,11 @@ export function App() {
     setDestination("create");
   }
 
+  const handleViewConsultation = useCallback((consultationId: string) => {
+    window.history.pushState(null, "", buildConsultationPath(consultationId));
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }, []);
+
   if (route.kind === "invalid") {
     return (
       <main className="page">
@@ -227,6 +234,14 @@ export function App() {
                   initialTab={myConsultationsTab}
                   initialNotice={myConsultationsNotice}
                   onNoticeConsumed={() => setMyConsultationsNotice(null)}
+                />
+              )}
+
+              {destination === "history" && (
+                <MyParticipation
+                  onSessionLost={returnToSignIn}
+                  onViewConsultation={handleViewConsultation}
+                  onGoHome={handleGoHome}
                 />
               )}
 

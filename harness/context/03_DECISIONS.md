@@ -880,3 +880,35 @@ participant history; RF-32 owns administrator authority; RF-34 owns later accoun
 anonymization. One coordinated RF-19/RF-20 implementation plan preserves both ticket traces and
 requires unit, API, accessible frontend, migration, real-PostgreSQL concurrency, storage-fault,
 Docker, restart and supported-recovery evidence. The owner selected `Q1A` through `Q14A`.
+
+---
+
+## DEC-045 - Participant history is a private, neutral consumer of minimum semantic outcomes
+
+**Status:** Accepted (2026-10-21)
+
+RF-21 adds a fifth primary navigation destination labelled `History`, with screen title
+`My participation`, while preserving the author-only meaning of `My consultations`. The history is
+authenticated and account-scoped. It combines the current account's real open votes with retained
+semantic outcomes and displays one photo-free row per consultation. Open rows carry only minimum
+reference, state and honestly labelled vote date. Final rows carry `Matched`, `Not matched` or
+`No choice` and an honestly labelled finalization date. The mixed history orders by that effective
+event date with deterministic tie-breaking.
+
+Prior participation is never an access grant. The history stores and returns no Private-link
+capability, and a View action requires independently valid current authority. Rows expose no photo,
+raw chosen option, declaration set, aggregate result, other voter, reputation, expertise score or
+global match percentage. Outcome language is neutral and explains that matching means agreement
+with the author's declared choice, not objective correctness.
+
+Deletion or removal before finalization creates no outcome or durable participation tombstone, so
+the open row disappears. `Unavailable` is limited to a surviving account-linked record that proves
+participation but cannot safely produce a semantic result. Historical outcomes are never inferred
+from declarations or aggregates; without such proof, an unrepresentable legacy row is omitted.
+An existing finalized outcome remains visible after ordinary author deletion while it exists.
+Future RF-32 rules, not RF-21, own any administrative preservation, invalidation, replacement or
+erasure of outcomes. RF-34 remains responsible for removing or anonymizing account-linked history
+when the participant account is deleted.
+
+The owner selected RF-21 options `Q1A` through `Q7A`. These choices complete material grooming but
+do not approve implementation-plan finalisation, harness launch or implementation.
