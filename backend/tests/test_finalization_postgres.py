@@ -12,6 +12,7 @@ from app.consultation_finalization_service import (
     FinalizationDeclaration,
     finalize_consultation,
 )
+from app.consultation_removal_service import remove_consultation
 from app.consultation_service import ConsultationConflictError, ConsultationUnavailableError
 from app.db import Base
 from app.models import (
@@ -20,6 +21,7 @@ from app.models import (
     ConsultationFinalization,
     ConsultationOutcome,
     ConsultationPhoto,
+    ConsultationRemoval,
     ConsultationState,
     PhotoUploadImage,
     PhotoUploadSession,
@@ -137,15 +139,25 @@ def _delete_open(db: Session, cid: uuid.UUID, owner_id: uuid.UUID) -> str:
         return "unavailable"
 
 
-def _remove(db: Session, cid: uuid.UUID) -> str:
-    row = db.execute(
-        select(Consultation).where(Consultation.id == cid).with_for_update()
-    ).scalar_one_or_none()
-    if row is None or row.state != ConsultationState.open:
-        return "lost"
-    row.state = ConsultationState.removed
-    db.commit()
-    return "removed"
+def _remove(
+    db: Session,
+    cid: uuid.UUID,
+    operation_id: uuid.UUID | None = None,
+    reason: str = "other",
+) -> str:
+    try:
+        return remove_consultation(
+            db,
+            consultation_id=cid,
+            operation_id=operation_id or uuid.uuid4(),
+            expected_state="open",
+            operator_id="postgres.test",
+            reason_code=reason,
+        ).classification
+    except ConsultationConflictError:
+        return "conflict"
+    except ConsultationUnavailableError:
+        return "unavailable"
 
 
 def test_vote_before_finalize_is_included(pg_factory) -> None:
@@ -293,7 +305,132 @@ def test_removal_versus_finalize_race(pg_factory) -> None:
 
     if "first" in outcomes:
         assert state == "finalized"
-        assert "lost" in outcomes
+        assert "conflict" in outcomes
     else:
         assert state == "removed"
         assert "unavailable" in outcomes
+
+
+def test_concurrent_identical_removals_yield_first_and_replay(pg_factory) -> None:
+    with pg_factory() as db:
+        owner_id = _account(db, "owner@example.com", "Owner")
+        cid, _ = _consultation(db, owner_id)
+    operation_id = uuid.uuid4()
+
+    def remove_fn(_index: int) -> str:
+        with pg_factory() as db:
+            return _remove(db, cid, operation_id)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(remove_fn, range(2)))
+
+    assert sorted(outcomes) == ["first", "replay"]
+    with pg_factory() as db:
+        assert db.get(Consultation, cid).state == ConsultationState.removed
+        assert db.get(ConsultationRemoval, cid).operation_id == operation_id
+
+
+def test_concurrent_different_removals_yield_first_and_conflict(pg_factory) -> None:
+    with pg_factory() as db:
+        owner_id = _account(db, "owner@example.com", "Owner")
+        cid, _ = _consultation(db, owner_id)
+    operations = [uuid.uuid4(), uuid.uuid4()]
+
+    def remove_fn(operation_id: uuid.UUID) -> str:
+        with pg_factory() as db:
+            return _remove(db, cid, operation_id)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(remove_fn, operations))
+
+    assert sorted(outcomes) == ["conflict", "first"]
+    with pg_factory() as db:
+        audit = db.get(ConsultationRemoval, cid)
+        assert audit is not None
+        assert audit.operation_id in operations
+
+
+def test_concurrent_cross_target_operation_reuse_is_a_conflict(pg_factory) -> None:
+    with pg_factory() as db:
+        owner_id = _account(db, "owner@example.com", "Owner")
+        first_id, _ = _consultation(db, owner_id)
+        second_id, _ = _consultation(db, owner_id)
+    operation_id = uuid.uuid4()
+
+    def remove_fn(cid: uuid.UUID) -> tuple[uuid.UUID, str]:
+        with pg_factory() as db:
+            return cid, _remove(db, cid, operation_id)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = dict(pool.map(remove_fn, [first_id, second_id]))
+
+    assert sorted(outcomes.values()) == ["conflict", "first"]
+    with pg_factory() as db:
+        audits = list(
+            db.scalars(
+                select(ConsultationRemoval).where(ConsultationRemoval.operation_id == operation_id)
+            ).all()
+        )
+        assert len(audits) == 1
+        winner = audits[0].consultation_id
+        loser = second_id if winner == first_id else first_id
+        assert db.get(Consultation, winner).state == ConsultationState.removed
+        assert db.get(Consultation, loser).state == ConsultationState.open
+
+
+def test_removal_versus_author_deletion_race(pg_factory) -> None:
+    with pg_factory() as db:
+        owner_id = _account(db, "owner@example.com", "Owner")
+        cid, _ = _consultation(db, owner_id)
+
+    def removal_fn(_index: int) -> tuple[str, str]:
+        with pg_factory() as db:
+            return "removal", _remove(db, cid)
+
+    def deletion_fn(_index: int) -> tuple[str, str]:
+        with pg_factory() as db:
+            return "deletion", _delete_open(db, cid, owner_id)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = dict(pool.map(lambda fn: fn(0), [removal_fn, deletion_fn]))
+
+    with pg_factory() as db:
+        row = db.get(Consultation, cid)
+        audit = db.get(ConsultationRemoval, cid)
+        if row.state == ConsultationState.removed:
+            assert outcomes == {"removal": "first", "deletion": "unavailable"}
+            assert audit is not None
+            assert row.author_deleted_at is None
+        else:
+            assert row.state == ConsultationState.deleted
+            assert outcomes == {"removal": "conflict", "deletion": "first"}
+            assert audit is None
+            assert row.author_deleted_at is not None
+
+
+def test_removal_serializes_with_vote_and_leaves_no_raw_vote(pg_factory) -> None:
+    with pg_factory() as db:
+        owner_id = _account(db, "owner@example.com", "Owner")
+        voter_id = _account(db, "voter@example.com", "Voter")
+        cid, photo_ids = _consultation(db, owner_id)
+
+    def removal_fn(_index: int) -> str:
+        with pg_factory() as db:
+            return _remove(db, cid)
+
+    def vote_fn(_index: int) -> str:
+        with pg_factory() as db:
+            try:
+                submit_vote(db, cid, voter_id, None, photo_ids[0])
+                return "submitted"
+            except ConsultationUnavailableError:
+                return "unavailable"
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(lambda fn: fn(0), [removal_fn, vote_fn]))
+
+    assert outcomes[0] == "first"
+    assert outcomes[1] in {"submitted", "unavailable"}
+    with pg_factory() as db:
+        assert db.get(Consultation, cid).state == ConsultationState.removed
+        assert db.scalar(select(Vote).where(Vote.consultation_id == cid)) is None

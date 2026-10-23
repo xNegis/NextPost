@@ -17,6 +17,7 @@ import hashlib
 import json
 import logging
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Literal, cast
@@ -29,9 +30,9 @@ from app.config import get_settings
 from app.consultation_access import (
     AccessOperation,
     AccessSnapshot,
-    ConsultationLifecycle,
     can_access,
 )
+from app.consultation_lifecycle import ConsultationLifecycle
 from app.consultation_text import validate_consultation_text
 from app.finalization_summary import FinalizedResultSummary, build_finalized_summaries
 from app.models import (
@@ -526,7 +527,7 @@ def _build_snapshot(consultation: Consultation) -> AccessSnapshot:
     )
 
 
-def _link_verifier(secret: str):
+def _link_verifier(secret: str) -> Callable[[PrivateLinkState, str | None], bool]:
     def verify(state: PrivateLinkState, token: str | None) -> bool:
         return verify_current_link(state, token, secret)
 

@@ -912,3 +912,47 @@ when the participant account is deleted.
 
 The owner selected RF-21 options `Q1A` through `Q7A`. These choices complete material grooming but
 do not approve implementation-plan finalisation, harness launch or implementation.
+
+---
+
+## DEC-046 - Restricted administrator removal is a command-only, open-consultation terminal operation
+
+**Status:** Accepted (2026-10-23)
+
+The DEC-022 MVP exception to RF-32 is limited to irreversible manual removal of one open
+consultation. Authority comes from controlled deployment/host access, separated from ordinary
+product authentication. The only surface is a backend command; no FastAPI route, frontend code,
+administrator account role, application credential, console or general administration system is
+introduced. A required bounded `REMOVAL_OPERATOR_ID` is supplied through server-side configuration
+and persisted as a non-secret attribution label. It is not an authentication credential and must
+not be accepted from a product client or command-line argument.
+
+The operator supplies the canonical consultation UUID twice, `expected_state=open`, a caller-created
+operation UUID and one controlled reason code: `rights_or_privacy`, `safety_or_abuse`,
+`vote_integrity` or `other`. The command locks the consultation row and serializes with votes,
+finalization, author deletion and other removal attempts. The first terminal commit wins without
+priority. Only an exact replay of the stored target, operation, expected state, operator and reason
+returns success; an operation UUID reused with any different payload is a conflict.
+
+First execution atomically creates one immutable minimal removal record containing consultation,
+globally unique operation UUID, UTC removal time, operator label, controlled reason and previous
+state `open`; invokes RF-37's transaction-local media marker; deletes raw votes without creating an
+outcome or participation tombstone; sanitizes terminal content; writes lifecycle `removed`; and
+commits once. Unknown targets are unavailable. Finalized, author-deleted, already-removed without an
+exact audit match and otherwise terminal targets are conflicts and remain unchanged. No historical
+audit row is fabricated for pre-existing `removed` data.
+
+The database commit is success and immediately revokes feeds, detail, photographs, voting and
+Private-link access through existing state checks. Physical deletion remains the separate
+startup/hourly/manual RF-37 reconciliation process; partial storage failure never reverses removal.
+Operator output is structured and sanitized with stable exit meanings. Logs and output exclude
+configuration secrets, database URLs, content, link capabilities, storage keys, images and vote
+choices. Product users receive only existing generic unavailability: there is no reason display,
+notification, appeal, restoration or republication in this increment.
+
+The immutable audit row is the only new retained business data. It contains no free text or copied
+content and is kept with the consultation until a later explicit retention policy says otherwise.
+RF-30 reputation, RF-31 reports/cases and RF-42 notifications remain dependencies or future policy
+consumers, not part of this increment. The owner selected RF-32 options `Q1A` through `Q8A` and
+explicitly requested implementation-plan finalisation; this does not authorize a harness launch,
+implementation, commit, deployment or Trello mutation.

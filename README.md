@@ -57,6 +57,11 @@ the configured alert age. Before downgrading past the RF-07 migration, run this 
 explicit operator decision about any remaining files in the private photo volume; a database
 downgrade does not make that volume public or silently remove it.
 
+The designated-operator procedure for the irreversible, command-only removal of one open
+consultation is documented in `harness/operations/RF-32-restricted-removal.md`. It uses deployment
+access rather than a product administrator role or HTTP endpoint; never substitute direct database
+updates for that audited command.
+
 ## Consultation text limits
 
 `CONSULTATION_QUESTION_MAX_LENGTH` (default `120`) and `CONSULTATION_CONTEXT_MAX_LENGTH` (default
@@ -142,7 +147,7 @@ durable state before an operator can downgrade.
 
 `backend/app/consultation_lifecycle.py` is the single source of truth for the persisted consultation
 lifecycle: `open`, `finalized`, `deleted` and `removed`. Publication creates only `open`; `finalized`
-(RF-19/RF-20), `deleted` (RF-13) and `removed` (restricted administrator removal / RF-37) are
+(RF-19/RF-20), `deleted` (RF-13) and `removed` (restricted RF-32 administrator removal) are
 terminal states owned by those consumers. There is no automatic expiry, duration, reopening or
 lifecycle-transition date; `published_at` remains the only product event date. Temporary preparation
 stays on `PhotoUploadSessionState`, not on a consultation row.

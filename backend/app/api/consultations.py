@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Annotated, Literal, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response, status
@@ -16,6 +17,7 @@ from app.consultation_finalization_service import (
 from app.consultation_service import (
     ConsultationCapReachedError,
     ConsultationConflictError,
+    ConsultationDetail,
     ConsultationUnavailableError,
     LinkConflictError,
     MyConsultationFinalizedDetail,
@@ -94,7 +96,7 @@ def require_trusted_origin(request: Request) -> None:
         )
 
 
-def _published_at_iso(value) -> str:
+def _published_at_iso(value: datetime) -> str:
     return value.isoformat() + "Z"
 
 
@@ -110,7 +112,7 @@ def _set_private_read_headers(response: Response) -> None:
     response.headers["Referrer-Policy"] = "no-referrer"
 
 
-def _detail_response(detail) -> ConsultationDetailResponse:
+def _detail_response(detail: ConsultationDetail) -> ConsultationDetailResponse:
     return ConsultationDetailResponse(
         id=detail.id,
         owner_nickname=detail.owner_nickname,

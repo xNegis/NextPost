@@ -29,6 +29,8 @@ ALIAS_MAX_LENGTH = 30
 STORAGE_KEY_MAX_LENGTH = 64
 DELETION_ERROR_MAX_LENGTH = 200
 FINGERPRINT_MAX_LENGTH = 64
+REMOVAL_OPERATOR_ID_MAX_LENGTH = 128
+REMOVAL_REASON_MAX_LENGTH = 32
 
 
 class Account(Base):
@@ -402,3 +404,35 @@ class ConsultationOutcome(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class ConsultationRemoval(Base):
+    """Immutable minimal audit and idempotency record for restricted removal (RF-32)."""
+
+    __tablename__ = "consultation_removals"
+    __table_args__ = (
+        UniqueConstraint("operation_id", name="uq_consultation_removals_operation_id"),
+        CheckConstraint(
+            "length(operator_id) BETWEEN 1 AND 128",
+            name="ck_consultation_removals_operator_id",
+        ),
+        CheckConstraint(
+            "reason_code IN ('rights_or_privacy', 'safety_or_abuse', 'vote_integrity', 'other')",
+            name="ck_consultation_removals_reason_code",
+        ),
+        CheckConstraint(
+            "previous_state = 'open'",
+            name="ck_consultation_removals_previous_state",
+        ),
+    )
+
+    consultation_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("consultations.id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    operation_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    removed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    operator_id: Mapped[str] = mapped_column(String(REMOVAL_OPERATOR_ID_MAX_LENGTH), nullable=False)
+    reason_code: Mapped[str] = mapped_column(String(REMOVAL_REASON_MAX_LENGTH), nullable=False)
+    previous_state: Mapped[str] = mapped_column(String(16), nullable=False)

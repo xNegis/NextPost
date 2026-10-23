@@ -3,7 +3,7 @@
 A persisted consultation has exactly one of four internal lifecycle values: ``open``,
 ``finalized``, ``deleted`` or ``removed``. Publication creates only ``open``; the three terminal
 values are produced only by their owning consumer operations (RF-13 author deletion, RF-19/RF-20
-finalization, and the restricted administrator removal path owned by RF-37). ``unavailable`` is an
+finalization, and the restricted RF-32 administrator-removal command). ``unavailable`` is an
 external access result, not a persisted lifecycle, and temporary preparation belongs to
 ``PhotoUploadSessionState`` rather than to a ``Consultation`` row.
 

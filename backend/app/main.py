@@ -8,7 +8,9 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import RequestResponseEndpoint
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.responses import Response
 
 from app.api.accounts import router as accounts_router
 from app.api.consultations import router as consultations_router
@@ -98,7 +100,9 @@ def create_app() -> FastAPI:
     )
 
     @application.middleware("http")
-    async def _protected_private_headers(request: Request, call_next):
+    async def _protected_private_headers(
+        request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         response = await call_next(request)
         path = request.url.path
         if (

@@ -31,9 +31,9 @@ import logging
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
-from sqlalchemy import Boolean, String, and_, cast, exists, literal, or_, select, union_all
+from sqlalchemy import Boolean, Select, String, and_, cast, exists, literal, or_, select, union_all
 from sqlalchemy.orm import Session
 
 from app.audience import PUBLIC
@@ -124,7 +124,7 @@ def decode_history_cursor(raw: str) -> tuple[datetime, datetime, uuid.UUID] | No
     return snapshot, event_at, cid
 
 
-def _open_vote_select(account_id: uuid.UUID):
+def _open_vote_select(account_id: uuid.UUID) -> Select[Any]:
     has_outcome = exists(
         select(ConsultationOutcome.id).where(
             ConsultationOutcome.consultation_id == Vote.consultation_id,
@@ -148,7 +148,7 @@ def _open_vote_select(account_id: uuid.UUID):
     )
 
 
-def _outcome_select(account_id: uuid.UUID):
+def _outcome_select(account_id: uuid.UUID) -> Select[Any]:
     return (
         select(
             ConsultationOutcome.consultation_id.label("consultation_id"),
@@ -165,7 +165,7 @@ def _outcome_select(account_id: uuid.UUID):
     )
 
 
-def _terminal_vote_select(account_id: uuid.UUID):
+def _terminal_vote_select(account_id: uuid.UUID) -> Select[Any]:
     has_outcome = exists(
         select(ConsultationOutcome.id).where(
             ConsultationOutcome.consultation_id == Vote.consultation_id,

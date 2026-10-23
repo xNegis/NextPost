@@ -1,5 +1,96 @@
 # Project State
 
+## RF-32 restricted administrator removal implemented and technically validated - 2026-10-23
+
+After repeated OpenCode Go launches could not enter inference because the quota was exhausted, the
+product owner explicitly authorized direct coordinator implementation. The DEC-022/DEC-046 subset
+is now complete: additive migration 0010 and `consultation_removals` provide minimal immutable
+audit/idempotency; `app.consultation_removal_service` owns locked atomic open-only removal; and
+`python -m app.remove_consultation` provides double UUID confirmation, caller operation identity,
+controlled reasons, backend-only operator attribution, sanitized JSON and stable exits. There is no
+HTTP/frontend/admin-role surface.
+
+The operation reuses RF-37 exactly: database commit marks the complete consumed session, revokes
+access, deletes open votes without outcomes/tombstones, sanitizes content and writes `removed`;
+physical erasure remains separate retryable maintenance. Exact replay is safe, global operation-ID
+collisions are conflicts, first terminal commit wins against vote/finalization/author deletion, and
+historical removed/finalized/deleted targets are never reinterpreted. The restricted runbook is at
+`harness/operations/RF-32-restricted-removal.md` and the independent acceptance trace is at
+`harness/grooming/RF-32-implementation-review.md`.
+
+Validation passed: 28 focused backend tests; the complete backend suite (569 passed, 77 skipped);
+14 disposable PostgreSQL 18 migration/concurrency tests; Ruff check/format across 77 files; strict
+MyPy across 34 source files; 596 frontend tests across 45 files; Prettier, ESLint, TypeScript and
+production build; Compose config and backend/frontend image builds; clean diff checks; and a fresh
+built-image PostgreSQL smoke proving first removal, exact replay, immediate vote/content revocation
+and separate RF-37 convergence with zero failures/anomalies. Disposable databases/containers were
+removed.
+
+`npm audit --audit-level=high` still reports the pre-existing Vite high advisory and two moderate
+Vitest advisories; remediation requires forced dependency upgrades outside RF-32 and was not
+performed. No commit, push, deployment or Trello mutation occurred. The broad RF-32 functionality
+remains deferred exactly as documented.
+
+## RF-32 harness launches attempted but provider inference did not start - 2026-10-23
+
+The product owner explicitly authorized RF-32 implementation-harness launches. OpenCode CLI
+`1.18.16` still lists authenticated OpenCode Go credentials and the required
+`opencode-go/deepseek-v4-pro` model with `high` variant as active. The corrected new conversation
+`ses_e974d4826ffehh19aI3zzRHY7G` received the complete approved implementation prompt, but remained
+at zero input/output/reasoning/cache tokens, zero cost and zero changed files for more than seven
+minutes. It emitted neither a model response nor an explicit quota error and was terminated to
+avoid leaving an orphan process.
+
+After a further explicit owner request, a second wholly new conversation
+`ses_e96e637bdffeU9lI6IfcRGhUFL` received the same complete approved contract. It reproduced the
+same condition for more than five minutes: zero tokens, zero cost, no assistant content and no file
+change. It was also terminated cleanly. No implementation process remains active.
+
+This matches the zero-token admission pattern of the recent exhausted-quota RF-21 retries, but the
+CLI exposes no remaining-quota command and neither attempt returned an authoritative monthly
+quota message. RF-32 therefore remains `Ready for implementation`; no implementation or validation
+started, and the pre-existing approved documentation changes are intact. Do not continue that empty
+session as implementation evidence. A later retry or an explicitly approved alternative execution
+path is required.
+
+## RF-32 restricted-removal plan ready for implementation - 2026-10-23
+
+The product owner accepted the complete RF-32 restricted-removal decision batch (`Q1A` through
+`Q8A`) and explicitly requested plan finalisation. DEC-046 now fixes a command-only operation for
+open consultations, deployment/host authority with a server-side non-secret operator label, one
+immutable minimal removal record, strong target confirmation and caller-generated idempotency,
+database-commit success, separate RF-37 physical reconciliation and sanitized operational output.
+
+`harness/features/RF-32-Implementation-plan.md` is self-contained and marked
+`Ready for implementation`. The broad RF-32 card remains deferred, including suspensions, reports,
+case review, a moderation/admin console, evidence archives, restoration, application-managed admin
+roles, notifications, appeals and finalized-result invalidation. No harness was launched, no product
+code was implemented, and no commit, deployment or Trello mutation was performed at this gate.
+
+## RF-32 restricted-removal grooming opened; consolidated decisions pending - 2026-10-23
+
+The exact live Trello card `RF-32 · Retirar contenido y suspender cuentas` was consumed read-only
+from `Después · cuentas y administración` and captured in
+`harness/grooming/RF-32-grooming.md`. The broad card remains deferred; this grooming covers only
+DEC-022's MVP exception for restricted manual removal of one consultation and explicitly excludes
+account suspension, reports, moderation inbox/review, a general console, evidence retention,
+restoration and application-managed administrator roles.
+
+Repository inspection confirms that RF-37, RF-13 and RF-19/RF-20 provide the required shared
+terminal lock, database-first revocation, minimization and retryable physical erasure boundaries,
+but no production administrator authority, removal service, command, API or audit record exists.
+The only current removal writer is a state-only concurrency fixture and is not a valid consumer.
+The recommended minimum is a command-only backend operation for open consultations, authorized by
+deployment access, with one immutable minimal removal/audit row and no credential or route exposed
+to the frontend, browser, URLs or ordinary logs. Finalized-outcome invalidation remains outside the
+recommended subset.
+
+Eight material choices covering authority, surface, target lifecycles, persistent audit data,
+reason minimization, confirmation/idempotency, cleanup success boundary and operator/user output
+are now awaiting one consolidated product-owner response. Recommendations remain proposals only.
+No implementation plan was created or finalised, no harness was launched, and no product code,
+deployment or Trello mutation occurred.
+
 ## RF-21 corrective implementation technically validated; owner acceptance pending - 2026-10-22
 
 After both corrective harness launches were blocked by the exhausted OpenCode Go usage limit, the
