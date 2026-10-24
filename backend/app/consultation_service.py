@@ -20,7 +20,7 @@ import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Literal, cast
+from typing import Literal, cast
 
 from sqlalchemy import Select, and_, func, or_, select
 from sqlalchemy.orm import Session
@@ -680,7 +680,7 @@ def list_my_consultations(
     cursor is only pagination and carries no owner/token/authorization field.
     """
     lifecycle = ConsultationState.open if state == "open" else ConsultationState.finalized
-    statement: Select[Any]
+    statement: Select[uuid.UUID, str | None, str | None, datetime] | Select[uuid.UUID, datetime]
     if state == "open":
         statement = select(
             Consultation.id,
@@ -877,7 +877,13 @@ def list_feed(
     server-side from the authenticated account. Nicknames and first-photo metadata are loaded
     set-wise; there are no per-row detail or storage reads.
     """
-    statement: Select[Any] = select(
+    statement: Select[
+        uuid.UUID,
+        uuid.UUID,
+        str | None,
+        str | None,
+        datetime,
+    ] = select(
         Consultation.id,
         Consultation.owner_id,
         Consultation.question,
