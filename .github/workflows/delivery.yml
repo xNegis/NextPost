@@ -139,7 +139,7 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: >-
           ssh -o BatchMode=yes "$DEPLOY_USER@$DEPLOY_HOST"
-          "cd /opt/nextpost && DEPLOY_SHA='${{ github.sha }}' ./scripts/deploy.sh"
+          "cd /opt/nextpost && DEPLOY_SHA='${{ github.sha }}' bash ./scripts/deploy.sh"
       - name: Notify the private operator inbox on failure
         if: failure()
         env:
