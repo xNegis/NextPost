@@ -1,0 +1,61 @@
+workflows:
+  ios-testflight:
+    name: NextPost iOS - TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: "Codemagic FormCadence"
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: app.nextpost
+      node: 24
+      xcode: latest
+    scripts:
+      - name: Verify selected main revision
+        script: |
+          test -n "$CM_COMMIT" || { echo "CM_COMMIT is required"; exit 1; }
+          test "$CM_BRANCH" = "main" || { echo "TestFlight builds must use main"; exit 1; }
+          echo "Building NextPost revision $CM_COMMIT"
+      - name: Install locked frontend dependencies
+        script: |
+          cd "$CM_BUILD_DIR/frontend"
+          npm ci
+      - name: Validate shared frontend
+        script: |
+          cd "$CM_BUILD_DIR/frontend"
+          npm test
+          npm run format:check
+          npm run lint
+          npm run typecheck
+      - name: Build and synchronize iOS
+        script: |
+          cd "$CM_BUILD_DIR/frontend"
+          npm run mobile:sync:ios
+      - name: Set monotonic iOS build number
+        script: |
+          cd "$CM_BUILD_DIR/frontend/ios/App"
+          xcrun agvtool new-version -all "$BUILD_NUMBER"
+      - name: Configure App Store signing
+        script: |
+          cd "$CM_BUILD_DIR/frontend/ios/App"
+          xcode-project use-profiles
+      - name: Build signed IPA
+        script: |
+          cd "$CM_BUILD_DIR/frontend/ios/App"
+          build_status=0
+          xcode-project build-ipa --project "App.xcodeproj" --scheme "App" || build_status=$?
+          [ "$build_status" -ne 0 ] || exit 0
+          echo "Xcode archive failed. Printing bounded diagnostics:"
+          for xcode_log in /tmp/xcodebuild_logs/*.log; do
+            [ -f "$xcode_log" ] || continue
+            grep -n -C 5 -E 'error:|fatal error:|CodeSign|provisioning profile|entitlement|ARCHIVE FAILED' "$xcode_log" || tail -n 200 "$xcode_log"
+          done
+          exit "$build_status"
+    artifacts:
+      - frontend/ios/App/build/ios/ipa/*.ipa
+      - frontend/ios/App/build/ios/archive/*.xcarchive
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration

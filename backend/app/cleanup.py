@@ -17,7 +17,7 @@ from app.models import (
 )
 from app.photo_erasure_service import reconcile_terminal_media
 from app.photo_service import _as_naive_utc, _revoke_images, utcnow
-from app.storage import PhotoStorage, StorageError
+from app.storage import PhotoStorage, StorageError, build_photo_storage
 
 logger = logging.getLogger(__name__)
 
@@ -328,8 +328,7 @@ def _exit_code(report: CleanupReport) -> int:
 
 def main() -> None:
     settings = get_settings()
-    storage = PhotoStorage(settings.photo_storage_root)
-    storage.ensure_dirs()
+    storage = build_photo_storage(settings)
 
     session_factory = get_session_factory()
     lock = build_maintenance_lock()

@@ -1969,3 +1969,27 @@ h1 {
   display: grid;
   gap: 8px;
 }
+
+.privacy-link {
+  justify-self: center;
+  color: var(--color-accent);
+  line-height: 1.5;
+}
+
+.privacy-page {
+  align-items: start;
+}
+
+.privacy-notice {
+  gap: 12px;
+}
+
+.privacy-notice h2 {
+  margin: 12px 0 0;
+  font-size: 1.05rem;
+}
+
+.privacy-notice p {
+  margin: 0;
+  line-height: 1.55;
+}

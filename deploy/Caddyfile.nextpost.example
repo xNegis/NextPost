@@ -1,0 +1,26 @@
+# Merge this site block into the single host-owned Caddy configuration.
+# Do not start a second proxy container that also binds ports 80/443.
+nextpost.formcadence.app {
+	encode zstd gzip
+
+	handle /.well-known/apple-app-site-association {
+		rewrite * /apple-app-site-association
+		root * /etc/caddy/nextpost
+		header Content-Type application/json
+		file_server
+	}
+
+	handle /api/* {
+		reverse_proxy nextpost-backend:8000
+	}
+
+	handle {
+		reverse_proxy nextpost-frontend:80
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+	}
+}

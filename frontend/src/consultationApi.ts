@@ -1,8 +1,7 @@
 import { ApiError } from "./api";
+import { API_BASE_URL } from "./apiOrigin";
 import { isAudience, type Audience } from "./audience";
 import { privateLinkHeaders } from "./consultationLink";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
 const UUID_RE =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;

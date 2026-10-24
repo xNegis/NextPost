@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "REPLACE_APPLE_TEAM_ID.app.nextpost",
+        "components": [
+          { "/": "/consultations/*", "comment": "Public and Private consultation links" },
+          { "/": "/privacy", "comment": "Public privacy notice" }
+        ]
+      }
+    ]
+  }
+}

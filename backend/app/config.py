@@ -24,6 +24,23 @@ def _require_int(name: str, raw: str | None, default: int, minimum: int | None) 
     return value
 
 
+def _require_bool(name: str, raw: str | None, default: bool = False) -> bool:
+    if raw is None or raw.strip() == "":
+        return default
+    normalized = raw.strip().lower()
+    if normalized in {"1", "true", "yes"}:
+        return True
+    if normalized in {"0", "false", "no"}:
+        return False
+    raise ValueError(f"{name} must be a boolean")
+
+
+def _optional_text(raw: str | None) -> str | None:
+    if raw is None or raw.strip() == "":
+        return None
+    return raw.strip()
+
+
 PRIVATE_LINK_SECRET_DEV_DEFAULT = "nextpost-private-link-secret-local-only"
 _PRIVATE_LINK_SECRET_MIN_BYTES = 32
 
@@ -62,6 +79,11 @@ class Settings:
     photo_deletion_alert_seconds: int
     consultation_question_max_length: int
     consultation_context_max_length: int
+    photo_storage_backend: str
+    s3_region: str | None
+    s3_bucket: str | None
+    s3_prefix: str
+    s3_preflight_approved: bool
 
     def __post_init__(self) -> None:
         if self.consultation_min_photos < 2:
@@ -86,6 +108,20 @@ class Settings:
             raise ValueError("PHOTO_DELETION_ALERT_SECONDS must be positive")
         if not self.photo_storage_root:
             raise ValueError("PHOTO_STORAGE_ROOT must be set")
+        if self.photo_storage_backend not in {"filesystem", "s3"}:
+            raise ValueError("PHOTO_STORAGE_BACKEND must be filesystem or s3")
+        if self.photo_storage_backend == "s3":
+            if self.app_env == "development":
+                raise ValueError("S3 photo storage is not allowed in development")
+            if self.s3_region is None or self.s3_bucket is None:
+                raise ValueError("S3_REGION and S3_BUCKET are required for S3 photo storage")
+            if not self.s3_preflight_approved:
+                raise ValueError(
+                    "S3_PREFLIGHT_APPROVED must be true only after the owner preflight passes"
+                )
+        normalized_prefix = self.s3_prefix.strip("/")
+        if normalized_prefix != "nextpost":
+            raise ValueError("S3_PREFIX must be exactly nextpost")
 
 
 @lru_cache(maxsize=1)
@@ -150,5 +186,12 @@ def get_settings() -> Settings:
             os.getenv("CONSULTATION_CONTEXT_MAX_LENGTH"),
             500,
             1,
+        ),
+        photo_storage_backend=os.getenv("PHOTO_STORAGE_BACKEND", "filesystem").strip().lower(),
+        s3_region=_optional_text(os.getenv("S3_REGION")),
+        s3_bucket=_optional_text(os.getenv("S3_BUCKET")),
+        s3_prefix=os.getenv("S3_PREFIX", "nextpost").strip(),
+        s3_preflight_approved=_require_bool(
+            "S3_PREFLIGHT_APPROVED", os.getenv("S3_PREFLIGHT_APPROVED")
         ),
     )

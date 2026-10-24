@@ -22,7 +22,7 @@ from app.config import get_settings
 from app.consultation_service import ConsultationError
 from app.db import get_session_factory
 from app.photo_service import PhotoError
-from app.storage import PhotoStorage
+from app.storage import build_photo_storage
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +39,7 @@ def _build_field_errors(exc: RequestValidationError) -> dict[str, str]:
 
 def _run_cleanup_once() -> None:
     settings = get_settings()
-    storage = PhotoStorage(settings.photo_storage_root)
-    storage.ensure_dirs()
+    storage = build_photo_storage(settings)
     session_factory = get_session_factory()
     with session_factory() as db:
         run_cleanup(db, storage, lock=build_maintenance_lock())

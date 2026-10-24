@@ -24,16 +24,14 @@ from app.schemas import (
     UploadImageResponse,
     UploadSessionResponse,
 )
-from app.storage import PhotoStorage
+from app.storage import PhotoStorage, build_photo_storage
 
 router = APIRouter(tags=["photos"])
 
 
 @lru_cache(maxsize=1)
 def _photo_storage() -> PhotoStorage:
-    storage = PhotoStorage(get_settings().photo_storage_root)
-    storage.ensure_dirs()
-    return storage
+    return build_photo_storage(get_settings())
 
 
 def get_photo_storage() -> PhotoStorage:

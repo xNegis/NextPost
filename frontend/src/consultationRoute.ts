@@ -5,6 +5,7 @@ import {
 
 export type ConsultationRoute =
   | { kind: "root" }
+  | { kind: "privacy" }
   | { kind: "consultation"; destination: ConsultationDestination }
   | { kind: "invalid" };
 
@@ -32,6 +33,9 @@ export function classifyLocation(
   href: string,
   origin: string,
 ): ConsultationRoute {
+  if (pathnameOf(href) === "/privacy") {
+    return { kind: "privacy" };
+  }
   const destination = parseConsultationUrl(href, origin);
   if (destination !== null) {
     return { kind: "consultation", destination };

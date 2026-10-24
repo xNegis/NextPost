@@ -17,6 +17,11 @@ _CONFIG_KEYS = (
     "CONSULTATION_CONTEXT_MAX_LENGTH",
     "PRIVATE_LINK_SECRET",
     "APP_ENV",
+    "PHOTO_STORAGE_BACKEND",
+    "S3_REGION",
+    "S3_BUCKET",
+    "S3_PREFIX",
+    "S3_PREFLIGHT_APPROVED",
 )
 
 
@@ -43,6 +48,9 @@ def test_defaults_match_accepted_values() -> None:
     assert settings.photo_deletion_alert_seconds == 86400
     assert settings.consultation_question_max_length == 120
     assert settings.consultation_context_max_length == 500
+    assert settings.photo_storage_backend == "filesystem"
+    assert settings.s3_prefix == "nextpost"
+    assert not settings.s3_preflight_approved
 
 
 def test_valid_overrides_are_applied(monkeypatch) -> None:
@@ -192,3 +200,28 @@ def test_private_link_secret_accepts_local_default_in_development(monkeypatch) -
     get_settings.cache_clear()
 
     assert get_settings().private_link_secret == "nextpost-private-link-secret-local-only"
+
+
+def test_s3_storage_requires_production_and_completed_preflight(monkeypatch) -> None:
+    monkeypatch.setenv("PHOTO_STORAGE_BACKEND", "s3")
+    monkeypatch.setenv("S3_REGION", "eu-west-1")
+    monkeypatch.setenv("S3_BUCKET", "private-bucket")
+    with pytest.raises(ValueError, match="not allowed in development"):
+        get_settings()
+
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("PRIVATE_LINK_SECRET", "p" * 40)
+    get_settings.cache_clear()
+    with pytest.raises(ValueError, match="S3_PREFLIGHT_APPROVED"):
+        get_settings()
+
+    monkeypatch.setenv("S3_PREFLIGHT_APPROVED", "true")
+    get_settings.cache_clear()
+    assert get_settings().photo_storage_backend == "s3"
+
+
+def test_s3_prefix_cannot_escape_nextpost_namespace(monkeypatch) -> None:
+    monkeypatch.setenv("S3_PREFIX", "formcadence")
+    get_settings.cache_clear()
+    with pytest.raises(ValueError, match="S3_PREFIX"):
+        get_settings()

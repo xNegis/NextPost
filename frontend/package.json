@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:mobile": "tsc -b && vite build --mode mobile",
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "eslint .",
@@ -14,9 +15,11 @@
     "typecheck": "tsc -b",
     "mobile:add:android": "cap add android",
     "mobile:add:ios": "cap add ios",
-    "mobile:sync": "npm run build && cap sync"
+    "mobile:sync": "npm run build:mobile && cap sync",
+    "mobile:sync:ios": "npm run build:mobile && cap sync ios"
   },
   "dependencies": {
+    "@capacitor/app": "8.1.2",
     "@capacitor/core": "8.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0"
@@ -38,7 +41,7 @@
     "prettier": "3.9.6",
     "typescript": "6.0.2",
     "typescript-eslint": "8.70.0",
-    "vite": "8.3.0",
-    "vitest": "5.0.1"
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
   }
 }

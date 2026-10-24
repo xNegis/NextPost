@@ -107,6 +107,9 @@ export function ProfileView({
       >
         {signingOut ? "Signing out…" : "Sign out"}
       </button>
+      <a className="privacy-link" href="/privacy">
+        Privacy notice
+      </a>
     </section>
   );
 }

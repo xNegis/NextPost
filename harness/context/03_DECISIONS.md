@@ -956,3 +956,50 @@ RF-30 reputation, RF-31 reports/cases and RF-42 notifications remain dependencie
 consumers, not part of this increment. The owner selected RF-32 options `Q1A` through `Q8A` and
 explicitly requested implementation-plan finalisation; this does not authorize a harness launch,
 implementation, commit, deployment or Trello mutation.
+
+---
+
+## DEC-047 - RF-42 delivers one shared-host web production and a separate invited iOS application
+
+**Status:** Accepted (2026-10-23)
+
+NextPost initially runs on the existing FormCadence Lightsail instance because beta traffic does
+not justify another host. The applications remain independent stacks, APIs, databases,
+configuration and storage identities. One host-owned HTTPS reverse proxy routes FormCadence and
+`https://nextpost.formcadence.app`; NextPost serves its browser API at same-origin `/api`. Measured
+capacity or operational risk may justify later separation, but no shared application API or data
+store is introduced.
+
+Every successful protected `main` revision passes complete backend/frontend CI before one
+serialized web deployment. The deployment records the exact SHA and rolls forward through a
+corrective commit; code rollback is not represented as reversing a database migration. Production
+PostgreSQL has persistent storage but deliberately no RF-42 backup, snapshot, retention, restore
+automation or continuity promise. If it is lost without a valid ad hoc copy, traffic remains off,
+the exact NextPost S3 namespace is permanently purged and verified, and the product restarts empty.
+
+Normalized photographs move from the server-local volume to the existing private FormCadence S3
+bucket under an isolated `nextpost/` namespace. NextPost uses a new least-privilege IAM identity and
+never reuses FormCadence's runtime key. The backend remains the only object reader/writer; there are
+no public or long-lived presigned URLs. RF-37's database-first revocation, exact-object retry,
+strong absence verification and no historical-photo restoration remain mandatory. Before the
+first NextPost photograph is uploaded, an authenticated bucket-owner check must prove compatible
+versioning, Object Lock, lifecycle, public-access and encryption settings. If retention prevents
+permanent deletion, activation stops and returns to the owner. If versions can exist, every
+retrievable version must be identified, deleted and verified; a delete marker is insufficient.
+
+iOS is a distinct App Store Connect application in the existing Apple Developer team and Codemagic
+account. Its preferred permanent bundle identifier is `app.nextpost` and visible name is
+`NextPost`; unavailability returns to the owner rather than selecting a silent fallback. The app
+packages versioned Vite assets and uses Capacitor's native HTTP/cookie bridge to
+`https://nextpost.formcadence.app/api`, preserving the signed `HttpOnly` session outside JavaScript.
+There is no bearer-token redesign, remote production WebView, permissive CORS, weaker TLS/cookies or
+`SameSite=None` shortcut. TestFlight builds are started manually for a selected `main` commit and
+remain eligible for both internal and external groups and the first external beta review.
+
+Before external invitations, NextPost publishes a plain-language privacy notice and an executable
+manual, authenticated, audit-safe process for access/export and account/data erasure requests.
+`xnegis@gmail.com` is the beta contact for support, feedback, privacy, TestFlight review and private
+automated deploy/readiness/RF-37/S3 alerts. Delivery to that inbox must be proven without adding an
+in-product notification system or requiring a custom mail server. These RF-42 choices do not
+authorize deployment, build upload, tester invitations, DNS/credential mutations, push or Trello
+changes.

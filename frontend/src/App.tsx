@@ -9,6 +9,7 @@ import { HomeFeed } from "./HomeFeed";
 import { MyConsultations } from "./MyConsultations";
 import { MyParticipation } from "./MyParticipation";
 import { Navigation, type Destination } from "./Navigation";
+import { PrivacyNotice } from "./PrivacyNotice";
 import { ProfileView } from "./ProfileView";
 import { RegistrationForm } from "./RegistrationForm";
 import { SignInForm } from "./SignInForm";
@@ -185,6 +186,10 @@ export function App() {
     window.dispatchEvent(new PopStateEvent("popstate"));
   }, []);
 
+  if (route.kind === "privacy") {
+    return <PrivacyNotice onClose={navigateToRoot} />;
+  }
+
   if (route.kind === "invalid") {
     return (
       <main className="page">
@@ -339,6 +344,9 @@ export function App() {
           />
         </section>
       )}
+      <a className="privacy-link" href="/privacy">
+        Privacy
+      </a>
     </main>
   );
 }

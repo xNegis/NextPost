@@ -1,10 +1,17 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  // Replace this provisional ID before generating signed native projects.
-  appId: "com.nextpost.app",
+  appId: "app.nextpost",
   appName: "NextPost",
   webDir: "dist",
+  ios: {
+    preferredContentMode: "mobile",
+  },
+  plugins: {
+    CapacitorHttp: {
+      enabled: true,
+    },
+  },
 };
 
 export default config;

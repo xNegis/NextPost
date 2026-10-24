@@ -1,5 +1,151 @@
 # Project State
 
+## RF-42 repository implementation and S3 gate complete; delivery activation pending - 2026-10-24
+
+After the two approved OpenCode Go attempts failed before inference because the provider quota was
+exhausted, the product owner explicitly authorized direct Codex implementation. The approved RF-42
+repository scope is now implemented and technically validated. It includes complete GitHub CI and
+serialized exact-SHA deployment contracts, isolated production Compose/shared-host proxy guidance,
+private version-aware S3 storage with a fail-closed owner preflight, RF-37 scheduling and sanitized
+alert delivery, public privacy/manual-rights readiness, permanent `app.nextpost` Capacitor iOS
+configuration, canonical native HTTP/link handling, and a manual external-capable Codemagic
+TestFlight workflow. Vite/Vitest were updated within their current major versions and the dependency
+audit is clean.
+
+Validation passed with backend Ruff/format/MyPy, 654 backend tests against disposable PostgreSQL 18,
+47 frontend files / 602 tests, Prettier/ESLint/TypeScript, web/mobile builds, zero high-severity npm
+audit findings, Capacitor iOS sync, Compose validation, production image builds and an isolated
+production-shaped smoke proving migrations, readiness, frontend serving, loopback publication and
+no PostgreSQL host binding. The disposable containers, networks and volumes were removed. Evidence
+is recorded in `harness/grooming/RF-42-implementation-review.md`.
+
+On 2026-10-24 the owner completed `aws login`. The real bucket preflight then passed Block Public
+Access, encryption, absent public policy, disabled versioning, absent default Object Lock retention,
+readable empty lifecycle, absent replication and version-inventory checks. A dedicated
+`nextpost-production` IAM user was created with the exact `nextpost/*` policy, and its credential was
+stored only in the local profile of the same name. A CLI preflight object and an application-level
+`S3PhotoStorage` object both proved encrypted write/read and permanent deletion; final inventories
+were empty. The preflight also exposed and corrected support for AWS-login CRT credentials and the
+safe `NoSuchBucketPolicy` case, with regression coverage.
+
+RF-42 is `Implementation review - repository implementation and S3 gate complete; delivery
+activation pending`. Remaining gates include installing the dedicated credential and approved flag
+on the host, server/GitHub/DNS/alert configuration, separate Apple/App Store Connect registration,
+Codemagic signing/upload, external TestFlight review/invitations and the physical-iPhone matrix. The
+only AWS mutation was the explicitly scoped IAM identity/policy plus disposable canaries, which were
+permanently erased. No commit, push, deployment, DNS/Apple/Codemagic mutation, build upload,
+invitation, real alert or Trello change occurred.
+
+## RF-42 delivery plan ready; authorized harness blocked by provider usage limit - 2026-10-23
+
+The product owner explicitly selected `RF-42 · Preparar la entrega web e iOS y la prueba invitada`
+and confirmed the intended targets as the production web application plus iOS through TestFlight,
+using the FormCadence/FlexGym distribution shape as the reference. The preserved card snapshot and
+current repository/reference inspection are recorded in `harness/grooming/RF-42-grooming.md`.
+The available read-only browser reached Trello's sign-in wall, so the complete repository-owned
+2026-10-12 snapshot is retained; the owner accepted it for finalisation.
+
+FormCadence proves a push-to-main GitHub Actions web chain through CI, SSH, Lightsail, Compose,
+migration and HTTPS probes. It also contains a Capacitor/Codemagic/App Store Connect workflow, but
+its own state still records signed upload, TestFlight installation and physical-iPhone validation
+as pending. A blind copy is invalid: a same-host second Caddy would conflict on ports 80/443;
+NextPost has PostgreSQL and a private photo volume with a database-only/no-historical-photo restore
+contract; and FormCadence's internal-only TestFlight build cannot serve invited people outside the
+App Store Connect team. A local ignored FormCadence environment file also contains apparently live
+AWS credentials that must not be copied or reused and should be rotated.
+
+RF-42 grooming is complete and `harness/features/RF-42-Implementation-plan.md` is `Ready for
+implementation`. The owner accepted Q1A: reuse the existing Lightsail instance
+while traffic is modest, with one shared HTTPS reverse proxy but separate FormCadence and NextPost
+APIs, processes, configuration, databases and storage; later traffic may justify separation. The
+owner also decided not to purchase another domain and confirmed
+`https://nextpost.formcadence.app` as the initial canonical same-origin web/API host. A later domain
+change is allowed but requires coordinated DNS/proxy/CORS/link configuration and a new iOS build;
+old shared links are not assumed to migrate. Production photograph storage, the no-backup posture,
+distribution triggers, tester classes, Apple identity, native HTTP/cookies, beta privacy, operator
+channels and release/rollback are all resolved in the approved plan and DEC-047.
+
+The owner proposed using the existing private AWS S3 capacity because photographs are central and
+more intensive in NextPost than FormCadence. Inspection confirms FormCadence has a useful private
+Boto3 object-store boundary, but its simple delete does not provide NextPost's RF-37 absence,
+version/inventory and anomaly guarantees. Read-only checks confirmed that AWS CLI is installed, but
+the saved default owner/root login session is expired. The existing FormCadence runtime IAM identity
+authenticates successfully yet is denied bucket versioning, Object Lock, lifecycle,
+public-access-block and encryption configuration, which is appropriate for runtime credentials but
+cannot close the compatibility review. No AWS state, permission or object was changed and no
+credential value was printed. The owner selected Q3B: reuse that bucket under a dedicated `nextpost/` prefix with a new
+least-privilege IAM identity that cannot access FormCadence's prefix; the existing FormCadence key
+will not be reused. A bucket-owner configuration review remains mandatory because versioning,
+Object Lock and lifecycle are bucket-wide. If retrievable versions can exist, NextPost must track,
+permanently delete and verify every version rather than treating a current-key 404/delete marker as
+physical erasure. This decision changes
+the local-volume mechanism in DEC-032/041 while preserving private backend-only access, verified
+permanent deletion and the ban on restoring historical photo bytes.
+
+The owner selected Q4C and explicitly rejected PostgreSQL backups for the invited beta. RF-42 will
+not add scheduled/pre-deploy dumps, snapshots, retention, restore automation or backup alerts. The
+owner accepts that loss or corruption of the PostgreSQL volume may require purging the isolated
+NextPost S3 prefix and restarting accounts, consultations, votes, outcomes and audit state from
+empty; ordinary volume persistence is not a backup and no continuity claim is permitted. The owner
+also confirmed Q5A through the original delivery request: successful `main` pushes deploy the web
+stack after CI, while iOS/TestFlight runs only when manually requested for a selected commit.
+
+The owner selected Q6B: testers may include both App Store Connect team members and ordinary
+external invitees. The iOS archive must therefore remain eligible for external TestFlight rather
+than use the internal-only export mode present in FormCadence. RF-42 must prepare separate internal
+and external groups as needed, required beta/review/contact metadata and credentials, and the first
+external TestFlight Beta App Review.
+
+The owner resolved Q7: use the same Apple Developer team and Codemagic account/integration
+infrastructure as FormCadence, while creating a completely separate NextPost App ID and App Store
+Connect application. The preferred permanent bundle identifier is `app.nextpost` and the visible
+name is `NextPost`; the provisional `com.nextpost.app` will be replaced. FormCadence's identifier,
+record, builds and groups remain untouched. Availability must be checked before native generation;
+an unavailable identifier returns to the owner rather than triggering a silent fallback. No Apple
+or Codemagic record was created during grooming.
+
+The owner accepted Q8A. The iOS application packages local versioned Vite assets and calls
+`https://nextpost.formcadence.app/api` through Capacitor's native HTTP bridge, preserving the signed
+`HttpOnly` session cookie outside JavaScript. Browser delivery retains normal same-origin fetch.
+RF-42 will not introduce native bearer tokens, a remote production WebView, permissive CORS, weaker
+TLS/cookie flags or a `SameSite=None` shortcut; real-device authentication/relaunch remains required
+evidence.
+
+The owner accepted Q9A for invited-beta readiness. Before external invitations, RF-42 publishes a
+plain-language privacy notice identifying controller, purpose, retention and processors, and
+documents an executable manual, authenticated, audit-safe operator process for access/export and
+account/data erasure requests. `xnegis@gmail.com` is the monitored contact for support,
+tester feedback and privacy and the TestFlight contact address. The beta does not wait for complete
+self-service RF-34/RF-35 screens; those tickets must be groomed immediately if the manual process
+cannot satisfy the accepted data contracts.
+
+The owner accepted Q10 with the same `xnegis@gmail.com` inbox as the single private beta destination
+for automated web-deploy, backend/readiness, RF-37 overdue/anomaly and S3/storage failure alerts.
+RF-42 must validate delivery to that inbox but does not require a custom mail server or an
+in-product chat/notification system.
+
+The owner accepted Q11A. The complete CI gate protects `main`; production deployments are
+serialized and record the deployed commit SHA. Failures roll forward through corrective commits,
+and code rollback is never presented as reversing a migration. If no valid ad hoc database copy
+exists, the already accepted disaster procedure keeps traffic off, verifies purge of the exact
+NextPost S3 namespace and restarts with an empty database; historical photo bytes are never
+restored.
+
+The owner accepted the unavailable bucket-owner inspection as a hard activation gate before the
+first NextPost production photograph and asked Codex to complete everything else. That instruction
+accepts the preserved Trello snapshot, complete scope/exclusions/validation matrix, plan
+finalisation and autonomous harness implementation. The real bucket remains untouched; the plan
+requires code and disposable tests now and fail-closed owner-authenticated validation after a new
+`aws login`. DEC-047 records the durable delivery/storage/native/beta contract.
+
+The approved OpenCode Go harness was launched twice as new conversations with the required
+`opencode-go/deepseek-v4-pro` model and `high` variant. Both requests failed before generating any
+token or editing any product file with the provider error `Go usage limit exceeded`; the second was
+the single clean retry after terminating the first inert process. RF-42 therefore remains `Ready for
+implementation` and requires either a later retry after usage resets or explicit owner authority for
+the Codex coordinator to implement directly. No deployment, build upload, tester invitation,
+DNS/credential change, commit, push or Trello mutation occurred.
+
 ## RF-32 restricted administrator removal implemented and technically validated - 2026-10-23
 
 After repeated OpenCode Go launches could not enter inference because the quota was exhausted, the

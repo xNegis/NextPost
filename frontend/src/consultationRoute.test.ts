@@ -14,6 +14,12 @@ describe("classifyLocation", () => {
     });
   });
 
+  it("classifies the public privacy notice", () => {
+    expect(classifyLocation("/privacy", "http://app.example")).toEqual({
+      kind: "privacy",
+    });
+  });
+
   it("classifies a relative public consultation path", () => {
     expect(
       classifyLocation(`/consultations/${UUID}`, "http://app.example"),
