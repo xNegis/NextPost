@@ -1,6 +1,6 @@
 # Project State
 
-## RF-42 repository implementation and S3 gate complete; delivery activation pending - 2026-10-24
+## RF-42 production web/API deployed; iOS and invited-beta gates pending - 2026-10-24
 
 After the two approved OpenCode Go attempts failed before inference because the provider quota was
 exhausted, the product owner explicitly authorized direct Codex implementation. The approved RF-42
@@ -28,13 +28,27 @@ stored only in the local profile of the same name. A CLI preflight object and an
 were empty. The preflight also exposed and corrected support for AWS-login CRT credentials and the
 safe `NoSuchBucketPolicy` case, with regression coverage.
 
-RF-42 is `Implementation review - repository implementation and S3 gate complete; delivery
-activation pending`. Remaining gates include installing the dedicated credential and approved flag
-on the host, server/GitHub/DNS/alert configuration, separate Apple/App Store Connect registration,
-Codemagic signing/upload, external TestFlight review/invitations and the physical-iPhone matrix. The
-only AWS mutation was the explicitly scoped IAM identity/policy plus disposable canaries, which were
-permanently erased. No commit, push, deployment, DNS/Apple/Codemagic mutation, build upload,
-invitation, real alert or Trello change occurred.
+The product owner then explicitly authorized the first production deployment. The dedicated S3
+credential and approved preflight flag were installed in a protected host environment, GitHub's
+`production` environment received independent SSH deployment secrets, and the existing FormCadence
+Caddy service was connected to a separate `nextpost-proxy` network without exposing PostgreSQL or
+interrupting FormCadence. Cloudflare now has a DNS-only `nextpost.formcadence.app` A record. The
+server received swap protection for its constrained memory; no PostgreSQL backup was introduced.
+
+Commits `18f6439`, `299496e` and `031827d` were pushed to `main`. The first CI run exposed current
+SQLAlchemy 2.1 typing and `undici` audit differences; both were corrected and fully revalidated. The
+second run passed all quality/image gates and exposed only the one-time server bootstrap gap. The
+final GitHub Actions run `40079783618` passed backend, frontend, Compose and deployment. Production
+records exact SHA `031827db83b3567db42bb97ebf62da7a56314342`; its PostgreSQL and backend containers
+are healthy, the frontend is running, public `/api/ready` returns `{"status":"ok"}`, the web root
+returns HTTP 200 with title `NextPost`, and browser inspection shows the sign-in/account-creation UI.
+FormCadence still returns `{"status":"ok"}` after the shared-proxy change.
+
+RF-42 is `Implementation review - production web/API deployed; iOS and invited-beta gates pending`.
+Remaining gates are a real private-alert delivery adapter and controlled inbox test, host cleanup
+scheduling, separate Apple/App Store Connect registration, Apple Team ID association publishing,
+Codemagic signing/upload, external TestFlight review/invitations and the physical-iPhone matrix. No
+Apple/Codemagic mutation, build upload, invitation, real alert or Trello change occurred.
 
 ## RF-42 delivery plan ready; authorized harness blocked by provider usage limit - 2026-10-23
 

@@ -2,13 +2,12 @@
 
 ## Status
 
-`Implementation review - repository implementation and S3 gate complete; delivery activation pending`
+`Implementation review - production web/API deployed; iOS and invited-beta gates pending`
 
 The product owner explicitly authorized direct coordinator implementation after two approved
 OpenCode Go launches failed before inference because the provider quota was exhausted. This review
-covers repository implementation and local validation only. It does not claim a production deploy,
-Apple registration, signed upload, production deployment, TestFlight invitation or physical-iPhone
-acceptance.
+covers repository implementation, validation and the first production web/API deployment. It does
+not claim Apple registration, signed upload, TestFlight invitation or physical-iPhone acceptance.
 
 ## Scope and acceptance review
 
@@ -71,24 +70,31 @@ acceptance.
   dedicated `nextpost-production` IAM user and exact-prefix inline policy were created. A CLI
   canary and the real `S3PhotoStorage` implementation both proved encrypted write/read and
   permanent all-version deletion; final inventories contained zero current objects, versions and
-  delete markers. The credential exists only in the local AWS profile and is not yet on the host.
+  delete markers. The dedicated credential is installed in the protected production host
+  environment; no credential was printed or committed.
+- Cloudflare publishes the DNS-only `nextpost.formcadence.app` A record. The shared FormCadence
+  Caddy container joins a dedicated proxy network and routes only NextPost frontend/backend aliases;
+  PostgreSQL remains on an internal-only network. FormCadence stayed healthy throughout.
+- GitHub Actions run `40079783618` passed backend, frontend, Compose and production deployment for
+  exact SHA `031827db83b3567db42bb97ebf62da7a56314342` after two evidence-producing correction runs.
+  Production reports healthy database/backend containers, a running frontend, public TLS readiness
+  with `{"status":"ok"}`, HTTP 200 web serving and the expected browser-rendered sign-in UI.
 
 ## External activation gates
 
-1. Install the already-created dedicated IAM credential in the root-owned server environment, set
-   `S3_PREFLIGHT_APPROVED=true`, and preserve the exact-prefix policy. Do not reuse owner credentials.
-2. Install server/GitHub secrets, DNS/proxy fragment,
-   cleanup schedule and a real alert delivery adapter; confirm delivery to `xnegis@gmail.com`.
-3. Confirm `app.nextpost` availability, create the separate Apple/App Store Connect record, replace
+1. Install the host cleanup schedule and a real alert delivery adapter; run a controlled failure and
+   confirm sanitized delivery to `xnegis@gmail.com`.
+2. Confirm `app.nextpost` availability, create the separate Apple/App Store Connect record, replace
    the Apple Team ID in the association file, configure Codemagic signing and run the manual build.
-4. Complete external TestFlight review/invitations and the documented physical-iPhone matrix on the
+3. Complete external TestFlight review/invitations and the documented physical-iPhone matrix on the
    same recorded Git SHA.
 
 ## Final assessment
 
-The approved repository scope and real S3 compatibility gate are implemented and validated. RF-42
-remains in implementation review because its defining distribution evidence depends on the external
-gates above. The only external mutation was creation of the dedicated exact-prefix IAM identity,
-policy and disposable canaries, which were permanently erased. No commit, push, deployment,
-DNS/Apple/Codemagic mutation, build upload, invitation, email delivery or Trello change was
-performed.
+The approved repository scope, real S3 compatibility gate and first production web/API deployment
+are implemented and validated. RF-42 remains in implementation review because iOS distribution,
+invited TestFlight use and private alert delivery still depend on the external gates above. External
+mutations performed were the scoped IAM identity/policy and erased canaries, protected host/GitHub
+configuration, shared proxy integration, Cloudflare DNS record, commits/pushes and the recorded web
+deployment. No Apple/Codemagic mutation, build upload, invitation, email delivery or Trello change
+was performed.
