@@ -15,6 +15,7 @@ const FOCUSABLE_SELECTOR =
 interface FinalizeConsultationDialogProps {
   consultationId: string;
   photos: ConsultationPhoto[];
+  photoUrls: string[];
   onCancel: () => void;
   onFinalized: () => void;
   onReload: () => void;
@@ -49,6 +50,7 @@ function selectionLabel(
 export function FinalizeConsultationDialog({
   consultationId,
   photos,
+  photoUrls,
   onCancel,
   onFinalized,
   onReload,
@@ -222,12 +224,24 @@ export function FinalizeConsultationDialog({
               </label>
               {photos.map((photo, index) => (
                 <label key={photo.id} className="finalize-dialog__photo">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(photo.id)}
-                    onChange={() => togglePhoto(photo.id)}
+                  <span className="finalize-dialog__photo-position">
+                    Photo {index + 1} of {photos.length}
+                  </span>
+                  <img
+                    src={photoUrls[index]}
+                    alt={`Consultation photo ${index + 1}`}
                   />
-                  Photo {index + 1}
+                  <span className="finalize-dialog__photo-choice">
+                    <input
+                      type="checkbox"
+                      aria-label={`Photo ${index + 1}`}
+                      checked={selectedIds.includes(photo.id)}
+                      onChange={() => togglePhoto(photo.id)}
+                    />
+                    {selectedIds.includes(photo.id)
+                      ? `Photo ${index + 1} selected`
+                      : `Choose photo ${index + 1}`}
+                  </span>
                 </label>
               ))}
             </fieldset>
@@ -267,6 +281,23 @@ export function FinalizeConsultationDialog({
             <p className="finalize-dialog__review" aria-live="polite">
               Your choice: {selectionLabel(selectedIds, chooseNone, photos)}
             </p>
+            {!chooseNone && (
+              <ul className="finalize-dialog__review-photos">
+                {photos.map((photo, index) =>
+                  selectedIds.includes(photo.id) ? (
+                    <li key={photo.id}>
+                      <span>
+                        Photo {index + 1} of {photos.length}
+                      </span>
+                      <img
+                        src={photoUrls[index]}
+                        alt={`Selected consultation photo ${index + 1}`}
+                      />
+                    </li>
+                  ) : null,
+                )}
+              </ul>
+            )}
             <p className="finalize-dialog__review-note">
               This is your final decision. New votes and access stop immediately
               and every photograph is permanently removed.

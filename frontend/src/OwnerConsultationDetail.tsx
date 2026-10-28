@@ -310,6 +310,9 @@ export function OwnerConsultationDetail({
                 : undefined;
             return (
               <li key={url} className="owner-consultation__photo">
+                <p className="owner-consultation__photo-position">
+                  Photo {index + 1} of {phase.photoUrls.length}
+                </p>
                 <img src={url} alt={`Consultation photo ${index + 1}`} />
                 {count !== undefined && (
                   <p
@@ -471,6 +474,7 @@ export function OwnerConsultationDetail({
         <FinalizeConsultationDialog
           consultationId={consultationId}
           photos={phase.detail.photos}
+          photoUrls={phase.photoUrls}
           onCancel={() => setFinalizeOpen(false)}
           onFinalized={() => {
             setFinalizeOpen(false);

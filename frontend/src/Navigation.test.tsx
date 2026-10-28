@@ -16,6 +16,9 @@ describe("Navigation", () => {
     expect(
       screen.getByRole("button", { name: "My consultations" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "My consultations" }).closest("li"),
+    ).toHaveClass("navigation__item--my");
     expect(screen.getByRole("button", { name: "History" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Profile" })).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(5);

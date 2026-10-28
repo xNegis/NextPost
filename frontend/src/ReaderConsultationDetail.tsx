@@ -175,7 +175,38 @@ export function ReaderConsultationDetail({
           </legend>
           <ul className="reader-consultation__photos">
             {phase.detail.photos.map((photo, index) => (
-              <li key={photo.id} className="reader-consultation__photo">
+              <li
+                key={photo.id}
+                className={`reader-consultation__photo${
+                  selectedPhotoId === photo.id
+                    ? " reader-consultation__photo--selected"
+                    : ""
+                }`}
+              >
+                <p className="reader-consultation__photo-position">
+                  Photo {index + 1} of {phase.detail.photos.length}
+                </p>
+                <label className="reader-consultation__select-photo">
+                  <img
+                    src={phase.photoUrls[index]}
+                    alt={`Consultation photo ${index + 1}`}
+                  />
+                  <span className="reader-consultation__choice">
+                    <input
+                      type="radio"
+                      name="vote-choice"
+                      value={photo.id}
+                      aria-label={`Photo ${index + 1}`}
+                      checked={selectedPhotoId === photo.id}
+                      onChange={() => setSelectedPhotoId(photo.id)}
+                    />
+                    <span>
+                      {selectedPhotoId === photo.id
+                        ? `Photo ${index + 1} selected`
+                        : `Choose photo ${index + 1}`}
+                    </span>
+                  </span>
+                </label>
                 <button
                   type="button"
                   className="reader-consultation__enlarge"
@@ -187,21 +218,8 @@ export function ReaderConsultationDetail({
                     })
                   }
                 >
-                  <img
-                    src={phase.photoUrls[index]}
-                    alt={`Consultation photo ${index + 1}`}
-                  />
+                  <span aria-hidden="true">↗</span>
                 </button>
-                <label className="reader-consultation__choice">
-                  <input
-                    type="radio"
-                    name="vote-choice"
-                    value={photo.id}
-                    checked={selectedPhotoId === photo.id}
-                    onChange={() => setSelectedPhotoId(photo.id)}
-                  />
-                  <span>Photo {index + 1}</span>
-                </label>
               </li>
             ))}
           </ul>
@@ -308,9 +326,12 @@ export function ReaderConsultationDetail({
                     isVoted ? " reader-consultation__photo--voted" : ""
                   }`}
                 >
+                  <span className="reader-consultation__photo-position">
+                    Photo {index + 1} of {phase.detail.photos.length}
+                  </span>
                   <button
                     type="button"
-                    className="reader-consultation__enlarge"
+                    className="reader-consultation__view-photo"
                     aria-label={`Enlarge photo ${index + 1}`}
                     onClick={() =>
                       setEnlarged({

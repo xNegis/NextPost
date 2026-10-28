@@ -214,6 +214,8 @@ describe("ConsultationComposer", () => {
     expect(
       screen.getByRole("heading", { name: "Review and publish" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Photo 1 of 2")).toBeInTheDocument();
+    expect(screen.getByText("Photo 2 of 2")).toBeInTheDocument();
   });
 
   it("publishes an ordered frozen snapshot", async () => {

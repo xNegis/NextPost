@@ -78,7 +78,22 @@ describe("ReaderConsultationDetail", () => {
         screen.getAllByRole("img", { name: /Consultation photo/ }),
       ).toHaveLength(2),
     );
+    expect(screen.getAllByText("Photo 1 of 2")).not.toHaveLength(0);
+    expect(screen.getAllByText("Photo 2 of 2")).not.toHaveLength(0);
     expect(photoMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("selects a photo by tapping the large image choice", async () => {
+    const user = userEvent.setup();
+    renderDetail();
+
+    await user.click(
+      await screen.findByRole("img", { name: "Consultation photo 2" }),
+    );
+
+    expect(screen.getByRole("radio", { name: "Photo 2" })).toBeChecked();
+    expect(screen.getByText("Photo 2 selected")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Review vote" })).toBeEnabled();
   });
 
   it("loads photos in stored order", async () => {

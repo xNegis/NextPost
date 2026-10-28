@@ -18,6 +18,7 @@ const PHOTOS = [
   { id: "123e4567-e89b-12d3-a456-426614174002", width: 100, height: 200 },
   { id: "123e4567-e89b-12d3-a456-426614174003", width: 100, height: 200 },
 ];
+const PHOTO_URLS = ["blob:photo-1", "blob:photo-2"];
 
 function renderDialog(
   overrides: Partial<Parameters<typeof FinalizeConsultationDialog>[0]> = {},
@@ -25,6 +26,7 @@ function renderDialog(
   const props = {
     consultationId: CONSULTATION_ID,
     photos: PHOTOS,
+    photoUrls: PHOTO_URLS,
     onCancel: vi.fn(),
     onFinalized: vi.fn(),
     onReload: vi.fn(),
@@ -74,6 +76,10 @@ describe("FinalizeConsultationDialog", () => {
     expect(
       screen.queryByRole("button", { name: "Finalize consultation" }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Consultation photo 1" }),
+    ).toHaveAttribute("src", PHOTO_URLS[0]);
+    expect(screen.getByText("Photo 1 of 2")).toBeInTheDocument();
   });
 
   it("moves to a review step that summarizes the choice before finalizing", async () => {
@@ -85,6 +91,9 @@ describe("FinalizeConsultationDialog", () => {
     );
 
     expect(screen.getByText("Your choice: Photo 1")).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Selected consultation photo 1" }),
+    ).toHaveAttribute("src", PHOTO_URLS[0]);
     expect(
       screen.getByRole("button", { name: "Finalize consultation" }),
     ).toBeEnabled();

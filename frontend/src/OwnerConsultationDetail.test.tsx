@@ -479,6 +479,7 @@ describe("OwnerConsultationDetail", () => {
     });
     renderReturning();
     await waitFor(() => expect(screen.getAllByText("1 vote")).toHaveLength(2));
+    expect(screen.getByText("Photo 1 of 1")).toBeInTheDocument();
     expect(
       screen.getByText(
         "These are participant opinions and may change while your consultation is open.",

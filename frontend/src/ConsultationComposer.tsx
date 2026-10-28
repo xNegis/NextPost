@@ -474,6 +474,9 @@ export function ConsultationComposer({
           <ul className="composer-review-photos">
             {readyItems.map((item, index) => (
               <li key={item.clientId} className="composer-review-photo">
+                <p className="composer-review-photo__position">
+                  Photo {index + 1} of {readyItems.length}
+                </p>
                 <img src={item.imageUrl} alt={`Selected photo ${index + 1}`} />
               </li>
             ))}

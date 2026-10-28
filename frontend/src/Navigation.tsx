@@ -130,7 +130,10 @@ export function Navigation({ active, onSelect }: NavigationProps) {
         {DESTINATIONS.map(({ key, label, icon: Icon }) => {
           const isActive = key === active;
           return (
-            <li key={key} className="navigation__item">
+            <li
+              key={key}
+              className={`navigation__item navigation__item--${key}`}
+            >
               <button
                 type="button"
                 className="navigation__link"

@@ -1,5 +1,37 @@
 # Project State
 
+## RF-43 implemented and technically validated; owner visual acceptance pending - 2026-10-28
+
+The product owner explicitly prioritised an unplanned visual iteration before returning to the
+existing roadmap. A new Trello card, `RF-43 · Mejorar la navegación móvil y la experiencia
+fotográfica`, was created at the top of `Próximo · completar el MVP` and consumed into
+`harness/grooming/RF-43-grooming.md`. After confirming the concise visual direction, the owner
+explicitly approved plan finalisation and requested direct Codex implementation. The self-contained
+contract is `harness/features/RF-43-Implementation-plan.md`, marked `Ready for implementation`.
+No external harness launch is authorised or required for this run.
+
+The reported physical-iPhone issues are reproducible in the current layout contract: five equal
+mobile navigation tracks plus `overflow-wrap: anywhere` compress `My consultations`, while the open
+owner detail forces photos into a two-column grid with fixed 140 px image height. The reader uses a
+separate one-column treatment capped at 320 px, so owner and voter surfaces lack one coherent photo
+sequence. The initial product direction is a vertical one-photo-per-block experience rather than a
+horizontal carousel. The owner confirmed that mobile navigation keeps the full visible
+`My consultations` label in a wider track, with normal word-boundary wrapping and the existing five
+icons, touch targets, semantics and safe area. Exact photo-surface scope, vote action placement,
+desktop behaviour and image framing follow the bounded responsive choices in the approved plan.
+Direct implementation is now complete. Reader, owner and composer review use an ordered vertical
+one-photo-per-block presentation; reader images select the vote directly with a separate enlarge
+action; owner counts stay attached to their photo; and finalization now shows actual authorised
+photos during selection and review. Feed previews, upload management and finalized text-only
+history remain unchanged. No backend, API, database, storage, dependency or deployment change was
+made.
+
+Frontend Prettier, ESLint, TypeScript, all 47 test files / 603 tests, the production build and the
+high-severity dependency audit pass; the audit reports zero vulnerabilities. Detailed evidence is
+in `harness/grooming/RF-43-implementation-review.md`. RF-43 is `Implementation review`; physical-
+iPhone owner acceptance remains the only completion gate. No commit, push, deploy or further Trello
+mutation was performed.
+
 ## RF-42 production web/API deployed; iOS and invited-beta gates pending - 2026-10-24
 
 After the two approved OpenCode Go attempts failed before inference because the provider quota was
