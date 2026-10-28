@@ -15,11 +15,6 @@ interface ReaderConsultationDetailProps {
   exitLabel?: string;
 }
 
-interface EnlargedPhoto {
-  src: string;
-  alt: string;
-}
-
 export function ReaderConsultationDetail({
   consultationId,
   onBack,
@@ -33,7 +28,7 @@ export function ReaderConsultationDetail({
     token,
   );
   const vote = useReaderVote(consultationId, token, onSessionLost);
-  const [enlarged, setEnlarged] = useState<EnlargedPhoto | null>(null);
+  const [enlargedIndex, setEnlargedIndex] = useState<number | null>(null);
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const retryProtectedState = () => {
@@ -202,7 +197,7 @@ export function ReaderConsultationDetail({
                 </label>
               ),
             }))}
-            onEnlarge={(item) => setEnlarged({ src: item.src, alt: item.alt })}
+            onEnlarge={(_item, index) => setEnlargedIndex(index)}
           />
 
           {!reviewing ? (
@@ -308,7 +303,7 @@ export function ReaderConsultationDetail({
                   <span className="photo-carousel__vote-badge">Your vote</span>
                 ) : undefined,
             }))}
-            onEnlarge={(item) => setEnlarged({ src: item.src, alt: item.alt })}
+            onEnlarge={(_item, index) => setEnlargedIndex(index)}
           />
           <p className="reader-consultation__finality" role="status">
             Votes cannot be changed.
@@ -329,11 +324,38 @@ export function ReaderConsultationDetail({
         </button>
       </div>
 
-      {enlarged !== null && (
+      {enlargedIndex !== null && (
         <PhotoEnlargement
-          src={enlarged.src}
-          alt={enlarged.alt}
-          onClose={() => setEnlarged(null)}
+          items={phase.detail.photos.map((photo, index) => ({
+            id: photo.id,
+            src: phase.photoUrls[index],
+            alt: `Consultation photo ${index + 1}`,
+            badge:
+              vote.status.kind === "voted" &&
+              vote.status.photoId === photo.id ? (
+                <span className="photo-carousel__vote-badge">Your vote</span>
+              ) : undefined,
+            footer:
+              vote.status.kind === "not_voted" ? (
+                <label className="reader-consultation__choice">
+                  <input
+                    type="radio"
+                    name="full-screen-vote-choice"
+                    value={photo.id}
+                    aria-label={`Photo ${index + 1}`}
+                    checked={selectedPhotoId === photo.id}
+                    onChange={() => setSelectedPhotoId(photo.id)}
+                  />
+                  <span>
+                    {selectedPhotoId === photo.id
+                      ? `Photo ${index + 1} selected`
+                      : `Choose photo ${index + 1}`}
+                  </span>
+                </label>
+              ) : undefined,
+          }))}
+          initialIndex={enlargedIndex}
+          onClose={() => setEnlargedIndex(null)}
         />
       )}
     </section>

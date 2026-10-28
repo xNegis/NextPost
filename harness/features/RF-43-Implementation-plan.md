@@ -20,6 +20,10 @@ The owner's second review removes visible previous/next controls. The accepted g
 is direct horizontal swipe, with a discreet overlaid counter and position dots. Keyboard arrow
 navigation remains available for accessibility but must not add visible arrow buttons.
 
+Full-screen enlargement must reuse the complete carousel, open at the currently visible photo and
+allow horizontal swipe, position feedback and the current vote choice where applicable. It must not
+be a single-image dead end.
+
 ## Source ticket
 
 - Trello title: `RF-43 · Mejorar la navegación móvil y la experiencia fotográfica`

@@ -1,17 +1,23 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
+import { PhotoCarousel, type PhotoCarouselItem } from "./PhotoCarousel";
+
 const FOCUSABLE_SELECTOR =
   "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), " +
   'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 interface PhotoEnlargementProps {
-  src: string;
-  alt: string;
+  items: PhotoCarouselItem[];
+  initialIndex: number;
   onClose: () => void;
 }
 
-export function PhotoEnlargement({ src, alt, onClose }: PhotoEnlargementProps) {
+export function PhotoEnlargement({
+  items,
+  initialIndex,
+  onClose,
+}: PhotoEnlargementProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<Element | null>(null);
@@ -65,11 +71,15 @@ export function PhotoEnlargement({ src, alt, onClose }: PhotoEnlargementProps) {
       className="photo-enlargement"
       role="dialog"
       aria-modal="true"
-      aria-label={alt}
+      aria-label="Full-screen photo gallery"
     >
       <div className="photo-enlargement__backdrop" onClick={onClose} />
       <div className="photo-enlargement__panel" ref={panelRef}>
-        <img className="photo-enlargement__image" src={src} alt={alt} />
+        <PhotoCarousel
+          items={items}
+          label="Full-screen consultation photos"
+          initialIndex={initialIndex}
+        />
         <button
           ref={closeRef}
           type="button"

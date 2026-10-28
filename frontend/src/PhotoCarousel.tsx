@@ -1,5 +1,5 @@
 import {
-  useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent,
@@ -18,18 +18,27 @@ export interface PhotoCarouselItem {
 interface PhotoCarouselProps {
   items: PhotoCarouselItem[];
   label: string;
+  initialIndex?: number;
   onEnlarge?: (item: PhotoCarouselItem, index: number) => void;
 }
 
-export function PhotoCarousel({ items, label, onEnlarge }: PhotoCarouselProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
+export function PhotoCarousel({
+  items,
+  label,
+  initialIndex = 0,
+  onEnlarge,
+}: PhotoCarouselProps) {
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
   const trackRef = useRef<HTMLUListElement>(null);
 
-  useEffect(() => {
-    setActiveIndex((current) =>
-      Math.min(current, Math.max(items.length - 1, 0)),
-    );
-  }, [items.length]);
+  useLayoutEffect(() => {
+    const next = Math.max(0, Math.min(initialIndex, items.length - 1));
+    setActiveIndex(next);
+    const track = trackRef.current;
+    if (track !== null && typeof track.scrollTo === "function") {
+      track.scrollTo({ left: track.clientWidth * next, behavior: "auto" });
+    }
+  }, [initialIndex, items.length]);
 
   if (items.length === 0) return null;
 

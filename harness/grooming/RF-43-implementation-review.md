@@ -19,6 +19,8 @@ Direct Codex implementation of the approved
 - The visible reader photo offers a distinct enlargement action and vote choice. The separate
   review/confirm vote boundary remains intact.
 - Post-vote detail retains the swipe carousel and marks the recorded choice as `Your vote`.
+- Full-screen Enlarge now opens the complete gallery at the current photo and preserves swipe,
+  counter, dots, selected-vote marker and the visible-photo choice where voting is still available.
 - Open owner detail uses the same carousel and keeps each live count paired with its photo.
 - Composer review uses the carousel instead of a two-column 140 px grid.
 - Finalization receives the already-authorized open-detail object URLs. Selection shows every actual
@@ -44,13 +46,14 @@ Executed from `frontend/` on 2026-10-28:
 - `npm run format:check` - passed.
 - `npm run lint` - passed.
 - `npm run typecheck` - passed.
-- `npm test -- --run` - 47 test files and 603 tests passed.
+- `npm test -- --run` - 47 test files and 604 tests passed.
 - `npm run build` - passed with Vite 8.3.5; 70 modules transformed.
 - `npm audit --audit-level=high` - passed with 0 vulnerabilities.
 
 Focused carousel and affected-surface validation passes. Assertions cover the navigation modifier,
 one-at-a-time swipe navigation, absence of visible arrows, the position counter, visible-photo
-selection, owner count pairing, composer review and actual finalization selection/review images.
+selection, full-screen initial position/swipe/focus containment, owner count pairing, composer review
+and actual finalization selection/review images.
 
 `git diff --check` reports no whitespace errors. Git only reports the repository's expected Windows
 LF-to-CRLF conversion warnings.

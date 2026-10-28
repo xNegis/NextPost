@@ -125,7 +125,14 @@ describe("ReaderConsultationDetail", () => {
     await user.click(
       await screen.findByRole("button", { name: "Enlarge photo 1" }),
     );
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Full-screen photo gallery" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("list", {
+        name: "Full-screen consultation photos. Swipe horizontally to browse.",
+      }),
+    ).toBeInTheDocument();
 
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

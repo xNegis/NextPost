@@ -52,6 +52,16 @@ Instagram-like direct horizontal swipe, with a discreet counter and position dot
 support remains non-visual for accessibility. This focused correction is authorised for direct
 implementation and CI deployment without changing any functional contract.
 
+The third owner review accepts inline swipe but identifies a consistency gap: full-screen Enlarge
+still shows one isolated image. RF-43 must open the complete gallery at the current index and retain
+the same swipe, counter, dots and visible-photo vote choice in the modal. This is a frontend-only
+correction; full-screen browsing does not alter photo access or vote rules.
+
+That correction is implemented and validated: full-screen opens at the requested index, contains
+the complete gallery, supports swipe and keyboard navigation, keeps focus trapped, and exposes the
+current option selector only while voting remains available. All 47 frontend files / 604 tests,
+formatting, lint, TypeScript, production build and audit pass; the audit reports zero vulnerabilities.
+
 ## RF-42 production web/API deployed; iOS and invited-beta gates pending - 2026-10-24
 
 After the two approved OpenCode Go attempts failed before inference because the provider quota was

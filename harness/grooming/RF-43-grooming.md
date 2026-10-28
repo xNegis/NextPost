@@ -261,6 +261,9 @@ None.
 - 2026-10-28, second owner review: remove the visible previous/next arrow toolbar. Navigation must
   feel like Instagram: direct horizontal swipe on the photograph, with only a discreet overlaid
   counter and position dots. Preserve keyboard arrow support without adding visible arrow controls.
+- 2026-10-28, third owner review: the inline carousel swipe is accepted, but the full-screen
+  enlargement must also contain the complete gallery and support the same swipe interaction from
+  the currently visible photo. Closing full screen merely to reach the next image is not acceptable.
 
 ## Proposed scope
 
