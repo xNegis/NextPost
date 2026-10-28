@@ -86,6 +86,13 @@ use bounded bottom rows. Inline galleries remain light. All 47 frontend files / 
 lint, TypeScript, build and audit pass with zero vulnerabilities; physical-device acceptance remains
 pending.
 
+The seventh physical-device review caught image stretching in the first viewport-sized version.
+The cause was forcing both axes of the image element to fill its frame. Full-screen images now keep
+intrinsic automatic width and height and use only 100% maximum stage bounds, so the limiting axis
+fits while the other axis follows the source aspect ratio. All 47 frontend files / 605 tests,
+formatting, lint, TypeScript, build and audit pass with zero vulnerabilities; physical-device visual
+acceptance remains pending.
+
 ## RF-42 production web/API deployed; iOS and invited-beta gates pending - 2026-10-24
 
 After the two approved OpenCode Go attempts failed before inference because the provider quota was

@@ -43,6 +43,11 @@ limiting viewport dimension while preserving aspect ratio. Controls remain overl
 bottom action row so the image never creates a wider nested rectangle. Inline galleries retain the
 light treatment from the fifth review.
 
+The seventh review corrects a Safari/device rendering defect in that implementation. The image
+element itself must keep `width: auto` and `height: auto`; only `max-width: 100%` and
+`max-height: 100%` constrain it. Do not size both axes to 100%, even with `object-fit`, because the
+physical-device result is visibly distorted.
+
 ## Source ticket
 
 - Trello title: `RF-43 · Mejorar la navegación móvil y la experiencia fotográfica`

@@ -27,6 +27,9 @@ Direct Codex implementation of the approved
   stage. Slides and image frames fill that stage, while `object-fit: contain` fits portrait and
   landscape photos by their limiting dimension without crop or distortion. Counter and close float
   above the stage; dots and the bounded vote action occupy only their own bottom rows.
+- Physical-device follow-up found that forcing both axes of the image element to 100% still produced
+  visible stretching in Safari. Full-screen images now retain automatic intrinsic width and height,
+  with only maximum stage bounds applied, making aspect-ratio preservation explicit.
 - Reader voting lives in a stable panel below the gallery. `Choose this photo` always targets the
   visible image, selection remains visible while browsing, and `Review vote` appears only after a
   choice. The separate review/confirm vote boundary remains intact.

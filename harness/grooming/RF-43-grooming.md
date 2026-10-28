@@ -280,6 +280,10 @@ None.
   crop or distortion. Any unavoidable bars belong to the continuous dark viewport, not to a nested
   card. Counter and close float above the stage; dots and the stable vote action may define bounded
   bottom rows but must never create another image card or distort its aspect ratio.
+- 2026-10-28, seventh owner review: the first viewport implementation visibly stretches photos in
+  full screen on the physical device. Do not force both image dimensions to the slide size. Preserve
+  intrinsic aspect ratio explicitly with automatic width and height, bounded only by `max-width` and
+  `max-height` of the available stage.
 
 ## Proposed scope
 
