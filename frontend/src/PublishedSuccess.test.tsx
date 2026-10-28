@@ -1,4 +1,10 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -115,14 +121,18 @@ describe("PublishedSuccess", () => {
   });
 
   it("shows published photos one at a time", async () => {
-    const user = userEvent.setup();
     renderSuccess();
     await waitFor(() =>
       expect(
         screen.getByRole("img", { name: "Consultation photo 1" }),
       ).toBeInTheDocument(),
     );
-    await user.click(screen.getByRole("button", { name: "Next photo" }));
+    const track = screen.getByRole("list", {
+      name: "Your consultation photos. Swipe horizontally to browse.",
+    });
+    Object.defineProperty(track, "clientWidth", { value: 100 });
+    Object.defineProperty(track, "scrollLeft", { value: 100 });
+    fireEvent.scroll(track);
     expect(
       screen.getByRole("img", { name: "Consultation photo 2" }),
     ).toBeInTheDocument();

@@ -14,7 +14,8 @@ Direct Codex implementation of the approved
 - Mobile primary navigation retains all five icons and full labels while assigning extra width to
   `My consultations`; labels wrap only at normal word boundaries.
 - Reader photos render as an immersive horizontal swipe carousel: one large contained photo at a
-  time, a live `Photo N of M` counter, scroll-snap gestures and accessible previous/next controls.
+  time, a live `Photo N of M` counter, scroll-snap gestures and position dots. There are no visible
+  previous/next controls; keyboard arrows remain available on the focused carousel.
 - The visible reader photo offers a distinct enlargement action and vote choice. The separate
   review/confirm vote boundary remains intact.
 - Post-vote detail retains the swipe carousel and marks the recorded choice as `Your vote`.
@@ -48,8 +49,8 @@ Executed from `frontend/` on 2026-10-28:
 - `npm audit --audit-level=high` - passed with 0 vulnerabilities.
 
 Focused carousel and affected-surface validation passes. Assertions cover the navigation modifier,
-one-at-a-time navigation, the position counter, visible-photo selection, owner count pairing,
-composer review and actual finalization selection/review images.
+one-at-a-time swipe navigation, absence of visible arrows, the position counter, visible-photo
+selection, owner count pairing, composer review and actual finalization selection/review images.
 
 `git diff --check` reports no whitespace errors. Git only reports the repository's expected Windows
 LF-to-CRLF conversion warnings.

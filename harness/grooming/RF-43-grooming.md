@@ -258,6 +258,9 @@ None.
   provide a current-position indicator and accessible previous/next controls, and let the voter
   choose the visible option before the existing review/confirm boundary. Apply the same browsing
   pattern to the open owner detail so My consultations no longer uses a vertical stack or grid.
+- 2026-10-28, second owner review: remove the visible previous/next arrow toolbar. Navigation must
+  feel like Instagram: direct horizontal swipe on the photograph, with only a discreet overlaid
+  counter and position dots. Preserve keyboard arrow support without adding visible arrow controls.
 
 ## Proposed scope
 

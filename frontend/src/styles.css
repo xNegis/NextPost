@@ -1584,6 +1584,7 @@ h1 {
 }
 
 .photo-carousel {
+  position: relative;
   overflow: hidden;
   border: 1px solid #273142;
   border-radius: var(--radius-md);
@@ -1591,23 +1592,19 @@ h1 {
   box-shadow: 0 12px 28px rgb(16 24 40 / 20%);
 }
 
-.photo-carousel__toolbar {
-  display: grid;
-  grid-template-columns: 44px 1fr 44px;
-  align-items: center;
-  gap: 8px;
-  min-height: 52px;
-  padding: 4px 8px;
-  color: #f8fafc;
-}
-
 .photo-carousel__position {
-  text-align: center;
-  font-size: 0.9rem;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: #f8fafc;
+  background: rgb(16 24 40 / 74%);
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
-.photo-carousel__nav,
 .photo-carousel__enlarge {
   display: grid;
   place-items: center;
@@ -1621,12 +1618,6 @@ h1 {
   cursor: pointer;
 }
 
-.photo-carousel__nav:disabled {
-  opacity: 0.32;
-  cursor: default;
-}
-
-.photo-carousel__nav:focus-visible,
 .photo-carousel__enlarge:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 2px;
@@ -1648,6 +1639,11 @@ h1 {
 
 .photo-carousel__track::-webkit-scrollbar {
   display: none;
+}
+
+.photo-carousel__track:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -3px;
 }
 
 .photo-carousel__slide {
@@ -1685,6 +1681,35 @@ h1 {
   padding: 12px;
   color: #f8fafc;
   background: #101828;
+}
+
+.photo-carousel__dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #101828;
+}
+
+.photo-carousel__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 34%);
+  transition:
+    width 160ms ease,
+    background-color 160ms ease;
+}
+
+.photo-carousel__dot--active {
+  width: 18px;
+  background: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-carousel__dot {
+    transition: none;
+  }
 }
 
 .photo-carousel__footer .reader-consultation__choice {

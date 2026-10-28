@@ -2,6 +2,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type KeyboardEvent,
   type ReactNode,
   type UIEvent,
 } from "react";
@@ -54,36 +55,30 @@ export function PhotoCarousel({ items, label, onEnlarge }: PhotoCarouselProps) {
     setActiveIndex(next);
   }
 
+  function handleKeyDown(event: KeyboardEvent<HTMLUListElement>) {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      goTo(activeIndex - 1);
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      goTo(activeIndex + 1);
+    }
+  }
+
   return (
     <section className="photo-carousel" aria-label={label}>
-      <div className="photo-carousel__toolbar">
-        <button
-          type="button"
-          className="photo-carousel__nav"
-          aria-label="Previous photo"
-          disabled={activeIndex === 0}
-          onClick={() => goTo(activeIndex - 1)}
-        >
-          <span aria-hidden="true">←</span>
-        </button>
-        <span className="photo-carousel__position" aria-live="polite">
-          Photo {activeIndex + 1} of {items.length}
-        </span>
-        <button
-          type="button"
-          className="photo-carousel__nav"
-          aria-label="Next photo"
-          disabled={activeIndex === items.length - 1}
-          onClick={() => goTo(activeIndex + 1)}
-        >
-          <span aria-hidden="true">→</span>
-        </button>
-      </div>
+      <span className="photo-carousel__position" aria-live="polite">
+        Photo {activeIndex + 1} of {items.length}
+      </span>
 
       <ul
         ref={trackRef}
         className="photo-carousel__track"
+        aria-label={`${label}. Swipe horizontally to browse.`}
+        tabIndex={0}
         onScroll={handleScroll}
+        onKeyDown={handleKeyDown}
       >
         {items.map((item, index) => (
           <li
@@ -111,6 +106,18 @@ export function PhotoCarousel({ items, label, onEnlarge }: PhotoCarouselProps) {
           </li>
         ))}
       </ul>
+      {items.length > 1 && (
+        <div className="photo-carousel__dots" aria-hidden="true">
+          {items.map((item, index) => (
+            <span
+              key={item.id}
+              className={`photo-carousel__dot${
+                index === activeIndex ? " photo-carousel__dot--active" : ""
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

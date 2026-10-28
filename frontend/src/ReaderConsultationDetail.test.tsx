@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -85,8 +85,16 @@ describe("ReaderConsultationDetail", () => {
     renderDetail();
 
     await screen.findByText("Photo 1 of 2");
-    await user.click(screen.getByRole("button", { name: "Next photo" }));
+    const track = screen.getByRole("list", {
+      name: "Consultation photos. Swipe horizontally to browse.",
+    });
+    Object.defineProperty(track, "clientWidth", { value: 100 });
+    Object.defineProperty(track, "scrollLeft", { value: 100 });
+    fireEvent.scroll(track);
     expect(screen.getByText("Photo 2 of 2")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Next photo" }),
+    ).not.toBeInTheDocument();
     await user.click(screen.getByRole("radio", { name: "Photo 2" }));
 
     expect(screen.getByRole("radio", { name: "Photo 2" })).toBeChecked();

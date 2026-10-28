@@ -16,6 +16,10 @@ plan where they conflict. Reader and open-owner detail must use an immersive hor
 carousel with position and accessible previous/next controls. Vote review/finality, results privacy,
 photo order, finalization visibility and every backend/storage rule remain unchanged.
 
+The owner's second review removes visible previous/next controls. The accepted gallery navigation
+is direct horizontal swipe, with a discreet overlaid counter and position dots. Keyboard arrow
+navigation remains available for accessibility but must not add visible arrow buttons.
+
 ## Source ticket
 
 - Trello title: `RF-43 · Mejorar la navegación móvil y la experiencia fotográfica`

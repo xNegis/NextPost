@@ -40,12 +40,17 @@ result, finalization, retention and deletion contracts.
 
 The correction is implemented and technically validated. Reader, open-owner detail and composer
 review now use a shared dark immersive carousel with native horizontal swipe/scroll snap, one photo
-at a time, a live position counter and accessible previous/next controls. The visible voter option
+at a time, a live position counter and position dots. The visible voter option
 retains selection, separate enlargement and the existing review/confirm boundary; owner counts stay
 paired with the corresponding slide. All 47 frontend test files / 603 tests, formatting, lint,
 TypeScript, production build and high-severity audit pass, with zero vulnerabilities. The owner
 explicitly authorised commit/push and CI deployment for remote review. RF-43 returns to
 `Implementation review`; physical-iPhone acceptance remains pending.
+
+The owner's second visual review rejected the visible arrow toolbar. The accepted interaction is
+Instagram-like direct horizontal swipe, with a discreet counter and position dots; keyboard arrow
+support remains non-visual for accessibility. This focused correction is authorised for direct
+implementation and CI deployment without changing any functional contract.
 
 ## RF-42 production web/API deployed; iOS and invited-beta gates pending - 2026-10-24
 
