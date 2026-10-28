@@ -1,6 +1,6 @@
 # Project State
 
-## RF-43 implemented and technically validated; owner visual acceptance pending - 2026-10-28
+## RF-43 swipe-carousel correction validated; owner review pending - 2026-10-28
 
 The product owner explicitly prioritised an unplanned visual iteration before returning to the
 existing roadmap. A new Trello card, `RF-43 · Mejorar la navegación móvil y la experiencia
@@ -31,6 +31,21 @@ high-severity dependency audit pass; the audit reports zero vulnerabilities. Det
 in `harness/grooming/RF-43-implementation-review.md`. RF-43 is `Implementation review`; physical-
 iPhone owner acceptance remains the only completion gate. No commit, push, deploy or further Trello
 mutation was performed.
+
+The owner reviewed the first deployed vertical sequence and clarified the target: reuse the
+enlarged-photo visual treatment as an immersive horizontal swipe gallery, one photo at a time, then
+choose/review/confirm the vote. The owner explicitly authorised the correction. This supersedes the
+vertical presentation choice for reader and open-owner detail while preserving all vote, access,
+result, finalization, retention and deletion contracts.
+
+The correction is implemented and technically validated. Reader, open-owner detail and composer
+review now use a shared dark immersive carousel with native horizontal swipe/scroll snap, one photo
+at a time, a live position counter and accessible previous/next controls. The visible voter option
+retains selection, separate enlargement and the existing review/confirm boundary; owner counts stay
+paired with the corresponding slide. All 47 frontend test files / 603 tests, formatting, lint,
+TypeScript, production build and high-severity audit pass, with zero vulnerabilities. The owner
+explicitly authorised commit/push and CI deployment for remote review. RF-43 returns to
+`Implementation review`; physical-iPhone acceptance remains pending.
 
 ## RF-42 production web/API deployed; iOS and invited-beta gates pending - 2026-10-24
 

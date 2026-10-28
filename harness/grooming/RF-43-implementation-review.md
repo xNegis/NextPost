@@ -13,13 +13,13 @@ Direct Codex implementation of the approved
 
 - Mobile primary navigation retains all five icons and full labels while assigning extra width to
   `My consultations`; labels wrap only at normal word boundaries.
-- Reader photos render as one large ordered vertical sequence with `Photo N of M`, preserved aspect
-  ratio and no forced crop.
-- Tapping the large reader image choice selects it; a distinct 44 px enlargement action preserves
-  the existing accessible modal. The separate review/confirm vote boundary remains intact.
-- Post-vote detail keeps every photo visible and marks only the recorded choice as `Your vote`.
-- Open owner detail uses the same one-column scale and keeps each live count paired with its photo.
-- Composer review uses the large ordered sequence instead of a two-column 140 px grid.
+- Reader photos render as an immersive horizontal swipe carousel: one large contained photo at a
+  time, a live `Photo N of M` counter, scroll-snap gestures and accessible previous/next controls.
+- The visible reader photo offers a distinct enlargement action and vote choice. The separate
+  review/confirm vote boundary remains intact.
+- Post-vote detail retains the swipe carousel and marks the recorded choice as `Your vote`.
+- Open owner detail uses the same carousel and keeps each live count paired with its photo.
+- Composer review uses the carousel instead of a two-column 140 px grid.
 - Finalization receives the already-authorized open-detail object URLs. Selection shows every actual
   photo and review repeats only the selected photos before the existing irreversible confirmation.
   `Choose none`, multi-select, operation identity, conflicts and terminal deletion are unchanged.
@@ -28,6 +28,7 @@ Direct Codex implementation of the approved
 ## Files reviewed
 
 - `frontend/src/Navigation.tsx` and `Navigation.test.tsx`
+- `frontend/src/PhotoCarousel.tsx`
 - `frontend/src/ReaderConsultationDetail.tsx` and its tests
 - `frontend/src/OwnerConsultationDetail.tsx` and its tests
 - `frontend/src/ConsultationComposer.tsx` and its tests
@@ -43,13 +44,12 @@ Executed from `frontend/` on 2026-10-28:
 - `npm run lint` - passed.
 - `npm run typecheck` - passed.
 - `npm test -- --run` - 47 test files and 603 tests passed.
-- `npm run build` - passed with Vite 8.3.5; 69 modules transformed.
+- `npm run build` - passed with Vite 8.3.5; 70 modules transformed.
 - `npm audit --audit-level=high` - passed with 0 vulnerabilities.
 
-Focused validation also passed 76 tests across Navigation, ReaderConsultationDetail,
-OwnerConsultationDetail, ConsultationComposer and FinalizeConsultationDialog. New assertions cover
-the navigation modifier, photo ordinals, large-image vote selection, owner count pairing, composer
-review order and actual finalization selection/review images.
+Focused carousel and affected-surface validation passes. Assertions cover the navigation modifier,
+one-at-a-time navigation, the position counter, visible-photo selection, owner count pairing,
+composer review and actual finalization selection/review images.
 
 `git diff --check` reports no whitespace errors. Git only reports the repository's expected Windows
 LF-to-CRLF conversion warnings.
@@ -61,11 +61,12 @@ LF-to-CRLF conversion warnings.
   reconciliation.
 - Finalization submits the same ordered photo-ID declaration; URLs are display-only transient props.
 - Finalized consultations remain image-free.
-- The implementation does not commit, push, deploy or perform another Trello mutation.
+- The owner explicitly authorised commit/push and CI deployment so the corrected UI can be reviewed
+  remotely. No further Trello mutation is included.
 
 ## Remaining gate
 
 The product owner must inspect the result on the physical iPhone, especially the bottom navigation,
-three-photo vertical sequence, selection/enlargement, author counts and finalization dialog. This
+three-photo swipe carousel, selection/enlargement, author counts and finalization dialog. This
 external visual gate is not claimed by automated checks. Any concrete feedback should be applied to
 RF-43 before marking it `Completed and validated`.

@@ -73,23 +73,21 @@ describe("ReaderConsultationDetail", () => {
     expect(screen.getByText("Which one?")).toBeInTheDocument();
     expect(screen.getByText("For LinkedIn")).toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(
-        screen.getAllByRole("img", { name: /Consultation photo/ }),
-      ).toHaveLength(2),
-    );
-    expect(screen.getAllByText("Photo 1 of 2")).not.toHaveLength(0);
-    expect(screen.getAllByText("Photo 2 of 2")).not.toHaveLength(0);
+    expect(
+      await screen.findByRole("img", { name: "Consultation photo 1" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Photo 1 of 2")).toBeInTheDocument();
     expect(photoMock).toHaveBeenCalledTimes(2);
   });
 
-  it("selects a photo by tapping the large image choice", async () => {
+  it("swipes through one photo at a time and selects the visible choice", async () => {
     const user = userEvent.setup();
     renderDetail();
 
-    await user.click(
-      await screen.findByRole("img", { name: "Consultation photo 2" }),
-    );
+    await screen.findByText("Photo 1 of 2");
+    await user.click(screen.getByRole("button", { name: "Next photo" }));
+    expect(screen.getByText("Photo 2 of 2")).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "Photo 2" }));
 
     expect(screen.getByRole("radio", { name: "Photo 2" })).toBeChecked();
     expect(screen.getByText("Photo 2 selected")).toBeInTheDocument();

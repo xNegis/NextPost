@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { ConsultationTextDisplay } from "./ConsultationTextDisplay";
 import { formatPublishedDate } from "./consultationDate";
+import { PhotoCarousel } from "./PhotoCarousel";
 import { PhotoEnlargement } from "./PhotoEnlargement";
 import { useReaderConsultationDetail } from "./useReaderConsultationDetail";
 import { useReaderVote } from "./useReaderVote";
@@ -173,56 +174,36 @@ export function ReaderConsultationDetail({
           <legend className="reader-consultation__legend">
             Choose a photo
           </legend>
-          <ul className="reader-consultation__photos">
-            {phase.detail.photos.map((photo, index) => (
-              <li
-                key={photo.id}
-                className={`reader-consultation__photo${
-                  selectedPhotoId === photo.id
-                    ? " reader-consultation__photo--selected"
-                    : ""
-                }`}
-              >
-                <p className="reader-consultation__photo-position">
-                  Photo {index + 1} of {phase.detail.photos.length}
-                </p>
-                <label className="reader-consultation__select-photo">
-                  <img
-                    src={phase.photoUrls[index]}
-                    alt={`Consultation photo ${index + 1}`}
+          <PhotoCarousel
+            label="Consultation photos"
+            items={phase.detail.photos.map((photo, index) => ({
+              id: photo.id,
+              src: phase.photoUrls[index],
+              alt: `Consultation photo ${index + 1}`,
+              badge:
+                selectedPhotoId === photo.id ? (
+                  <span className="photo-carousel__vote-badge">Selected</span>
+                ) : undefined,
+              footer: (
+                <label className="reader-consultation__choice">
+                  <input
+                    type="radio"
+                    name="vote-choice"
+                    value={photo.id}
+                    aria-label={`Photo ${index + 1}`}
+                    checked={selectedPhotoId === photo.id}
+                    onChange={() => setSelectedPhotoId(photo.id)}
                   />
-                  <span className="reader-consultation__choice">
-                    <input
-                      type="radio"
-                      name="vote-choice"
-                      value={photo.id}
-                      aria-label={`Photo ${index + 1}`}
-                      checked={selectedPhotoId === photo.id}
-                      onChange={() => setSelectedPhotoId(photo.id)}
-                    />
-                    <span>
-                      {selectedPhotoId === photo.id
-                        ? `Photo ${index + 1} selected`
-                        : `Choose photo ${index + 1}`}
-                    </span>
+                  <span>
+                    {selectedPhotoId === photo.id
+                      ? `Photo ${index + 1} selected`
+                      : `Choose photo ${index + 1}`}
                   </span>
                 </label>
-                <button
-                  type="button"
-                  className="reader-consultation__enlarge"
-                  aria-label={`Enlarge photo ${index + 1}`}
-                  onClick={() =>
-                    setEnlarged({
-                      src: phase.photoUrls[index],
-                      alt: `Consultation photo ${index + 1}`,
-                    })
-                  }
-                >
-                  <span aria-hidden="true">↗</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+              ),
+            }))}
+            onEnlarge={(item) => setEnlarged({ src: item.src, alt: item.alt })}
+          />
 
           {!reviewing ? (
             <div className="reader-consultation__vote-actions">
@@ -316,44 +297,19 @@ export function ReaderConsultationDetail({
 
       {vote.status.kind === "voted" && (
         <>
-          <ul className="reader-consultation__photos">
-            {phase.detail.photos.map((photo, index) => {
-              const isVoted = votedPhotoId === photo.id;
-              return (
-                <li
-                  key={photo.id}
-                  className={`reader-consultation__photo${
-                    isVoted ? " reader-consultation__photo--voted" : ""
-                  }`}
-                >
-                  <span className="reader-consultation__photo-position">
-                    Photo {index + 1} of {phase.detail.photos.length}
-                  </span>
-                  <button
-                    type="button"
-                    className="reader-consultation__view-photo"
-                    aria-label={`Enlarge photo ${index + 1}`}
-                    onClick={() =>
-                      setEnlarged({
-                        src: phase.photoUrls[index],
-                        alt: `Consultation photo ${index + 1}`,
-                      })
-                    }
-                  >
-                    <img
-                      src={phase.photoUrls[index]}
-                      alt={`Consultation photo ${index + 1}`}
-                    />
-                  </button>
-                  {isVoted && (
-                    <span className="reader-consultation__your-vote">
-                      Your vote
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          <PhotoCarousel
+            label="Consultation photos"
+            items={phase.detail.photos.map((photo, index) => ({
+              id: photo.id,
+              src: phase.photoUrls[index],
+              alt: `Consultation photo ${index + 1}`,
+              badge:
+                votedPhotoId === photo.id ? (
+                  <span className="photo-carousel__vote-badge">Your vote</span>
+                ) : undefined,
+            }))}
+            onEnlarge={(item) => setEnlarged({ src: item.src, alt: item.alt })}
+          />
           <p className="reader-consultation__finality" role="status">
             Votes cannot be changed.
           </p>

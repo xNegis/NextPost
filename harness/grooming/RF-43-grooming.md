@@ -10,6 +10,12 @@ direct Codex implementation. The implementation and automated frontend validatio
 physical-iPhone visual acceptance remains pending. These notes are not implementation authority;
 the approved contract is `harness/features/RF-43-Implementation-plan.md`.
 
+On 2026-10-28 the first deployed vertical sequence produced decisive owner feedback: the desired
+experience is the existing enlarged-photo presentation adapted into an immersive horizontal swipe
+gallery, one photograph at a time, followed by selection/review/vote. The owner explicitly approved
+this correction. It supersedes the earlier vertical-sequence presentation choice without changing
+the ticket's access, voting, privacy or deletion boundaries.
+
 ## Trello snapshot
 
 - Title: `RF-43 · Mejorar la navegación móvil y la experiencia fotográfica`
@@ -247,6 +253,11 @@ None.
   Instagram/Reddit-style carousel.
 - 2026-10-28: RF-43 may improve visual presentation and interaction but does not implicitly change
   vote, access, privacy, retention or lifecycle rules.
+- 2026-10-28, deployed UI correction: replace the vertical sequence with an immersive horizontal
+  swipe gallery based on the accepted enlarged-photo appearance. Show one large photo at a time,
+  provide a current-position indicator and accessible previous/next controls, and let the voter
+  choose the visible option before the existing review/confirm boundary. Apply the same browsing
+  pattern to the open owner detail so My consultations no longer uses a vertical stack or grid.
 
 ## Proposed scope
 

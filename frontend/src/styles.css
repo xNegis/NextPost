@@ -1583,6 +1583,132 @@ h1 {
   list-style: none;
 }
 
+.photo-carousel {
+  overflow: hidden;
+  border: 1px solid #273142;
+  border-radius: var(--radius-md);
+  background: #101828;
+  box-shadow: 0 12px 28px rgb(16 24 40 / 20%);
+}
+
+.photo-carousel__toolbar {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 4px 8px;
+  color: #f8fafc;
+}
+
+.photo-carousel__position {
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.photo-carousel__nav,
+.photo-carousel__enlarge {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 26%);
+  border-radius: 999px;
+  color: #f8fafc;
+  background: rgb(255 255 255 / 10%);
+  cursor: pointer;
+}
+
+.photo-carousel__nav:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.photo-carousel__nav:focus-visible,
+.photo-carousel__enlarge:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.photo-carousel__track {
+  display: flex;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  list-style: none;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.photo-carousel__track::-webkit-scrollbar {
+  display: none;
+}
+
+.photo-carousel__slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+
+.photo-carousel__image-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: min(60svh, 560px);
+  background: #070b12;
+}
+
+.photo-carousel__image-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(72svh, 720px);
+  object-fit: contain;
+}
+
+.photo-carousel__enlarge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgb(16 24 40 / 74%);
+  cursor: zoom-in;
+}
+
+.photo-carousel__footer {
+  padding: 12px;
+  color: #f8fafc;
+  background: #101828;
+}
+
+.photo-carousel__footer .reader-consultation__choice {
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: var(--radius-sm);
+}
+
+.photo-carousel__footer .owner-consultation__photo-count {
+  color: #e2e8f0;
+  border-top: 0;
+}
+
+.photo-carousel__vote-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: var(--color-accent-contrast);
+  background: var(--color-accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .reader-consultation__photo {
   position: relative;
   display: grid;
@@ -2088,6 +2214,13 @@ h1 {
   .owner-consultation__photos,
   .reader-consultation__photos,
   .composer-review-photos {
+    margin-right: -12px;
+    margin-left: -12px;
+  }
+
+  .owner-consultation > .photo-carousel,
+  .reader-consultation > .photo-carousel,
+  .consultation-composer .photo-carousel {
     margin-right: -12px;
     margin-left: -12px;
   }

@@ -114,13 +114,15 @@ describe("PublishedSuccess", () => {
     await waitFor(() => expect(screen.getByText("Open")).toBeInTheDocument());
   });
 
-  it("shows published photos", async () => {
+  it("shows published photos one at a time", async () => {
+    const user = userEvent.setup();
     renderSuccess();
     await waitFor(() =>
       expect(
         screen.getByRole("img", { name: "Consultation photo 1" }),
       ).toBeInTheDocument(),
     );
+    await user.click(screen.getByRole("button", { name: "Next photo" }));
     expect(
       screen.getByRole("img", { name: "Consultation photo 2" }),
     ).toBeInTheDocument();

@@ -6,6 +6,7 @@ import type { MyConsultationState } from "./consultationApi";
 import { DeleteConsultationDialog } from "./DeleteConsultationDialog";
 import { FinalizeConsultationDialog } from "./FinalizeConsultationDialog";
 import { selectedPhotosLabel } from "./finalizedResult";
+import { PhotoCarousel } from "./PhotoCarousel";
 import { PrivateLinkControls } from "./PrivateLinkControls";
 import { ShareConsultation } from "./ShareConsultation";
 import { useOwnerConsultationDetail } from "./useOwnerConsultationDetail";
@@ -299,8 +300,9 @@ export function OwnerConsultationDetail({
       />
 
       {phase.photoUrls.length > 0 && (
-        <ul className="owner-consultation__photos">
-          {phase.photoUrls.map((url, index) => {
+        <PhotoCarousel
+          label="Your consultation photos"
+          items={phase.photoUrls.map((url, index) => {
             const photoId = phase.detail.photos[index]?.id;
             const count =
               results.phase.kind === "ready" && photoId !== undefined
@@ -308,24 +310,22 @@ export function OwnerConsultationDetail({
                     (option) => option.photo_id === photoId,
                   )?.vote_count
                 : undefined;
-            return (
-              <li key={url} className="owner-consultation__photo">
-                <p className="owner-consultation__photo-position">
-                  Photo {index + 1} of {phase.photoUrls.length}
-                </p>
-                <img src={url} alt={`Consultation photo ${index + 1}`} />
-                {count !== undefined && (
+            return {
+              id: photoId ?? url,
+              src: url,
+              alt: `Consultation photo ${index + 1}`,
+              footer:
+                count !== undefined ? (
                   <p
                     className="owner-consultation__photo-count"
                     aria-label={`Photo ${index + 1}: ${voteCountLabel(count)}`}
                   >
                     {voteCountLabel(count)}
                   </p>
-                )}
-              </li>
-            );
+                ) : undefined,
+            };
           })}
-        </ul>
+        />
       )}
 
       <section

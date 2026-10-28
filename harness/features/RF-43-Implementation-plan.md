@@ -7,6 +7,15 @@
 The product owner explicitly approved plan finalisation and direct Codex implementation on
 2026-10-28. This plan does not launch the external harness.
 
+### Approved visual correction - 2026-10-28
+
+After reviewing the first deployed vertical implementation, the owner clarified that the intended
+experience is the enlarged-photo presentation as a horizontal swipe gallery: one large photograph
+at a time, then choose and vote. This correction supersedes vertical-sequence requirements in this
+plan where they conflict. Reader and open-owner detail must use an immersive horizontally swipeable
+carousel with position and accessible previous/next controls. Vote review/finality, results privacy,
+photo order, finalization visibility and every backend/storage rule remain unchanged.
+
 ## Source ticket
 
 - Trello title: `RF-43 · Mejorar la navegación móvil y la experiencia fotográfica`

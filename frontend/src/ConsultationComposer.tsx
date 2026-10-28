@@ -14,6 +14,7 @@ import { fetchConsultationCapacity } from "./consultationApi";
 import type { MyConsultationState } from "./consultationApi";
 import type { Destination } from "./Navigation";
 import { PhotoUploader } from "./PhotoUploader";
+import { PhotoCarousel } from "./PhotoCarousel";
 import type {
   PhotoUploaderHandle,
   PhotoUploaderSnapshot,
@@ -471,16 +472,14 @@ export function ConsultationComposer({
           />
         )}
         {readyItems.length > 0 && (
-          <ul className="composer-review-photos">
-            {readyItems.map((item, index) => (
-              <li key={item.clientId} className="composer-review-photo">
-                <p className="composer-review-photo__position">
-                  Photo {index + 1} of {readyItems.length}
-                </p>
-                <img src={item.imageUrl} alt={`Selected photo ${index + 1}`} />
-              </li>
-            ))}
-          </ul>
+          <PhotoCarousel
+            label="Photos to publish"
+            items={readyItems.map((item, index) => ({
+              id: item.clientId,
+              src: item.imageUrl!,
+              alt: `Selected photo ${index + 1}`,
+            }))}
+          />
         )}
         <p className="composer-review-count">
           {readyItems.length} {readyItems.length === 1 ? "photo" : "photos"}{" "}
