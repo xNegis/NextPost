@@ -34,6 +34,9 @@ Direct Codex implementation of the approved
   physical result looked unchanged. Carousel images now also receive the normalized API width and
   height as HTML attributes. Tests exercise explicit `900×1600` portrait and `1600×900` landscape
   geometry through the full-screen swipe flow.
+- Tablet review then isolated excessive enlargement rather than aspect-ratio loss. At widths of
+  700 px and above, full-screen images now receive responsive stage padding and are capped at
+  88 viewport-width/1100 px and 76 dynamic-viewport-height/720 px. iPhone sizing is unchanged.
 - Reader voting lives in a stable panel below the gallery. `Choose this photo` always targets the
   visible image, selection remains visible while browsing, and `Review vote` appears only after a
   choice. The separate review/confirm vote boundary remains intact.

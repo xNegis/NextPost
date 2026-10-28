@@ -54,6 +54,11 @@ render those as HTML image dimensions, and populate them from consultation API m
 upload items. CSS still controls the responsive rendered size; the attributes define authoritative
 intrinsic geometry for Safari's flex/grid calculation.
 
+The ninth review adds a tablet-only scale constraint. Keep phone full-screen sizing unchanged. From
+700 px viewport width, centre the contained image with responsive stage padding and cap it to
+`min(88vw, 1100px)` by `min(76dvh, 720px)`. The surrounding stage remains continuous and the source
+aspect ratio remains authoritative.
+
 ## Source ticket
 
 - Trello title: `RF-43 · Mejorar la navegación móvil y la experiencia fotográfica`

@@ -101,6 +101,14 @@ Focused tests cover portrait `900×1600` and landscape `1600×900` metadata thro
 all 47 frontend files / 605 tests, format, lint, TypeScript, build and audit pass with zero
 vulnerabilities. Physical-device visual acceptance remains pending.
 
+The ninth device review accepts the iPhone geometry but finds tablet full-screen scaling too large.
+Phone sizing is unchanged. At viewport widths of 700 px and above, the continuous stage now adds
+responsive breathing room and caps contained images at `min(88vw, 1100px)` by
+`min(76dvh, 720px)`, preserving explicit source ratio without restoring a nested card. An initial
+parallel validation run produced one unrelated text-field test timeout; that test passed immediately
+in isolation and the complete suite then passed alone. All 47 files / 605 tests, format, lint,
+TypeScript, build and audit pass with zero vulnerabilities; tablet visual acceptance remains pending.
+
 ## RF-42 production web/API deployed; iOS and invited-beta gates pending - 2026-10-24
 
 After the two approved OpenCode Go attempts failed before inference because the provider quota was

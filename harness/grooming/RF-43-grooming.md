@@ -289,6 +289,10 @@ None.
   not a stale asset. Stop relying solely on blob intrinsic sizing inside Safari's flexible slide:
   propagate each normalized photo's API `width` and `height` into the image element, giving the
   browser an explicit authoritative aspect ratio before layout and decode.
+- 2026-10-28, ninth owner review: aspect ratio is acceptable on iPhone, but full-screen photos are
+  excessively enlarged on the tablet. Preserve the phone treatment. At tablet widths, keep the
+  image centred and contained but cap its visual size to a restrained viewport/absolute maximum,
+  leaving breathing room on the continuous stage without reintroducing a nested card.
 
 ## Proposed scope
 

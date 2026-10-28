@@ -2034,6 +2034,17 @@ h1 {
   object-fit: contain;
 }
 
+@media (min-width: 700px) {
+  .photo-enlargement__panel .photo-carousel__image-frame {
+    padding: clamp(20px, 3vw, 48px);
+  }
+
+  .photo-enlargement__panel .photo-carousel__image-frame img {
+    max-width: min(88vw, 1100px);
+    max-height: min(76dvh, 720px);
+  }
+}
+
 .photo-enlargement__panel .photo-carousel__dots {
   padding: 10px 12px 12px;
   background: #000;
