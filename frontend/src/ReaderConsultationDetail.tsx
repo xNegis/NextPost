@@ -29,6 +29,7 @@ export function ReaderConsultationDetail({
   );
   const vote = useReaderVote(consultationId, token, onSessionLost);
   const [enlargedIndex, setEnlargedIndex] = useState<number | null>(null);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const retryProtectedState = () => {
@@ -119,6 +120,9 @@ export function ReaderConsultationDetail({
       : phase.detail.photos.findIndex((photo) => photo.id === selectedPhotoId);
   const votedPhotoId =
     vote.status.kind === "voted" ? vote.status.photoId : null;
+  const activePhoto =
+    phase.detail.photos[activePhotoIndex] ?? phase.detail.photos[0];
+  const activePhotoNumber = activePhotoIndex + 1;
 
   return (
     <section
@@ -179,37 +183,42 @@ export function ReaderConsultationDetail({
                 selectedPhotoId === photo.id ? (
                   <span className="photo-carousel__vote-badge">Selected</span>
                 ) : undefined,
-              footer: (
-                <label className="reader-consultation__choice">
-                  <input
-                    type="radio"
-                    name="vote-choice"
-                    value={photo.id}
-                    aria-label={`Photo ${index + 1}`}
-                    checked={selectedPhotoId === photo.id}
-                    onChange={() => setSelectedPhotoId(photo.id)}
-                  />
-                  <span>
-                    {selectedPhotoId === photo.id
-                      ? `Photo ${index + 1} selected`
-                      : `Choose photo ${index + 1}`}
-                  </span>
-                </label>
-              ),
             }))}
+            onActiveIndexChange={setActivePhotoIndex}
             onEnlarge={(_item, index) => setEnlargedIndex(index)}
           />
 
           {!reviewing ? (
-            <div className="reader-consultation__vote-actions">
+            <div className="reader-consultation__vote-panel">
+              <div className="reader-consultation__vote-panel-copy">
+                <span>Viewing photo {activePhotoNumber}</span>
+                {selectedIndex >= 0 && (
+                  <strong>Photo {selectedIndex + 1} selected</strong>
+                )}
+              </div>
               <button
                 type="button"
-                className="primary-button"
-                disabled={selectedPhotoId === null}
-                onClick={() => setReviewing(true)}
+                className="secondary-button reader-consultation__choose-visible"
+                aria-pressed={activePhoto?.id === selectedPhotoId}
+                disabled={activePhoto === undefined}
+                onClick={() => {
+                  if (activePhoto !== undefined)
+                    setSelectedPhotoId(activePhoto.id);
+                }}
               >
-                Review vote
+                {activePhoto?.id === selectedPhotoId
+                  ? "Selected"
+                  : "Choose this photo"}
               </button>
+              {selectedPhotoId !== null && (
+                <button
+                  type="button"
+                  className="primary-button reader-consultation__review-visible"
+                  onClick={() => setReviewing(true)}
+                >
+                  Review vote
+                </button>
+              )}
             </div>
           ) : (
             <div
@@ -335,26 +344,28 @@ export function ReaderConsultationDetail({
               vote.status.photoId === photo.id ? (
                 <span className="photo-carousel__vote-badge">Your vote</span>
               ) : undefined,
-            footer:
-              vote.status.kind === "not_voted" ? (
-                <label className="reader-consultation__choice">
-                  <input
-                    type="radio"
-                    name="full-screen-vote-choice"
-                    value={photo.id}
-                    aria-label={`Photo ${index + 1}`}
-                    checked={selectedPhotoId === photo.id}
-                    onChange={() => setSelectedPhotoId(photo.id)}
-                  />
-                  <span>
-                    {selectedPhotoId === photo.id
-                      ? `Photo ${index + 1} selected`
-                      : `Choose photo ${index + 1}`}
-                  </span>
-                </label>
-              ) : undefined,
           }))}
           initialIndex={enlargedIndex}
+          renderAction={
+            vote.status.kind === "not_voted"
+              ? (index) => {
+                  const photo = phase.detail.photos[index];
+                  if (photo === undefined) return null;
+                  return (
+                    <button
+                      type="button"
+                      className="reader-consultation__fullscreen-choice"
+                      aria-pressed={selectedPhotoId === photo.id}
+                      onClick={() => setSelectedPhotoId(photo.id)}
+                    >
+                      {selectedPhotoId === photo.id
+                        ? `Photo ${index + 1} selected`
+                        : "Choose this photo"}
+                    </button>
+                  );
+                }
+              : undefined
+          }
           onClose={() => setEnlargedIndex(null)}
         />
       )}

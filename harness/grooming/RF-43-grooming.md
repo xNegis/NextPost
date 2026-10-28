@@ -264,6 +264,11 @@ None.
 - 2026-10-28, third owner review: the inline carousel swipe is accepted, but the full-screen
   enlargement must also contain the complete gallery and support the same swipe interaction from
   the currently visible photo. Closing full screen merely to reach the next image is not acceptable.
+- 2026-10-28, fourth owner review: correct the occasional partial resting position after a swipe
+  and refine the gallery around Reddit's media-viewing pattern. Keep the image surface visually
+  quiet, with the counter and dots as secondary feedback. Voting must not cover or travel with the
+  photograph: expose one stable action below the gallery for the currently visible photo, then show
+  the existing separate review action after a choice has been made.
 
 ## Proposed scope
 

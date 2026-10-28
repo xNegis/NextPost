@@ -62,6 +62,14 @@ the complete gallery, supports swipe and keyboard navigation, keeps focus trappe
 current option selector only while voting remains available. All 47 frontend files / 604 tests,
 formatting, lint, TypeScript, production build and audit pass; the audit reports zero vulnerabilities.
 
+The fourth owner review identified a small resting-position defect and requested a more complete
+Reddit-inspired visual treatment. The carousel now corrects a partial swipe ending to the exact
+nearest-photo boundary. Reader voting has moved out of the moving slide into a stable panel below
+the gallery: its action always chooses the visible photo, preserves the selected-photo indication
+while browsing and reveals the separate review action only after selection. The focused regression
+and all 47 frontend files / 605 tests, formatting, lint, TypeScript, production build and audit pass;
+the audit reports zero vulnerabilities. Physical-iPhone visual acceptance remains pending.
+
 ## RF-42 production web/API deployed; iOS and invited-beta gates pending - 2026-10-24
 
 After the two approved OpenCode Go attempts failed before inference because the provider quota was

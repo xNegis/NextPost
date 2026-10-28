@@ -16,8 +16,12 @@ Direct Codex implementation of the approved
 - Reader photos render as an immersive horizontal swipe carousel: one large contained photo at a
   time, a live `Photo N of M` counter, scroll-snap gestures and position dots. There are no visible
   previous/next controls; keyboard arrows remain available on the focused carousel.
-- The visible reader photo offers a distinct enlargement action and vote choice. The separate
-  review/confirm vote boundary remains intact.
+- The media surface now uses a quieter Reddit-inspired treatment. A short settling correction
+  aligns partial swipe endings to the exact nearest-photo boundary instead of leaving the next
+  image slightly off frame.
+- Reader voting lives in a stable panel below the gallery. `Choose this photo` always targets the
+  visible image, selection remains visible while browsing, and `Review vote` appears only after a
+  choice. The separate review/confirm vote boundary remains intact.
 - Post-vote detail retains the swipe carousel and marks the recorded choice as `Your vote`.
 - Full-screen Enlarge now opens the complete gallery at the current photo and preserves swipe,
   counter, dots, selected-vote marker and the visible-photo choice where voting is still available.
@@ -46,14 +50,14 @@ Executed from `frontend/` on 2026-10-28:
 - `npm run format:check` - passed.
 - `npm run lint` - passed.
 - `npm run typecheck` - passed.
-- `npm test -- --run` - 47 test files and 604 tests passed.
+- `npm test -- --run` - 47 test files and 605 tests passed.
 - `npm run build` - passed with Vite 8.3.5; 70 modules transformed.
 - `npm audit --audit-level=high` - passed with 0 vulnerabilities.
 
 Focused carousel and affected-surface validation passes. Assertions cover the navigation modifier,
-one-at-a-time swipe navigation, absence of visible arrows, the position counter, visible-photo
-selection, full-screen initial position/swipe/focus containment, owner count pairing, composer review
-and actual finalization selection/review images.
+one-at-a-time swipe navigation, exact settling after a partial swipe, absence of visible arrows, the
+position counter, stable visible-photo selection, full-screen initial position/swipe/focus
+containment, owner count pairing, composer review and actual finalization selection/review images.
 
 `git diff --check` reports no whitespace errors. Git only reports the repository's expected Windows
 LF-to-CRLF conversion warnings.

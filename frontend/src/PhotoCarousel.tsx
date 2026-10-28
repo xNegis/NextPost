@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -19,6 +20,7 @@ interface PhotoCarouselProps {
   items: PhotoCarouselItem[];
   label: string;
   initialIndex?: number;
+  onActiveIndexChange?: (index: number) => void;
   onEnlarge?: (item: PhotoCarouselItem, index: number) => void;
 }
 
@@ -26,10 +28,19 @@ export function PhotoCarousel({
   items,
   label,
   initialIndex = 0,
+  onActiveIndexChange,
   onEnlarge,
 }: PhotoCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const trackRef = useRef<HTMLUListElement>(null);
+  const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (snapTimerRef.current !== null) clearTimeout(snapTimerRef.current);
+    },
+    [],
+  );
 
   useLayoutEffect(() => {
     const next = Math.max(0, Math.min(initialIndex, items.length - 1));
@@ -45,6 +56,7 @@ export function PhotoCarousel({
   function goTo(index: number) {
     const next = Math.max(0, Math.min(index, items.length - 1));
     setActiveIndex(next);
+    onActiveIndexChange?.(next);
     const track = trackRef.current;
     if (track !== null && typeof track.scrollTo === "function") {
       track.scrollTo({ left: track.clientWidth * next, behavior: "smooth" });
@@ -62,6 +74,16 @@ export function PhotoCarousel({
       ),
     );
     setActiveIndex(next);
+    onActiveIndexChange?.(next);
+
+    if (snapTimerRef.current !== null) clearTimeout(snapTimerRef.current);
+    snapTimerRef.current = setTimeout(() => {
+      const currentTrack = trackRef.current;
+      if (currentTrack === null || currentTrack.clientWidth <= 0) return;
+      const exactLeft = currentTrack.clientWidth * next;
+      if (Math.abs(currentTrack.scrollLeft - exactLeft) <= 1) return;
+      currentTrack.scrollTo({ left: exactLeft, behavior: "smooth" });
+    }, 120);
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLUListElement>) {

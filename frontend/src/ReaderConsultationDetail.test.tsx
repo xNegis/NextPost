@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -95,11 +101,39 @@ describe("ReaderConsultationDetail", () => {
     expect(
       screen.queryByRole("button", { name: "Next photo" }),
     ).not.toBeInTheDocument();
-    await user.click(screen.getByRole("radio", { name: "Photo 2" }));
+    await user.click(screen.getByRole("button", { name: "Choose this photo" }));
 
-    expect(screen.getByRole("radio", { name: "Photo 2" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "Selected" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     expect(screen.getByText("Photo 2 selected")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Review vote" })).toBeEnabled();
+  });
+
+  it("settles a partial swipe on the exact photo boundary", async () => {
+    vi.useFakeTimers();
+    try {
+      renderDetail();
+      await vi.waitFor(() => {
+        expect(screen.getByText("Photo 1 of 2")).toBeInTheDocument();
+      });
+      const track = screen.getByRole("list", {
+        name: "Consultation photos. Swipe horizontally to browse.",
+      });
+      const scrollTo = vi.fn();
+      Object.defineProperty(track, "clientWidth", { value: 100 });
+      Object.defineProperty(track, "scrollLeft", { value: 146 });
+      Object.defineProperty(track, "scrollTo", { value: scrollTo });
+
+      fireEvent.scroll(track);
+      expect(screen.getByText("Photo 2 of 2")).toBeInTheDocument();
+      await vi.advanceTimersByTimeAsync(120);
+
+      expect(scrollTo).toHaveBeenCalledWith({ left: 100, behavior: "smooth" });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("loads photos in stored order", async () => {
@@ -125,14 +159,22 @@ describe("ReaderConsultationDetail", () => {
     await user.click(
       await screen.findByRole("button", { name: "Enlarge photo 1" }),
     );
+    const dialog = screen.getByRole("dialog", {
+      name: "Full-screen photo gallery",
+    });
+    expect(dialog).toBeInTheDocument();
+    const track = within(dialog).getByRole("list", {
+      name: "Full-screen consultation photos. Swipe horizontally to browse.",
+    });
+    Object.defineProperty(track, "clientWidth", { value: 100 });
+    Object.defineProperty(track, "scrollLeft", { value: 100 });
+    fireEvent.scroll(track);
+    await user.click(
+      within(dialog).getByRole("button", { name: "Choose this photo" }),
+    );
     expect(
-      screen.getByRole("dialog", { name: "Full-screen photo gallery" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("list", {
-        name: "Full-screen consultation photos. Swipe horizontally to browse.",
-      }),
-    ).toBeInTheDocument();
+      within(dialog).getByRole("button", { name: "Photo 2 selected" }),
+    ).toHaveAttribute("aria-pressed", "true");
 
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -173,9 +215,11 @@ describe("ReaderConsultationDetail", () => {
     renderDetail();
 
     await screen.findByText("Choose a photo");
-    expect(screen.getByRole("button", { name: "Review vote" })).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "Review vote" }),
+    ).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("radio", { name: "Photo 1" }));
+    await user.click(screen.getByRole("button", { name: "Choose this photo" }));
     await user.click(screen.getByRole("button", { name: "Review vote" }));
 
     expect(screen.getByText("Review your vote")).toBeInTheDocument();

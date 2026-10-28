@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { PhotoCarousel, type PhotoCarouselItem } from "./PhotoCarousel";
@@ -10,14 +10,17 @@ const FOCUSABLE_SELECTOR =
 interface PhotoEnlargementProps {
   items: PhotoCarouselItem[];
   initialIndex: number;
+  renderAction?: (activeIndex: number) => ReactNode;
   onClose: () => void;
 }
 
 export function PhotoEnlargement({
   items,
   initialIndex,
+  renderAction,
   onClose,
 }: PhotoEnlargementProps) {
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
   const closeRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<Element | null>(null);
@@ -74,12 +77,25 @@ export function PhotoEnlargement({
       aria-label="Full-screen photo gallery"
     >
       <div className="photo-enlargement__backdrop" onClick={onClose} />
-      <div className="photo-enlargement__panel" ref={panelRef}>
+      <div
+        className={`photo-enlargement__panel${
+          renderAction === undefined
+            ? ""
+            : " photo-enlargement__panel--with-action"
+        }`}
+        ref={panelRef}
+      >
         <PhotoCarousel
           items={items}
           label="Full-screen consultation photos"
           initialIndex={initialIndex}
+          onActiveIndexChange={setActiveIndex}
         />
+        {renderAction !== undefined && (
+          <div className="photo-enlargement__action">
+            {renderAction(activeIndex)}
+          </div>
+        )}
         <button
           ref={closeRef}
           type="button"

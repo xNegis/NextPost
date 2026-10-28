@@ -24,6 +24,12 @@ Full-screen enlargement must reuse the complete carousel, open at the currently 
 allow horizontal swipe, position feedback and the current vote choice where applicable. It must not
 be a single-image dead end.
 
+The fourth review refines the carousel into a quieter Reddit-inspired media surface. A completed
+gesture must settle on the exact boundary of the nearest photo, including on iPhone. In the reader,
+the choice control belongs in a stable panel below the carousel and always targets the currently
+visible photo; it must not be embedded in, or move horizontally with, a slide. Once chosen, the
+existing review/confirm boundary remains separate and explicit.
+
 ## Source ticket
 
 - Trello title: `RF-43 · Mejorar la navegación móvil y la experiencia fotográfica`
