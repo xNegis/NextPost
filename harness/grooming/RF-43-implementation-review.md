@@ -21,7 +21,12 @@ Direct Codex implementation of the approved
   image slightly off frame.
 - The previous black viewer canvas, footer and dot strip have been replaced with the application's
   light surface, neutral light image containment, a subtle border and a blue active indicator. The
-  same treatment is shared by inline and full-screen viewing without changing image proportions.
+  inline gallery retains this treatment without changing image proportions.
+- Physical-iPad screenshots exposed a separate full-screen framing problem: the image sat inside a
+  wide fixed card. Full screen now uses the entire dynamic viewport as one continuous dark media
+  stage. Slides and image frames fill that stage, while `object-fit: contain` fits portrait and
+  landscape photos by their limiting dimension without crop or distortion. Counter and close float
+  above the stage; dots and the bounded vote action occupy only their own bottom rows.
 - Reader voting lives in a stable panel below the gallery. `Choose this photo` always targets the
   visible image, selection remains visible while browsing, and `Review vote` appears only after a
   choice. The separate review/confirm vote boundary remains intact.

@@ -1909,12 +1909,15 @@ h1 {
 }
 
 .reader-consultation__fullscreen-choice {
+  display: block;
   width: 100%;
+  max-width: 420px;
   min-height: 48px;
-  border: 1px solid rgb(255 255 255 / 30%);
-  border-radius: var(--radius-sm);
-  color: #f8fafc;
-  background: rgb(255 255 255 / 10%);
+  margin: 0 auto;
+  border: 0;
+  border-radius: 999px;
+  color: #111318;
+  background: #fff;
   font-weight: 700;
 }
 
@@ -1969,47 +1972,85 @@ h1 {
   position: fixed;
   inset: 0;
   z-index: 100;
-  display: grid;
-  place-items: center;
-  padding: max(20px, env(safe-area-inset-top))
-    max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom))
-    max(20px, env(safe-area-inset-left));
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: #000;
 }
 
 .photo-enlargement__backdrop {
   position: absolute;
   inset: 0;
-  background: rgb(16 24 40 / 70%);
+  background: #000;
 }
 
 .photo-enlargement__panel {
   position: relative;
   display: grid;
-  gap: 16px;
-  width: min(100%, 920px);
-  max-width: 100%;
-  max-height: 100%;
+  grid-template-rows: minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.photo-enlargement__panel--with-action {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.photo-enlargement__panel .photo-carousel {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: #000;
+}
+
+.photo-enlargement__panel .photo-carousel__position {
+  top: max(16px, env(safe-area-inset-top));
+  right: auto;
+  left: max(16px, env(safe-area-inset-left));
+  background: rgb(28 35 48 / 78%);
+}
+
+.photo-enlargement__panel .photo-carousel__track,
+.photo-enlargement__panel .photo-carousel__slide,
+.photo-enlargement__panel .photo-carousel__image-frame {
+  height: 100%;
+  min-height: 0;
 }
 
 .photo-enlargement__panel .photo-carousel__image-frame {
-  min-height: min(76svh, 760px);
-  background: #f0f2f5;
+  background: #000;
 }
 
 .photo-enlargement__panel .photo-carousel__image-frame img {
-  max-height: min(80svh, 820px);
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: contain;
 }
 
-.photo-enlargement__panel--with-action .photo-carousel__image-frame {
-  min-height: min(64svh, 680px);
+.photo-enlargement__panel .photo-carousel__dots {
+  padding: 10px 12px 12px;
+  background: #000;
 }
 
-.photo-enlargement__panel--with-action .photo-carousel__image-frame img {
-  max-height: min(68svh, 720px);
+.photo-enlargement__panel .photo-carousel__dot {
+  background: #737b87;
+}
+
+.photo-enlargement__panel .photo-carousel__dot--active {
+  background: #fff;
 }
 
 .photo-enlargement__action {
   width: 100%;
+  padding: 10px max(16px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: #000;
 }
 
 .photo-enlargement__image {
@@ -2021,9 +2062,20 @@ h1 {
 }
 
 .photo-enlargement__close {
-  justify-self: center;
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 3;
   width: auto;
   min-width: 44px;
+  margin: 0;
+  border-color: rgb(255 255 255 / 30%);
+  color: #fff;
+  background: rgb(28 35 48 / 78%);
+}
+
+.photo-enlargement__close:hover {
+  background: rgb(28 35 48 / 92%);
 }
 
 .danger-button {

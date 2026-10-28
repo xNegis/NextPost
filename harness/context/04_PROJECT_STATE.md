@@ -77,6 +77,15 @@ accent-colour active indicator. Swipe, exact settling, image containment and vot
 All 47 frontend files / 605 tests, formatting, lint, TypeScript, production build and audit pass;
 the audit reports zero vulnerabilities. Physical-iPhone visual acceptance remains pending.
 
+Physical-iPad screenshots in the sixth review clarified that the full-screen defect was the nested
+fixed-width card rather than black letterboxing itself. The enlarged gallery now occupies the full
+dynamic viewport as a continuous dark stage. Every slide and image frame fills the available stage;
+`object-fit: contain` fits portrait or landscape photos by the limiting dimension with no crop,
+stretch or inner card. The counter and close control float above the image, while dots and voting
+use bounded bottom rows. Inline galleries remain light. All 47 frontend files / 605 tests, format,
+lint, TypeScript, build and audit pass with zero vulnerabilities; physical-device acceptance remains
+pending.
+
 ## RF-42 production web/API deployed; iOS and invited-beta gates pending - 2026-10-24
 
 After the two approved OpenCode Go attempts failed before inference because the provider quota was

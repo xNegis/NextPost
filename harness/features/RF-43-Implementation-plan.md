@@ -36,6 +36,13 @@ subtle borders and restrained accent feedback, consistent with the clean upload 
 Reddit light-mode media post. This is a visual-only correction; interaction and data contracts do
 not change.
 
+The sixth review, supported by physical-iPad screenshots, supersedes the fifth review specifically
+for full screen. The enlarged gallery is not a centred light card: it is a viewport-sized dark media
+stage. Each slide fills the available stage and its image uses `object-fit: contain`, selecting the
+limiting viewport dimension while preserving aspect ratio. Controls remain overlaid or in a bounded
+bottom action row so the image never creates a wider nested rectangle. Inline galleries retain the
+light treatment from the fifth review.
+
 ## Source ticket
 
 - Trello title: `RF-43 · Mejorar la navegación móvil y la experiencia fotográfica`

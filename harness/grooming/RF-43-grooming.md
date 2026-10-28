@@ -273,6 +273,13 @@ None.
   Match the cleaner enlargement used during consultation creation and Reddit's light post-media
   treatment: neutral light letterboxing, a subtle border, a white footer/dot area and an accent-only
   active indicator. Preserve the current swipe, containment, enlargement and voting behaviour.
+- 2026-10-28, sixth owner review: iPad screenshots reveal that the real defect is the fixed-width
+  rectangular card around the full-screen image, not merely its colour. Full screen must behave like
+  Reddit's media viewer: the stage occupies the complete viewport and the image uses `contain`, so a
+  portrait image fills the available height and a landscape image fills the available bounds without
+  crop or distortion. Any unavoidable bars belong to the continuous dark viewport, not to a nested
+  card. Counter and close float above the stage; dots and the stable vote action may define bounded
+  bottom rows but must never create another image card or distort its aspect ratio.
 
 ## Proposed scope
 
