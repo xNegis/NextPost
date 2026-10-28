@@ -179,6 +179,8 @@ export function ReaderConsultationDetail({
               id: photo.id,
               src: phase.photoUrls[index],
               alt: `Consultation photo ${index + 1}`,
+              width: photo.width,
+              height: photo.height,
               badge:
                 selectedPhotoId === photo.id ? (
                   <span className="photo-carousel__vote-badge">Selected</span>
@@ -307,6 +309,8 @@ export function ReaderConsultationDetail({
               id: photo.id,
               src: phase.photoUrls[index],
               alt: `Consultation photo ${index + 1}`,
+              width: photo.width,
+              height: photo.height,
               badge:
                 votedPhotoId === photo.id ? (
                   <span className="photo-carousel__vote-badge">Your vote</span>
@@ -339,6 +343,8 @@ export function ReaderConsultationDetail({
             id: photo.id,
             src: phase.photoUrls[index],
             alt: `Consultation photo ${index + 1}`,
+            width: photo.width,
+            height: photo.height,
             badge:
               vote.status.kind === "voted" &&
               vote.status.photoId === photo.id ? (

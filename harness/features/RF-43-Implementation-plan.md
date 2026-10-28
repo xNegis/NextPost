@@ -48,6 +48,12 @@ element itself must keep `width: auto` and `height: auto`; only `max-width: 100%
 `max-height: 100%` constrain it. Do not size both axes to 100%, even with `object-fit`, because the
 physical-device result is visibly distorted.
 
+The eighth review adds an explicit aspect-ratio source after confirming production serves the
+seventh-review CSS unchanged. Extend shared carousel items with optional normalized width and height,
+render those as HTML image dimensions, and populate them from consultation API metadata and ready
+upload items. CSS still controls the responsive rendered size; the attributes define authoritative
+intrinsic geometry for Safari's flex/grid calculation.
+
 ## Source ticket
 
 - Trello title: `RF-43 · Mejorar la navegación móvil y la experiencia fotográfica`

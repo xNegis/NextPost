@@ -44,8 +44,8 @@ const DETAIL = {
   state: "open",
   published_at: "2026-09-28T12:00:00Z",
   photos: [
-    { id: "123e4567-e89b-12d3-a456-426614174001", width: 64, height: 64 },
-    { id: "123e4567-e89b-12d3-a456-426614174002", width: 64, height: 64 },
+    { id: "123e4567-e89b-12d3-a456-426614174001", width: 900, height: 1600 },
+    { id: "123e4567-e89b-12d3-a456-426614174002", width: 1600, height: 900 },
   ],
 };
 
@@ -166,9 +166,21 @@ describe("ReaderConsultationDetail", () => {
     const track = within(dialog).getByRole("list", {
       name: "Full-screen consultation photos. Swipe horizontally to browse.",
     });
+    expect(
+      within(dialog).getByRole("img", { name: "Consultation photo 1" }),
+    ).toHaveAttribute("width", "900");
+    expect(
+      within(dialog).getByRole("img", { name: "Consultation photo 1" }),
+    ).toHaveAttribute("height", "1600");
     Object.defineProperty(track, "clientWidth", { value: 100 });
     Object.defineProperty(track, "scrollLeft", { value: 100 });
     fireEvent.scroll(track);
+    expect(
+      within(dialog).getByRole("img", { name: "Consultation photo 2" }),
+    ).toHaveAttribute("width", "1600");
+    expect(
+      within(dialog).getByRole("img", { name: "Consultation photo 2" }),
+    ).toHaveAttribute("height", "900");
     await user.click(
       within(dialog).getByRole("button", { name: "Choose this photo" }),
     );

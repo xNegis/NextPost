@@ -30,6 +30,10 @@ Direct Codex implementation of the approved
 - Physical-device follow-up found that forcing both axes of the image element to 100% still produced
   visible stretching in Safari. Full-screen images now retain automatic intrinsic width and height,
   with only maximum stage bounds applied, making aspect-ratio preservation explicit.
+- A subsequent production check confirmed the latest hashed CSS asset was active even though the
+  physical result looked unchanged. Carousel images now also receive the normalized API width and
+  height as HTML attributes. Tests exercise explicit `900×1600` portrait and `1600×900` landscape
+  geometry through the full-screen swipe flow.
 - Reader voting lives in a stable panel below the gallery. `Choose this photo` always targets the
   visible image, selection remains visible while browsing, and `Review vote` appears only after a
   choice. The separate review/confirm vote boundary remains intact.

@@ -93,6 +93,14 @@ fits while the other axis follows the source aspect ratio. All 47 frontend files
 formatting, lint, TypeScript, build and audit pass with zero vulnerabilities; physical-device visual
 acceptance remains pending.
 
+The eighth review reported no visible improvement. A read-only production fetch proved the current
+hashed stylesheet and automatic-dimension rule were already deployed, excluding stale assets as the
+cause. Shared carousel items now carry the backend's normalized width and height into HTML image
+attributes, establishing authoritative aspect ratio before Safari lays out or decodes blob content.
+Focused tests cover portrait `900×1600` and landscape `1600×900` metadata through full-screen swipe;
+all 47 frontend files / 605 tests, format, lint, TypeScript, build and audit pass with zero
+vulnerabilities. Physical-device visual acceptance remains pending.
+
 ## RF-42 production web/API deployed; iOS and invited-beta gates pending - 2026-10-24
 
 After the two approved OpenCode Go attempts failed before inference because the provider quota was

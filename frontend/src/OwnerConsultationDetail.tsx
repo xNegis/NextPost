@@ -314,6 +314,8 @@ export function OwnerConsultationDetail({
               id: photoId ?? url,
               src: url,
               alt: `Consultation photo ${index + 1}`,
+              width: phase.detail.photos[index]?.width,
+              height: phase.detail.photos[index]?.height,
               footer:
                 count !== undefined ? (
                   <p

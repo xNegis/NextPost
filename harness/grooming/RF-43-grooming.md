@@ -284,6 +284,11 @@ None.
   full screen on the physical device. Do not force both image dimensions to the slide size. Preserve
   intrinsic aspect ratio explicitly with automatic width and height, bounded only by `max-width` and
   `max-height` of the available stage.
+- 2026-10-28, eighth owner review: the automatic-dimension correction looks unchanged on the
+  physical device. A read-only production check confirms that the latest CSS is deployed, so this is
+  not a stale asset. Stop relying solely on blob intrinsic sizing inside Safari's flexible slide:
+  propagate each normalized photo's API `width` and `height` into the image element, giving the
+  browser an explicit authoritative aspect ratio before layout and decode.
 
 ## Proposed scope
 

@@ -478,6 +478,8 @@ export function ConsultationComposer({
               id: item.clientId,
               src: item.imageUrl!,
               alt: `Selected photo ${index + 1}`,
+              width: item.width,
+              height: item.height,
             }))}
           />
         )}

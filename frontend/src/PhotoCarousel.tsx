@@ -12,6 +12,8 @@ export interface PhotoCarouselItem {
   id: string;
   src: string;
   alt: string;
+  width?: number;
+  height?: number;
   footer?: ReactNode;
   badge?: ReactNode;
 }
@@ -118,7 +120,12 @@ export function PhotoCarousel({
             aria-hidden={index === activeIndex ? undefined : true}
           >
             <div className="photo-carousel__image-frame">
-              <img src={item.src} alt={item.alt} />
+              <img
+                src={item.src}
+                alt={item.alt}
+                width={item.width}
+                height={item.height}
+              />
               {item.badge}
               {onEnlarge !== undefined && index === activeIndex && (
                 <button
