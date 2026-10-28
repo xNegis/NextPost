@@ -293,6 +293,11 @@ None.
   excessively enlarged on the tablet. Preserve the phone treatment. At tablet widths, keep the
   image centred and contained but cap its visual size to a restrained viewport/absolute maximum,
   leaving breathing room on the continuous stage without reintroducing a nested card.
+- 2026-10-28, tenth owner review: side-by-side iPad screenshots show the remaining difference from
+  Reddit. Reddit fills unused stage space with a darkened, blurred, cover-sized copy of the active
+  image, lets the sharp contained image use more vertical space, overlays pagination, and uses a
+  circular close icon. Adopt that presentation while preserving the explicit source ratio, swipe,
+  stable voting action and accessible close name.
 
 ## Proposed scope
 

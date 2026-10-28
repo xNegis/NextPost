@@ -37,6 +37,11 @@ Direct Codex implementation of the approved
 - Tablet review then isolated excessive enlargement rather than aspect-ratio loss. At widths of
   700 px and above, full-screen images now receive responsive stage padding and are capped at
   88 viewport-width/1100 px and 76 dynamic-viewport-height/720 px. iPhone sizing is unchanged.
+- Direct NextPost/Reddit iPad screenshots then identified the missing media-stage treatment. Each
+  full-screen slide now paints an aria-hidden, cover-sized copy of its active image behind the sharp
+  contained image, with blur, darkening and reduced saturation. Pagination overlays the stage, the
+  tablet cap uses more of the available height, and Close is a circular `×` while retaining its
+  accessible name. A regression assertion verifies exactly one active backdrop layer.
 - Reader voting lives in a stable panel below the gallery. `Choose this photo` always targets the
   visible image, selection remains visible while browsing, and `Review vote` appears only after a
   choice. The separate review/confirm vote boundary remains intact.

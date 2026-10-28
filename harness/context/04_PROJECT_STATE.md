@@ -109,6 +109,15 @@ parallel validation run produced one unrelated text-field test timeout; that tes
 in isolation and the complete suite then passed alone. All 47 files / 605 tests, format, lint,
 TypeScript, build and audit pass with zero vulnerabilities; tablet visual acceptance remains pending.
 
+The tenth review supplied side-by-side NextPost and Reddit iPad screenshots. The remaining visual
+gap was Reddit's blurred media-derived backdrop, overlaid pagination, greater useful image height and
+circular close icon. Full-screen slides now render an aria-hidden cover copy of the active image with
+blur, darkening and reduced saturation behind the sharp contained image; dots overlay the stage, the
+tablet cap is now `min(90vw, 1120px)` by `min(88dvh, 780px)`, and Close is an accessible circular
+`×`. Voting and explicit photo geometry are unchanged. All 47 frontend files / 605 tests, format,
+lint, TypeScript, build and audit pass with zero vulnerabilities; tablet visual acceptance remains
+pending.
+
 ## RF-42 production web/API deployed; iOS and invited-beta gates pending - 2026-10-24
 
 After the two approved OpenCode Go attempts failed before inference because the provider quota was

@@ -66,6 +66,11 @@ describe("PhotoEnlargement", () => {
     expect(
       screen.getByRole("img", { name: "Review photo 2" }),
     ).toBeInTheDocument();
+    expect(
+      screen
+        .getByRole("dialog", { name: "Full-screen photo gallery" })
+        .querySelectorAll(".photo-carousel__backdrop-image"),
+    ).toHaveLength(1);
 
     const track = screen.getByRole("list", {
       name: "Full-screen consultation photos. Swipe horizontally to browse.",

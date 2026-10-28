@@ -59,6 +59,12 @@ The ninth review adds a tablet-only scale constraint. Keep phone full-screen siz
 `min(88vw, 1100px)` by `min(76dvh, 720px)`. The surrounding stage remains continuous and the source
 aspect ratio remains authoritative.
 
+The tenth review refines that cap against a direct Reddit iPad comparison. In full screen, render an
+aria-hidden duplicate of the active slide image behind the sharp image, cover the stage with it, and
+apply strong blur, darkening and restrained saturation. Overlay pagination on the stage, increase the
+tablet sharp-image cap to `min(90vw, 1120px)` by `min(88dvh, 780px)`, and present Close as an
+accessible circular `×`. The foreground image remains contained and dimensioned from API metadata.
+
 ## Source ticket
 
 - Trello title: `RF-43 · Mejorar la navegación móvil y la experiencia fotográfica`

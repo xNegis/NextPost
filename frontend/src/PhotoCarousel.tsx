@@ -120,7 +120,16 @@ export function PhotoCarousel({
             aria-hidden={index === activeIndex ? undefined : true}
           >
             <div className="photo-carousel__image-frame">
+              {index === activeIndex && (
+                <img
+                  className="photo-carousel__backdrop-image"
+                  src={item.src}
+                  alt=""
+                  aria-hidden="true"
+                />
+              )}
               <img
+                className="photo-carousel__image"
                 src={item.src}
                 alt={item.alt}
                 width={item.width}

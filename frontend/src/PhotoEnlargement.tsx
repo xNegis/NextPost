@@ -100,9 +100,10 @@ export function PhotoEnlargement({
           ref={closeRef}
           type="button"
           className="secondary-button photo-enlargement__close"
+          aria-label="Close"
           onClick={onClose}
         >
-          Close
+          <span aria-hidden="true">×</span>
         </button>
       </div>
     </div>,
