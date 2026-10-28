@@ -30,6 +30,12 @@ the choice control belongs in a stable panel below the carousel and always targe
 visible photo; it must not be embedded in, or move horizontally with, a slide. Once chosen, the
 existing review/confirm boundary remains separate and explicit.
 
+The fifth review removes the remaining dark-viewer aesthetic. The shared carousel and full-screen
+gallery must use the application's light surfaces, neutral light space around contained images,
+subtle borders and restrained accent feedback, consistent with the clean upload preview and a
+Reddit light-mode media post. This is a visual-only correction; interaction and data contracts do
+not change.
+
 ## Source ticket
 
 - Trello title: `RF-43 · Mejorar la navegación móvil y la experiencia fotográfica`

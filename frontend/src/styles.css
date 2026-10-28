@@ -1586,9 +1586,9 @@ h1 {
 .photo-carousel {
   position: relative;
   overflow: hidden;
-  border: 1px solid #1d2939;
-  border-radius: 16px;
-  background: #101828;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
 }
 
 .photo-carousel__position {
@@ -1642,7 +1642,7 @@ h1 {
 }
 
 .photo-carousel__track:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--color-accent);
   outline-offset: -3px;
 }
 
@@ -1658,7 +1658,7 @@ h1 {
   display: grid;
   place-items: center;
   min-height: min(60svh, 560px);
-  background: #070b12;
+  background: #f0f2f5;
 }
 
 .photo-carousel__image-frame img {
@@ -1681,8 +1681,9 @@ h1 {
 
 .photo-carousel__footer {
   padding: 12px;
-  color: #f8fafc;
-  background: #101828;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .photo-carousel__dots {
@@ -1690,14 +1691,14 @@ h1 {
   justify-content: center;
   gap: 6px;
   padding: 10px 12px;
-  background: #101828;
+  background: var(--color-surface);
 }
 
 .photo-carousel__dot {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: rgb(255 255 255 / 34%);
+  background: #c7cdd6;
   transition:
     width 160ms ease,
     background-color 160ms ease;
@@ -1705,7 +1706,7 @@ h1 {
 
 .photo-carousel__dot--active {
   width: 18px;
-  background: #fff;
+  background: var(--color-accent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1715,7 +1716,7 @@ h1 {
 }
 
 .photo-carousel__footer .owner-consultation__photo-count {
-  color: #e2e8f0;
+  color: var(--color-text);
   border-top: 0;
 }
 
@@ -1992,6 +1993,7 @@ h1 {
 
 .photo-enlargement__panel .photo-carousel__image-frame {
   min-height: min(76svh, 760px);
+  background: #f0f2f5;
 }
 
 .photo-enlargement__panel .photo-carousel__image-frame img {

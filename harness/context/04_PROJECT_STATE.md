@@ -70,6 +70,13 @@ while browsing and reveals the separate review action only after selection. The 
 and all 47 frontend files / 605 tests, formatting, lint, TypeScript, production build and audit pass;
 the audit reports zero vulnerabilities. Physical-iPhone visual acceptance remains pending.
 
+The fifth owner review accepted the interaction but rejected the remaining dark viewer aesthetic.
+The shared inline and full-screen carousel now uses a Reddit-inspired light media surface: neutral
+light containment instead of a black canvas, a subtle application border, white footer/dot area and
+accent-colour active indicator. Swipe, exact settling, image containment and voting are unchanged.
+All 47 frontend files / 605 tests, formatting, lint, TypeScript, production build and audit pass;
+the audit reports zero vulnerabilities. Physical-iPhone visual acceptance remains pending.
+
 ## RF-42 production web/API deployed; iOS and invited-beta gates pending - 2026-10-24
 
 After the two approved OpenCode Go attempts failed before inference because the provider quota was

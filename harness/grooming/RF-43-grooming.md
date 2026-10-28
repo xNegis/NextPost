@@ -269,6 +269,10 @@ None.
   quiet, with the counter and dots as secondary feedback. Voting must not cover or travel with the
   photograph: expose one stable action below the gallery for the currently visible photo, then show
   the existing separate review action after a choice has been made.
+- 2026-10-28, fifth owner review: the interaction is accepted, but the dark viewer treatment is not.
+  Match the cleaner enlargement used during consultation creation and Reddit's light post-media
+  treatment: neutral light letterboxing, a subtle border, a white footer/dot area and an accent-only
+  active indicator. Preserve the current swipe, containment, enlargement and voting behaviour.
 
 ## Proposed scope
 

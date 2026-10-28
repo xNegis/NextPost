@@ -19,6 +19,9 @@ Direct Codex implementation of the approved
 - The media surface now uses a quieter Reddit-inspired treatment. A short settling correction
   aligns partial swipe endings to the exact nearest-photo boundary instead of leaving the next
   image slightly off frame.
+- The previous black viewer canvas, footer and dot strip have been replaced with the application's
+  light surface, neutral light image containment, a subtle border and a blue active indicator. The
+  same treatment is shared by inline and full-screen viewing without changing image proportions.
 - Reader voting lives in a stable panel below the gallery. `Choose this photo` always targets the
   visible image, selection remains visible while browsing, and `Review vote` appears only after a
   choice. The separate review/confirm vote boundary remains intact.
